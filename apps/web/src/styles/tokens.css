@@ -166,7 +166,7 @@
   --r-widget: 22px; /* [B-med] WidgetKit container corner */
   --r-grouped: 10px; /* [HIG] inset grouped list corner (iOS 13–18); iOS 26 rounder [B-med] */
   --margin: 16px; /* [HIG] layout margin */
-  --margin-la: 20px; /* [HIG] Live Activity margin */
+  --margin-la: 14px; /* [HIG] "The standard layout margin for Live Activities on the Lock Screen is 14 points." */
   --tap: 44px; /* [HIG] minimum hit target */
 
   /* Liquid Glass (iOS 26) [B-med] */
