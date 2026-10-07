@@ -79,16 +79,41 @@ function Intro() {
   const [params] = useSearchParams();
   const [code, setCode] = useState(params.get('join') ?? '');
   const [joinSheet, setJoinSheet] = useState(false);
+  const [page, setPage] = useState(0);
   const me = useMe();
   useEffect(() => {
     if (params.get('join')) draft.joinCode = params.get('join')!;
   }, [params]);
   return (
     <div className={s.intro}>
-      <div className={s.introArt}>
-        <AppIcon size={120} />
-        <p className={s.subtitle}>{locket.subtitle}</p>
-        <p className={s.storeLine}>{locket.storeLine}</p>
+      {/* First page: the app icon with Locket's subtitle and store line [V]; then Locket's own App
+          Store panels [I] (locket-01…07): gray glyph + label, white bold headline; page dots. */}
+      <div
+        className={s.pages}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          setPage(Math.round(el.scrollLeft / el.clientWidth));
+        }}
+      >
+        <div className={s.introArt}>
+          <AppIcon size={120} />
+          <p className={s.subtitle}>{locket.subtitle}</p>
+          <p className={s.storeLine}>{locket.storeLine}</p>
+        </div>
+        {locket.panels.map((p, i) => (
+          <div key={p.label} className={s.panel}>
+            <span className={`${s.panelLabel} ${i === 0 ? s.panelLabelYellow : ''}`}>
+              {i === 0 ? <AppIcon size={26} /> : <Icon name={p.glyph} size={26} strokeWidth={2} />}
+              {p.label}
+            </span>
+            <h2 className={s.panelHeadline}>{p.headline}</h2>
+          </div>
+        ))}
+      </div>
+      <div className={s.pageDots}>
+        {[0, ...locket.panels.map((_, i) => i + 1)].map((i) => (
+          <i key={i} className={i === page ? s.pageDotOn : ''} />
+        ))}
       </div>
       <div className={s.cta}>
         <Primary onClick={() => nav(me.data ? '/welcome/contacts' : '/welcome/name')}>{locket.setUp}</Primary>

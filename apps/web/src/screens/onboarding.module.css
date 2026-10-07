@@ -105,6 +105,62 @@
 }
 
 /* Intro */
+.pages {
+  flex: 1;
+  display: flex;
+  margin: 0 -20px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.pages::-webkit-scrollbar {
+  display: none;
+}
+.pages > * {
+  flex: none;
+  width: 100%;
+  scroll-snap-align: start;
+  padding: 0 24px;
+}
+/* Locket App Store panels [I] locket-01…07: gray SF glyph + bold gray label; white bold headline */
+.panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+}
+.panelLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font: 700 22px/1 var(--font-sf-rounded);
+  color: rgba(255, 255, 255, 0.55);
+}
+.panelLabelYellow {
+  color: var(--locket-yellow);
+}
+.panelHeadline {
+  margin: 0;
+  font: 700 30px/36px var(--font-sf-rounded);
+  color: #fff;
+}
+.pageDots {
+  display: flex;
+  justify-content: center;
+  gap: 7px;
+  margin: 8px 0 18px;
+}
+.pageDots i {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.3);
+}
+.pageDots .pageDotOn {
+  background: #fff;
+}
 .introArt {
   flex: 1;
   display: flex;
@@ -483,4 +539,9 @@
   justify-content: center;
   gap: 6px;
   font: 600 17px/1 var(--font-sf);
+}
+.pages > .introArt,
+.pages > .panel {
+  flex: none;
+  width: 100%;
 }

@@ -178,11 +178,11 @@ export const locket = {
   },
 
   /* ── Store panels (locket-01…07): glyph + label, then headline ── */
-  /** [I] App Store panels, in Locket's order · "Locket Widget" subst Locket→roll. */
+  /** [I] App Store panels, in Locket's order · "Locket Widget" and "Rollcall" subst → roll. */
   panels: [
     { glyph: 'heart', label: `${BRAND.name} Widget`, headline: 'Add your best friends to your Home Screen' },
     { glyph: 'paperplane', label: 'Send', headline: 'Send pics to friends’ Home Screens' },
-    { glyph: 'megaphone', label: 'Rollcall', headline: 'Weekly photo dumps with your best friends' },
+    { glyph: 'megaphone', label: BRAND.name, headline: 'Weekly photo dumps with your best friends' },
     { glyph: 'chat', label: 'Chat', headline: 'Reply to your friends’ pics' },
     { glyph: 'sparkle', label: 'Receive', headline: 'See new pictures throughout the day' },
     { glyph: 'aperture', label: 'Capture', headline: 'Tap the widget to open the camera' },
