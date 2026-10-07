@@ -9,21 +9,24 @@
   touch-action: none;
   isolation: isolate;
 }
-.head {
+/* Yope week-recap marks [I] (frame yope-week-recap): range in bold capitals bottom left, the
+   wordmark bottom right, white with a soft shadow */
+.marks {
   position: absolute;
-  left: 6%;
-  top: 4%;
-  right: 6%;
-  z-index: 0;
+  left: 5%;
+  right: 5%;
+  bottom: 4%;
+  z-index: 999;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
 }
-.title {
-  font: 900 9.6cqw/1 'Inter Variable', var(--font-ui);
-  letter-spacing: -0.04em;
-}
-.subtitle {
-  font: 700 4cqw/1.4 var(--font-ui);
-  margin-top: 1cqw;
-  opacity: 0.72;
+.marks b {
+  font: 800 5.4cqw/1 var(--font-sf);
+  letter-spacing: -0.01em;
 }
 .piece {
   position: absolute;
@@ -36,6 +39,10 @@
   display: block;
   pointer-events: none;
 }
+/* [I] Yope week recap: edge-to-edge tiles, no radius, no shadow */
+.tile img {
+  border-radius: 0;
+}
 .photo img {
   border-radius: 5%;
   box-shadow: 0 2cqw 5cqw rgba(0, 0, 0, 0.35);
@@ -43,7 +50,7 @@
 /* Cut-out sticker: thick white die-cut border */
 .sticker {
   padding: 1.1cqw;
-  background: var(--white);
+  background: #fff;
   border-radius: 20%;
   box-shadow: 0 1.5cqw 4cqw rgba(0, 0, 0, 0.35);
 }
@@ -52,7 +59,7 @@
 }
 .polaroid {
   padding: 1.6cqw 1.6cqw 7cqw;
-  background: var(--white);
+  background: #fff;
   box-shadow: 0 2cqw 5cqw rgba(0, 0, 0, 0.35);
 }
 .polaroidCap {
@@ -60,8 +67,8 @@
   left: 2cqw;
   right: 2cqw;
   bottom: 1.8cqw;
-  font: 700 3.2cqw/1 var(--font-ui);
-  color: var(--eel);
+  font: 700 3.2cqw/1 var(--font-sf);
+  color: #1c1c1e;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -73,11 +80,11 @@
   width: 36%;
   height: 5cqw;
   transform: translateX(-50%) rotate(-3deg);
-  background: color-mix(in srgb, var(--yellow) 55%, transparent);
-  mix-blend-mode: multiply;
+  /* [I] yope-03: blue-and-white striped washi tape */
+  background: repeating-linear-gradient(45deg, rgba(120, 175, 220, 0.85) 0 1.2cqw, rgba(255, 255, 255, 0.85) 1.2cqw 2.4cqw);
 }
 .selected {
-  outline: 0.6cqw dashed var(--yellow);
+  outline: 0.6cqw solid var(--sys-blue); /* [HIG] selection tint */
   outline-offset: 1cqw;
 }
 .deco {

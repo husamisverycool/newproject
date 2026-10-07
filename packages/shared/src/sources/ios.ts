@@ -92,4 +92,36 @@ export const ios = {
   on: 'On',
   /** [HIG] */
   off: 'Off',
+  /** [HIG] picker option for "no selection" (Settings → Sounds, Clock alarm sound) */
+  none: 'None',
+  /** [B-high] Contacts edit mode: the green ⊕ row for another date */
+  addDate: 'add date',
+  /** [HIG] DateFormatter template "EEEEMMMMd", e.g. "Saturday, October 17" */
+  weekdayDate: (t: number) => new Date(t).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' }),
+  /** [HIG] DateFormatter template "EEEMMMd", e.g. "Sat, Oct 17" */
+  shortDate: (t: number) => new Date(t).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }),
+  /** [HIG] DateFormatter timeStyle .short, e.g. "7:00 PM" */
+  time: (t: number) => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+  /** [HIG] DateFormatter template "EEEMMMdjmm", e.g. "Sat, Oct 17, 7:00 PM" */
+  dateTime: (t: number) => new Date(t).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }),
+  /** [HIG] Settings › Notifications › (app): the first switch */
+  allowNotifications: 'Allow Notifications',
+  /** [HIG] Settings › (app): the "Live Activities" switch (Locket's Rollcall runs as a Live Activity [V]) */
+  liveActivities: 'Live Activities',
+  /** [HIG] Settings › Focus › "Do Not Disturb" with a schedule: the stock name for nightly quiet hours */
+  doNotDisturb: 'Do Not Disturb',
+  /** [HIG] Focus schedule range, e.g. "10:00 PM–8:00 AM" (Apple Style Guide: en dash, no spaces, in a range) */
+  timeRange: (from: string, to: string) => `${from}–${to}`,
+  /** [HIG] Settings › Apple Account › iCloud: the "Storage" bar */
+  storage: 'Storage',
+  /** [HIG] App Review Guideline 5.1.1(v): apps that create accounts must offer account deletion ("Offering account deletion in your app") */
+  deleteAccount: 'Delete Account',
+  /** [HIG] StoreKit / App Review Guideline 3.1.1 restore mechanism; Locket help: "How do I restore my Locket Gold purchase?" [V] */
+  restorePurchases: 'Restore Purchases',
+  /** [HIG] AVPlayerViewController "Playback Speed" menu (iOS 16+): 0.5×, 1×, 1.25×, 1.5×, 2× */
+  playbackSpeeds: [0.5, 1, 1.25, 1.5, 2] as const,
+  /** [HIG] AVKit speed label, e.g. "1.25×" */
+  speedLabel: (n: number) => `${n}×`,
+  /** [HIG] AVKit menu title */
+  playbackSpeed: 'Playback Speed',
 } as const;

@@ -198,4 +198,8 @@ export const locket = {
   pushNew: (name: string) => `${name} sent a new photo`,
   /** [B-low] "<Name> reacted <emoji> to your Locket" · subst Locket→photo */
   pushReact: (name: string, emoji: string) => `${name} reacted ${emoji} to your photo`,
+  /** [V-weak] Gold price as reported: "$3.99 per month" (mrhack) */
+  perMonth: (price: string) => `${price} per month`,
+  /** [V-weak] Gold price as reported: "$36 per year" (mrhack) */
+  perYear: (price: string) => `${price} per year`,
 } as const;

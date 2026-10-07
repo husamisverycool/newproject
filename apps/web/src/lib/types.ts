@@ -139,7 +139,7 @@ export interface WallItem {
   h: number;
   rot: number;
   z: number;
-  shape: 'photo' | 'sticker' | 'polaroid';
+  shape: 'tile' | 'photo' | 'sticker' | 'polaroid';
   caption?: string | null;
   tape?: boolean;
 }

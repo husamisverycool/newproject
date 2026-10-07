@@ -84,9 +84,9 @@ export const yope = {
   recap: 'recap',
   /** [I] */
   pics: 'pics',
-  /** [I] frame yope-week-recap: title "18 aug-24 aug" (lowercase, hyphen, no spaces) */
+  /** [I] frame yope-week-recap "18 aug-24 aug", frame yope-1on1-feed "8 sep-14 sep" (three-letter lowercase months, hyphen, no spaces) */
   weekRange: (start: number, end: number) => {
-    const f = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toLowerCase();
+    const f = (t: number) => `${new Date(t).getDate()} ${new Date(t).toLocaleDateString('en-US', { month: 'short' }).slice(0, 3).toLowerCase()}`;
     return `${f(start)}-${f(end)}`;
   },
   /** [I] frame yope-1on1-feed: month separator "august 2025" */

@@ -1,15 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router';
+import { useEffect, useMemo, useState, type CSSProperties } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
-import { api, ApiError, downloadBlob } from '../lib/api';
-import { useGroup, useJournal } from '../lib/queries';
+import { bereal, gphotos, imessage, ios, locket, retro, yope } from '@app/shared';
+import { api, downloadBlob } from '../lib/api';
+import { queryClient, useGroup, useJournal } from '../lib/queries';
+import { useAmbient } from '../lib/ambient';
 import { haptic, sfx } from '../lib/feedback';
-import { timeAgo, weekRange } from '../lib/format';
-import type { LikenessObject, Post, WallLayout, PublicUser } from '../lib/types';
+import { firstName, weekBounds } from '../lib/format';
+import type { LikenessObject, Post, PublicUser, WallLayout } from '../lib/types';
 import { Icon } from '../components/Icon';
-import { Avatar, AvatarStack, Chip, IconButton, PillButton, Sheet, Spinner } from '../components/ui';
+import { Avatar, AvatarStack, Menu, Sheet, Spinner } from '../components/ios';
 import { WallCanvas } from '../components/WallCanvas';
+import { EmojiRain } from '../components/EmojiRain';
 import s from './week.module.css';
 
 interface WallResp {
@@ -17,41 +20,201 @@ interface WallResp {
   versions: { version: number; style: string; generator: string; created_by: string | null; created_at: number }[];
   styles: { id: string; name: string; source: string }[];
   recap: LikenessObject | null;
-  title: string;
 }
-
-type Tab = 'wall' | 'recap' | 'awards';
+type Award = { title: string; emoji: string; line: string; winners: string[] };
+type Mode = 'recap' | 'pics';
 
 /**
- * A developed week: Yope's AI wall ("edit them, remix them"), the six-panel AI recap and the
- * Retro-style slideshow (spec §G), and the week's awards (Wrapped Party). Exports carry the watermark.
+ * A developed week. The bottom capsule "recap" | "pics" and the recap screen come from Yope's week
+ * recap (frame research/inspo/frames/yope-week-recap [I]): ‹ and "18 aug-24 aug" at the top, the
+ * collage with "18 AUG-24 AUG" and the wordmark on it, page dots. "pics" is Locket's Rollcall viewer
+ * (research/inspo/store/locket-03-rollcall [I]). Yope walls are editable and remixable with versions
+ * [V-weak] (spec §E); Retro's Polaroid recap player (retro-04 [I]) and postcard (retro-03 [I]); the
+ * week's awards as Wrapped cards [V].
  */
 export default function WeekView() {
   const { groupId = '', weekKey = '' } = useParams();
+  const [params] = useSearchParams();
   const nav = useNavigate();
   const g = useGroup(groupId);
   const j = useJournal(groupId);
   const q = useQuery({ queryKey: ['wall', groupId, weekKey], queryFn: () => api.get<WallResp>(`/groups/${groupId}/walls/${weekKey}`) });
-  const games = useQuery({ queryKey: ['games', groupId], queryFn: () => api.get<{ games: { id: string; weekKey: string; kind: string; closed: boolean; results: { title: string; emoji: string; line: string; winners: string[] }[] | null }[] }>(`/groups/${groupId}/games`) });
-  const [tab, setTab] = useState<Tab>('wall');
+  const games = useQuery({ queryKey: ['games', groupId], queryFn: () => api.get<{ games: { weekKey: string; results: Award[] | null }[] }>(`/groups/${groupId}/games`) });
+  const week = j.data?.weeks.find((w) => w.weekKey === weekKey);
+  const posts = useMemo(() => week?.members.flatMap((m) => m.posts) ?? [], [week]);
+  const roll = useMemo(() => {
+    const r = posts.filter((p) => p.ritual);
+    return (r.length ? r : posts).sort((a, b) => a.user.id.localeCompare(b.user.id) || a.takenAt - b.takenAt);
+  }, [posts]);
+  const [mode, setMode] = useState<Mode>('recap');
+  const [player, setPlayer] = useState(false);
+  const [postcard, setPostcard] = useState<Post | null>(null);
+  useEffect(() => {
+    if (params.get('postcard') && posts[0]) setPostcard(posts[0]);
+  }, [params, posts]);
+  const { start, end } = weekBounds(weekKey);
+  const users = new Map((g.data?.members ?? []).map((m) => [m.user.id, m.user]));
+  const results = games.data?.games.find((x) => x.weekKey === weekKey)?.results ?? null;
+
+  return (
+    <div className={s.root}>
+      {mode === 'pics' ? (
+        <Rollcall posts={roll} start={start} end={end} onClose={() => nav(-1)} />
+      ) : (
+        <Recap
+          groupId={groupId}
+          weekKey={weekKey}
+          range={yope.weekRange(start, end)}
+          wall={q.data ?? null}
+          refetch={() => void q.refetch()}
+          posts={posts}
+          awards={results}
+          users={users}
+          mascot={g.data ? { species: g.data.group.mascot.species, level: g.data.group.mascot.stage.level, outfit: g.data.group.mascot.outfit } : undefined}
+          onBack={() => nav(-1)}
+          onPlay={() => setPlayer(true)}
+          onPostcard={() => posts[0] && setPostcard(posts[0])}
+        />
+      )}
+
+      {/* Yope "recap" | "pics" capsule [I] */}
+      <div className={s.segment}>
+        {(['recap', 'pics'] as Mode[]).map((m) => (
+          <button key={m} className={mode === m ? s.segOn : ''} onClick={() => { haptic('light'); setMode(m); }}>
+            {m === 'recap' ? yope.recap : yope.pics}
+          </button>
+        ))}
+      </div>
+
+      <AnimatePresence>{player && <RetroPlayer posts={posts} onClose={() => setPlayer(false)} />}</AnimatePresence>
+      <PostcardSheet groupId={groupId} post={postcard} onClose={() => setPostcard(null)} />
+    </div>
+  );
+}
+
+/* ───────────── pics: Locket Rollcall viewer [I] locket-03 ───────────── */
+
+function Rollcall({ posts, start, end, onClose }: { posts: Post[]; start: number; end: number; onClose: () => void }) {
+  const nav = useNavigate();
+  const [i, setI] = useState(0);
+  const [picker, setPicker] = useState(false);
+  const [rain, setRain] = useState<{ emoji: string; key: number } | null>(null);
+  const p = posts[Math.min(i, posts.length - 1)];
+  const ambient = useAmbient(p ? p.media.thumb ?? p.media.main : null);
+  const posters = [...new Map(posts.map((x) => [x.user.id, x.user])).values()];
+  const react = async (emoji: string) => {
+    if (!p) return;
+    haptic('light');
+    setRain({ emoji, key: Date.now() });
+    setPicker(false);
+    await api.post(`/posts/${p.id}/react`, { emoji });
+    void queryClient.invalidateQueries({ queryKey: ['journal', p.groupId] });
+  };
+  const faces = p ? [...new Set((p.reactions ?? []).map((r) => r.emoji).filter(Boolean) as string[])].slice(0, 3) : [];
+
+  return (
+    <div className={s.rollcall} style={ambient ? ({ '--amb': ambient } as CSSProperties) : undefined}>
+      <header className={s.rcHead}>
+        <button className={s.glass} onClick={onClose} aria-label={ios.close}>
+          <Icon name="close" size={18} strokeWidth={2.6} />
+        </button>
+        <div className={s.rcTitle}>
+          <b>
+            <Icon name="megaphone" size={22} strokeWidth={2} />
+            {locket.rollcallTitle}
+          </b>
+          <span>{locket.rollcallRange(start, end)}</span>
+        </div>
+        <span className={s.rcPeople}>
+          <AvatarStack users={posters.slice(0, 2)} size={30} edge="transparent" />
+          {posters.length > 0 && <i>{posters.length}</i>}
+        </span>
+      </header>
+
+      {p ? (
+        <>
+          <div className={s.deck}>
+            <span className={s.deckBack2} />
+            <span className={s.deckBack1} />
+            <div
+              className={s.deckTop}
+              onClick={(e) => {
+                const r = e.currentTarget.getBoundingClientRect();
+                if (e.clientX - r.left < r.width / 3) setI(Math.max(0, i - 1));
+                else if (i < posts.length - 1) setI(i + 1);
+                haptic('light');
+              }}
+            >
+              <AnimatePresence mode="popLayout" initial={false}>
+                <motion.img key={p.id} src={p.media.main} alt="" className={p.blurred ? s.blurred : ''} initial={{ opacity: 0, y: -18, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 30 }} transition={{ duration: 0.28 }} />
+              </AnimatePresence>
+              {p.caption && !p.blurred && <span className={s.caption}>{p.caption}</span>}
+              {faces.length > 0 && <span className={s.faces}>{faces.join('')}</span>}
+              <button className={s.addReact} onClick={(e) => { e.stopPropagation(); setPicker(true); }} aria-label={bereal.realMoji} disabled={p.blurred}>
+                <Icon name="smilePlus" size={22} />
+              </button>
+              {rain && <EmojiRain key={rain.key} emoji={rain.emoji} />}
+            </div>
+          </div>
+          <div className={s.poster}>
+            <Avatar user={p.user} size={36} />
+            <b>{locket.shortName(p.user.name)}</b>
+            <button className={s.glass} onClick={() => nav(`/p/${p.id}`)} aria-label={locket.sendMessage}>
+              <Icon name="plus" size={18} strokeWidth={2.6} />
+            </button>
+          </div>
+        </>
+      ) : (
+        <p className={s.empty}>{locket.rollcallStep1}</p>
+      )}
+
+      <Sheet open={picker} onClose={() => setPicker(false)} dark>
+        <div className={s.reactGrid}>
+          {[...locket.replyGrid, ...imessage.tapbacks].map((e) => (
+            <button key={e} onClick={() => void react(e)}>
+              {e}
+            </button>
+          ))}
+        </div>
+      </Sheet>
+    </div>
+  );
+}
+
+/* ───────────── recap: Yope week recap [I] + walls [V-weak] ───────────── */
+
+function Recap({ groupId, weekKey, range, wall, refetch, posts, awards, users, mascot, onBack, onPlay, onPostcard }: {
+  groupId: string;
+  weekKey: string;
+  range: string;
+  wall: WallResp | null;
+  refetch: () => void;
+  posts: Post[];
+  awards: Award[] | null;
+  users: Map<string, PublicUser>;
+  mascot?: { species: string; level: number; outfit: string[] };
+  onBack: () => void;
+  onPlay: () => void;
+  onPostcard: () => void;
+}) {
+  const [page, setPage] = useState(0);
   const [edit, setEdit] = useState(false);
   const [draft, setDraft] = useState<WallLayout | null>(null);
   const [selected, setSelected] = useState<string | null>(null);
   const [busy, setBusy] = useState<string | null>(null);
-  const [versions, setVersions] = useState(false);
-  const [share, setShare] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-  const week = j.data?.weeks.find((w) => w.weekKey === weekKey);
-  const posts = useMemo(() => week?.members.flatMap((m) => m.posts) ?? [], [week]);
-  const mascot = g.data ? { species: g.data.group.mascot.species, level: g.data.group.mascot.stage.level, outfit: g.data.group.mascot.outfit } : undefined;
-  const layout = draft ?? q.data?.wall?.layout ?? null;
-  const users = new Map((g.data?.members ?? []).map((m) => [m.user.id, m.user]));
+  const [menu, setMenu] = useState(false);
+  const [styles, setStyles] = useState(false);
+  const layout = draft ?? wall?.wall?.layout ?? null;
+  const panels = (wall?.recap?.meta.panels as string[] | undefined) ?? [];
+  const pages = [layout ? 'wall' : null, panels.length ? 'panels' : null, awards?.length ? 'awards' : null].filter(Boolean) as string[];
 
-  const remix = async (style: string) => {
+  const remix = async () => {
     setBusy('remix');
     haptic('medium');
-    await api.post(`/groups/${groupId}/walls/${weekKey}/remix`, { style });
-    await q.refetch();
+    const ids = wall?.styles.map((x) => x.id) ?? [];
+    const next = ids[(ids.indexOf(wall?.wall?.style ?? '') + 1) % Math.max(1, ids.length)];
+    await api.post(`/groups/${groupId}/walls/${weekKey}/remix`, { style: next });
+    refetch();
     setBusy(null);
     sfx.sparkle();
   };
@@ -62,276 +225,260 @@ export default function WeekView() {
     setDraft(null);
     setEdit(false);
     setSelected(null);
-    await q.refetch();
+    refetch();
     setBusy(null);
   };
-  const exportWall = async (version?: number) => {
+  const exportWall = async () => {
     setBusy('export');
-    const blob = await api.blob(`/groups/${groupId}/walls/${weekKey}/export${version ? `?version=${version}` : ''}`);
-    await downloadBlob(blob, `${g.data?.group.name ?? 'roll'}-${weekKey}.jpg`);
+    const blob = await api.blob(`/groups/${groupId}/walls/${weekKey}/export`);
+    await downloadBlob(blob, `${weekKey}.jpg`);
     setBusy(null);
   };
   const genRecap = async (style: string) => {
+    setStyles(false);
     setBusy('recap');
-    try {
-      await api.post(`/groups/${groupId}/recap/${weekKey}`, { style });
-      await q.refetch();
-      sfx.sparkle();
-    } catch (e) {
-      setMsg(e instanceof ApiError ? e.message : 'Could not make a recap');
-    }
+    await api.post(`/groups/${groupId}/recap/${weekKey}`, { style }).catch(() => undefined);
+    refetch();
     setBusy(null);
   };
-  const zine = async () => {
-    setBusy('zine');
-    const r = await api.post<{ object: LikenessObject }>(`/groups/${groupId}/zine`, { weekKey });
-    setBusy(null);
-    const blob = await api.blob(`/objects/${r.object.id}/export`);
-    await downloadBlob(blob, `zine-${weekKey}.jpg`);
-  };
 
-  const sel = layout?.items.find((i) => i.id === selected);
-  const patchSel = (p: Partial<WallLayout['items'][number]>) => {
-    if (!layout || !selected) return;
-    setDraft({ ...layout, items: layout.items.map((i) => (i.id === selected ? { ...i, ...p } : i)) });
-  };
-
-  const results = games.data?.games.find((x) => x.weekKey === weekKey)?.results ?? null;
-
-  return (
-    <div className="screen">
-      <header className={s.header}>
-        <IconButton icon="chevronLeft" label="Back" onClick={() => nav(-1)} />
-        <div className={s.title}>
-          <span>{weekRange(weekKey)}</span>
-          <span className={s.sub}>{g.data?.group.name}</span>
-        </div>
-        <IconButton icon="share" label="Share" onClick={() => setShare(true)} />
-      </header>
-      <div className={s.tabs}>
-        <div className="segmented">
-          {(['wall', 'recap', 'awards'] as Tab[]).map((t) => (
-            <button key={t} aria-pressed={tab === t} onClick={() => setTab(t)}>
-              {t === 'wall' ? 'Wall' : t === 'recap' ? 'Recap' : 'Awards'}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className={`${s.body} scroll`}>
-        {tab === 'wall' && (
-          <>
-            {layout ? (
-              <div className={s.wallWrap}>
-                <WallCanvas layout={layout} mascot={mascot} editable={edit} onChange={setDraft} selected={selected} onSelect={setSelected} animateIn={!edit} key={`${q.data?.wall?.version}-${edit}`} />
-                {busy === 'remix' && (
-                  <div className={s.busy}>
-                    <Spinner size={32} />
-                  </div>
-                )}
-              </div>
-            ) : q.isLoading ? (
-              <div className={s.center}><Spinner /></div>
-            ) : (
-              <div className={s.center}>
-                <p className="t-sub">No wall yet for this week.</p>
-                <PillButton onClick={() => remix('chaos')}>Make the wall</PillButton>
-              </div>
-            )}
-            {layout && !edit && (
-              <>
-                <div className={s.meta}>
-                  v{q.data?.wall?.version} · {q.data?.wall?.generator === 'auto' ? 'made by the roll' : q.data?.wall?.created_by ? `${users.get(q.data.wall.created_by)?.name.split(' ')[0] ?? 'someone'} ${q.data.wall.generator === 'edit' ? 'edited' : 'remixed'}` : 'remixed'} · {timeAgo(q.data?.wall?.created_at ?? Date.now())}
-                  <button className={s.link} onClick={() => setVersions(true)}>{q.data?.versions.length === 1 ? '1 version' : `${q.data?.versions.length} versions`}</button>
-                </div>
-                <div className={`${s.styles} scroll`}>
-                  {q.data?.styles.map((st) => (
-                    <Chip key={st.id} onClick={() => remix(st.id)}>
-                      <Icon name="shuffle" size={14} /> {st.name}
-                    </Chip>
-                  ))}
-                </div>
-                <div className={s.actions}>
-                  <button className={s.action} onClick={() => { setEdit(true); setDraft(layout); }}>
-                    <Icon name="wand" size={22} /> Edit
-                  </button>
-                  <button className={s.action} onClick={() => exportWall()} disabled={busy === 'export'}>
-                    {busy === 'export' ? <Spinner size={18} /> : <Icon name="download" size={22} />} Save
-                  </button>
-                  <button className={s.action} onClick={zine} disabled={busy === 'zine'}>
-                    {busy === 'zine' ? <Spinner size={18} /> : <Icon name="print" size={22} />} Zine
-                  </button>
-                </div>
-              </>
-            )}
-            {edit && layout && (
-              <div className={s.editBar}>
-                {sel ? (
-                  <>
-                    <div className={s.editRow}>
-                      <span className="t-cap">Rotate</span>
-                      <input type="range" min={-45} max={45} value={sel.rot} onChange={(e) => patchSel({ rot: Number(e.target.value) })} />
-                    </div>
-                    <div className={s.editRow}>
-                      <span className="t-cap">Size</span>
-                      <input type="range" min={0.15} max={0.8} step={0.01} value={sel.w} onChange={(e) => { const w = Number(e.target.value); patchSel({ w, h: (sel.h / sel.w) * w }); }} />
-                    </div>
-                    <div className="hstack gap8">
-                      {(['photo', 'sticker', 'polaroid'] as const).map((sh) => (
-                        <Chip key={sh} active={sel.shape === sh} onClick={() => patchSel({ shape: sh })}>{sh}</Chip>
-                      ))}
-                      <Chip onClick={() => patchSel({ z: Math.max(...layout.items.map((i) => i.z)) + 1 })}>Front</Chip>
-                    </div>
-                  </>
-                ) : (
-                  <p className="t-foot center" style={{ margin: 0 }}>Tap a photo to move, turn or resize it.</p>
-                )}
-                <div className="hstack gap8">
-                  <PillButton tone="dark" onClick={() => { setEdit(false); setDraft(null); setSelected(null); }}>Cancel</PillButton>
-                  <PillButton onClick={save} disabled={busy === 'save'}>Save version</PillButton>
-                </div>
-              </div>
-            )}
-          </>
-        )}
-        {tab === 'recap' && <Recap posts={posts} recap={q.data?.recap ?? null} onGenerate={genRecap} busy={busy === 'recap'} msg={msg} />}
-        {tab === 'awards' && <Awards results={results} users={users} />}
-        <div style={{ height: 40 }} />
-      </div>
-
-      <Sheet open={versions} onClose={() => setVersions(false)} title="Versions">
-        <div className="stack gap8" style={{ paddingBottom: 12 }}>
-          {q.data?.versions.map((v) => (
-            <div key={v.version} className="hstack gap12" style={{ minHeight: 48 }}>
-              <span className={s.vNum}>v{v.version}</span>
-              <span className="grow">
-                <span className="t-headline">{v.generator === 'auto' ? 'Developed' : v.generator === 'edit' ? 'Edited' : `Remixed · ${v.style}`}</span>
-                <span className="t-foot" style={{ display: 'block' }}>{v.created_by ? users.get(v.created_by)?.name : 'the roll'} · {timeAgo(v.created_at)}</span>
-              </span>
-              <button className="chip" onClick={() => exportWall(v.version)}>Save</button>
-            </div>
-          ))}
-        </div>
-      </Sheet>
-      <Sheet open={share} onClose={() => setShare(false)} title="Share this week">
-        <div className={s.shareGrid}>
-          <button onClick={() => { setShare(false); void exportWall(); }}>
-            <span className={s.shareIcon} style={{ background: 'var(--white)', color: 'var(--black)' }}><Icon name="download" /></span>
-            Save image
-          </button>
-          <button onClick={() => { setShare(false); void exportWall(); }}>
-            <span className={s.shareIcon} style={{ background: 'var(--imessage)' }}><Icon name="chat" /></span>
-            Messages
-          </button>
-          <button onClick={() => { setShare(false); void exportWall(); }}>
-            <span className={s.shareIcon} style={{ background: 'linear-gradient(135deg, var(--purple), var(--pink))' }}><Icon name="camera" /></span>
-            Stories
-          </button>
-          <button onClick={() => { setShare(false); void zine(); }}>
-            <span className={s.shareIcon} style={{ background: 'var(--yellow)', color: 'var(--black)' }}><Icon name="print" /></span>
-            Print zine
-          </button>
-        </div>
-        <p className="t-cap center">Exports carry the roll. watermark and a provenance record.</p>
-      </Sheet>
-    </div>
-  );
-}
-
-/* ───────────────────────── Recap: AI panels + slideshow ───────────────────────── */
-
-function Recap({ posts, recap, onGenerate, busy, msg }: { posts: Post[]; recap: LikenessObject | null; onGenerate: (style: string) => void; busy: boolean; msg: string | null }) {
-  const [play, setPlay] = useState(false);
-  const panels = (recap?.meta.panels as string[] | undefined) ?? [];
   return (
     <div className={s.recap}>
-      <button className={s.slideshowCard} onClick={() => setPlay(true)} disabled={!posts.length}>
-        <div className={s.slideMosaic}>
-          {posts.slice(0, 4).map((p) => (
-            <img key={p.id} src={p.media.thumb ?? p.media.main} alt="" />
-          ))}
-        </div>
-        <span className={s.playBtn}>
-          <Icon name="play" size={22} />
-        </span>
-        <span className={s.slideLabel}>Play the week · {posts.length} moments</span>
-      </button>
+      <header className={s.recapHead}>
+        {edit ? (
+          <button className={s.textBtn} onClick={() => { setEdit(false); setDraft(null); setSelected(null); }}>
+            {ios.cancel}
+          </button>
+        ) : (
+          <button className={s.back} onClick={onBack} aria-label={ios.back}>
+            <Icon name="chevronLeft" size={24} strokeWidth={2.6} />
+          </button>
+        )}
+        <h1>{range}</h1>
+        {edit ? (
+          <button className={`${s.textBtn} ${s.bold}`} onClick={save} disabled={busy === 'save'}>
+            {busy === 'save' ? <Spinner size={18} /> : ios.done}
+          </button>
+        ) : (
+          <button className={s.back} onClick={() => setMenu(true)} aria-label={ios.more}>
+            <Icon name="more" size={22} strokeWidth={3.2} />
+          </button>
+        )}
+      </header>
 
-      <div className={s.recapHead}>
-        <span className="t-title3">AI recap</span>
-        {recap && <span className={s.aiInfo}><Icon name="info" size={14} /> Made with roll. AI</span>}
+      <div
+        className={s.pages}
+        onScroll={(e) => {
+          const el = e.currentTarget;
+          setPage(Math.round(el.scrollLeft / el.clientWidth));
+        }}
+        style={edit ? { overflowX: 'hidden' } : undefined}
+      >
+        {pages.length === 0 && (
+          <div className={s.page}>
+            {wall === null ? <Spinner size={28} /> : (
+              <button className={s.make} onClick={remix} disabled={busy === 'remix'}>
+                {busy === 'remix' ? <Spinner size={22} /> : <Icon name="sparkles" size={22} />}
+                <span>{yope.wallRemix}</span>
+              </button>
+            )}
+          </div>
+        )}
+        {pages.includes('wall') && layout && (
+          <div className={s.page}>
+            <div className={s.wallWrap}>
+              <WallCanvas layout={layout} mascot={mascot} editable={edit} onChange={setDraft} selected={selected} onSelect={setSelected} animateIn={!edit} label={range.toUpperCase()} key={`${wall?.wall?.version}-${edit}`} />
+              {busy === 'remix' && (
+                <div className={s.busy}>
+                  <Spinner size={32} />
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {pages.includes('panels') && (
+          <div className={s.page}>
+            <div className={s.panels}>
+              {panels.map((src) => (
+                <img key={src} src={src} alt="" />
+              ))}
+            </div>
+            <span className={s.aiTag}>{gphotos.madeBy}</span>
+          </div>
+        )}
+        {pages.includes('awards') && awards && (
+          <div className={s.page}>
+            <div className={s.awards}>
+              {awards.map((a, k) => (
+                <div key={a.title + k} className={s.award}>
+                  <span className={s.awardEmoji}>{a.emoji}</span>
+                  <b>{a.title}</b>
+                  <span>{a.line}</span>
+                  <span className={s.awardWho}>
+                    <AvatarStack users={a.winners.map((w) => users.get(w))} size={26} edge="transparent" />
+                    {a.winners.map((w) => firstName(users.get(w)?.name ?? '')).join(' & ')}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
-      {panels.length ? (
-        <div className={s.panels}>
-          {panels.map((p, i) => (
-            <motion.img key={p} src={p} alt="" initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} />
+      {pages.length > 1 && (
+        <div className={s.dots}>
+          {pages.map((x, k) => (
+            <i key={x} className={k === page ? s.dotOn : ''} />
           ))}
         </div>
-      ) : (
-        <p className="t-sub">Six panels from the week, drawn in one style.</p>
       )}
-      <div className={`${s.styles} scroll`} style={{ padding: 0 }}>
-        {['comic', 'anime', 'sketch', 'watercolor', '8bit', 'polaroid'].map((st) => (
-          <Chip key={st} onClick={() => onGenerate(st)}>
-            {busy ? <Spinner size={14} /> : <Icon name="sparkles" size={14} />} {st === '8bit' ? '8-bit' : st[0].toUpperCase() + st.slice(1)}
-          </Chip>
-        ))}
-      </div>
-      {msg && <p className="t-foot" style={{ color: 'var(--yellow)' }}>{msg}</p>}
-      <AnimatePresence>{play && <Slideshow posts={posts} onClose={() => setPlay(false)} />}</AnimatePresence>
+      {!edit && layout && (
+        <button className={s.share} onClick={exportWall} disabled={busy === 'export'}>
+          {busy === 'export' ? <Spinner size={16} /> : <Icon name="share" size={18} strokeWidth={2.2} />}
+          {yope.share}
+        </button>
+      )}
+
+      <Menu
+        open={menu}
+        onClose={() => setMenu(false)}
+        actions={[
+          ...(layout ? [{ label: yope.wallEdit, icon: 'pencil', onClick: () => { setEdit(true); setDraft(layout); } }] : []),
+          { label: yope.wallRemix, icon: 'shuffle', onClick: remix },
+          ...(layout ? [{ label: yope.wallSave, icon: 'download', onClick: exportWall }] : []),
+          ...(posts.length ? [{ label: retro.recapFormats.video, icon: 'play', onClick: onPlay }] : []),
+          { label: gphotos.tools.remix, icon: 'sparkles', onClick: () => setStyles(true) },
+          ...(posts.length ? [{ label: retro.postcard, icon: 'pencil', onClick: onPostcard }] : []),
+        ]}
+      />
+      <Menu
+        open={styles}
+        onClose={() => setStyles(false)}
+        actions={Object.entries(gphotos.remixStyles)
+          .filter(([k]) => k !== 'threeD')
+          .map(([k, label]) => ({ label, icon: 'sparkles', onClick: () => void genRecap(k) }))}
+      />
+      {busy === 'recap' && (
+        <div className={s.busyFull}>
+          <Spinner size={32} />
+        </div>
+      )}
     </div>
   );
 }
 
-/** Retro "video slideshow" of the week, story-style progress bars. */
-function Slideshow({ posts, onClose }: { posts: Post[]; onClose: () => void }) {
+/* ───────────── Retro recap player [I] retro-04 ───────────── */
+
+function RetroPlayer({ posts, onClose }: { posts: Post[]; onClose: () => void }) {
   const [i, setI] = useState(0);
   useEffect(() => {
-    const t = setTimeout(() => (i < posts.length - 1 ? setI(i + 1) : onClose()), 2600);
+    const t = setTimeout(() => setI((x) => (x < posts.length - 1 ? x + 1 : x)), 3000);
     return () => clearTimeout(t);
-  }, [i, posts.length, onClose]);
+  }, [i, posts.length]);
   const p = posts[i];
+  if (!p) return null;
+  const shareIt = () => typeof navigator.share === 'function' && void navigator.share({ url: `${location.origin}/api/posts/${p.id}/export` }).catch(() => undefined);
   return (
-    <motion.div className={s.slideshow} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={(e) => { const r = (e.currentTarget as HTMLElement).getBoundingClientRect(); if (e.clientX - r.left < r.width / 3) setI(Math.max(0, i - 1)); else if (i < posts.length - 1) setI(i + 1); else onClose(); }}>
-      <div className={s.bars}>
-        {posts.map((_, k) => (
-          <span key={k}>
-            <motion.i initial={{ width: k < i ? '100%' : 0 }} animate={{ width: k < i ? '100%' : k === i ? '100%' : 0 }} transition={{ duration: k === i ? 2.6 : 0, ease: 'linear' }} />
-          </span>
-        ))}
-      </div>
-      <AnimatePresence mode="wait">
-        <motion.img key={p.id} src={p.media.main} alt="" className={s.slideImg} initial={{ scale: 1.08, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.5 }} />
-      </AnimatePresence>
-      <div className={s.slideBy}>
-        <Avatar user={p.user} size={28} /> <b>{p.user.name.split(' ')[0]}</b> {p.caption && <span>· {p.caption}</span>}
-      </div>
-      <button className={s.slideClose} onClick={(e) => { e.stopPropagation(); onClose(); }} aria-label="Close">
-        <Icon name="close" size={22} />
+    <motion.div className={s.player} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+      <img src={p.media.main} alt="" className={s.playerBg} />
+      <button className={`${s.glass} ${s.playerX}`} onClick={onClose} aria-label={ios.close}>
+        <Icon name="close" size={18} strokeWidth={2.6} />
       </button>
+      <div
+        className={s.polaroidArea}
+        onClick={(e) => {
+          const r = e.currentTarget.getBoundingClientRect();
+          setI(e.clientX - r.left < r.width / 3 ? Math.max(0, i - 1) : Math.min(posts.length - 1, i + 1));
+        }}
+      >
+        <AnimatePresence mode="wait">
+          <motion.div key={p.id} className={s.polaroid} initial={{ opacity: 0, rotate: -2, scale: 0.96 }} animate={{ opacity: 1, rotate: 0, scale: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.4 }}>
+            <img src={p.media.main} alt="" />
+          </motion.div>
+        </AnimatePresence>
+      </div>
+      <div className={s.meta}>
+        <div>
+          <span>{retro.monthYear(p.takenAt)}</span>
+        </div>
+        <hr />
+        <div>
+          <span>{firstName(p.user.name)}</span>
+          <span>{retro.clock(p.takenAt)}</span>
+          <span>{retro.domain}</span>
+        </div>
+      </div>
+      <div className={s.playerBar}>
+        <span className={s.count}>
+          <img src={p.media.thumb ?? p.media.main} alt="" />
+          <i>{posts.length}</i>
+        </span>
+        <span className={s.playerDots}>
+          {posts.slice(0, 7).map((x, k) => (
+            <i key={x.id} className={k === Math.min(i, 6) ? s.dotOn : ''} />
+          ))}
+        </span>
+        <button className={s.whiteBtn} onClick={shareIt}>
+          {retro.share}
+        </button>
+      </div>
     </motion.div>
   );
 }
 
-/* ───────────────────────── Awards (Wrapped Party style) ───────────────────────── */
+/* ───────────── Retro postcard [I] retro-03 ───────────── */
 
-function Awards({ results, users }: { results: { title: string; emoji: string; line: string; winners: string[] }[] | null; users: Map<string, PublicUser> }) {
-  if (!results?.length) return <p className="t-sub center" style={{ padding: 30 }}>Awards appear when the week develops.</p>;
-  const tones = ['var(--yellow)', 'var(--blue)', 'var(--purple)', 'var(--green)', 'var(--orange)', 'var(--red)'];
+function PostcardSheet({ groupId, post, onClose }: { groupId: string; post: Post | null; onClose: () => void }) {
+  const [message, setMessage] = useState('');
+  const [address, setAddress] = useState<string[]>(['', '', '', '']);
+  const [editing, setEditing] = useState(true);
+  const [busy, setBusy] = useState(false);
+  const [done, setDone] = useState(false);
+  const ready = address[0].trim() && address[1].trim() && address[2].trim();
+  const send = async () => {
+    if (!post || !ready) return;
+    setBusy(true);
+    await api.post(`/groups/${groupId}/orders`, { kind: 'postcard', items: [post.id], message, address });
+    setBusy(false);
+    setDone(true);
+    haptic('success');
+    setTimeout(() => {
+      setDone(false);
+      onClose();
+    }, 900);
+  };
   return (
-    <div className={s.awards}>
-      {results.map((a, i) => (
-        <motion.div key={a.title + i} className={s.award} style={{ background: tones[i % tones.length] }} initial={{ opacity: 0, y: 20, rotate: i % 2 ? 2 : -2 }} animate={{ opacity: 1, y: 0, rotate: i % 2 ? 1.2 : -1.2 }} transition={{ delay: i * 0.08, type: 'spring' }}>
-          <span className={s.awardEmoji}>{a.emoji}</span>
-          <span className={s.awardTitle}>{a.title}</span>
-          <span className={s.awardLine}>{a.line}</span>
-          <span className={s.awardWinners}>
-            <AvatarStack users={a.winners.map((w) => users.get(w))} size={30} />
-            <b>{a.winners.map((w) => users.get(w)?.name.split(' ')[0] ?? '').join(' & ')}</b>
-          </span>
-        </motion.div>
-      ))}
-    </div>
+    <Sheet open={Boolean(post)} onClose={onClose} dark title={retro.postcard} trailing={<button className={s.sheetX} onClick={onClose} aria-label={ios.close}><Icon name="close" size={16} strokeWidth={2.6} /></button>}>
+      {post && (
+        <div className={s.postcard}>
+          <div className={s.pcPhoto}>
+            <img src={post.media.main} alt="" />
+            <label className={s.pcMessage}>
+              <Icon name="pencil" size={15} />
+              <input placeholder={retro.addAMessage} value={message} onChange={(e) => setMessage(e.target.value.slice(0, 300))} />
+            </label>
+          </div>
+          <div className={s.pcAddress}>
+            <div>
+              <span className={s.pcLabel}>{retro.mailingAddress}</span>
+              {editing ? (
+                ios.addressFields.map((f, k) => <input key={f} className={s.pcField} placeholder={f} value={address[k]} onChange={(e) => setAddress(address.map((x, n) => (n === k ? e.target.value : x)))} />)
+              ) : (
+                address.filter(Boolean).map((l) => <span key={l}>{l}</span>)
+              )}
+            </div>
+            <button className={s.pcEdit} onClick={() => setEditing(!editing)} aria-label={ios.edit}>
+              <Icon name="pencil" size={16} />
+            </button>
+          </div>
+          <div className={s.pcTotal}>
+            <span>{retro.total}</span>
+            <span>{retro.postcardPrice}</span>
+          </div>
+          <button className={s.whiteBlock} onClick={send} disabled={!ready || busy}>
+            {done ? <Icon name="check" size={20} strokeWidth={2.8} /> : busy ? <Spinner size={18} /> : retro.sendPostcard}
+          </button>
+        </div>
+      )}
+    </Sheet>
   );
 }
-
-

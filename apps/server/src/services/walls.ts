@@ -1,5 +1,5 @@
 import sharp from 'sharp';
-import { FREE_GROUP_RECAPS_PER_WEEK, PALETTE, PLANS, autoCreationAllowed, seeded, type Group } from '@app/shared';
+import { BRAND, FREE_GROUP_RECAPS_PER_WEEK, PLANS, autoCreationAllowed, seeded, yope, type Group } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
 import { exportImage, readMedia, writeMedia, escapeXml } from '../media.ts';
 import { getUser, id, insertObject, members, postsForGroup, type PostFull } from '../repo.ts';
@@ -8,17 +8,25 @@ import * as img from '../ai/image.ts';
 import { MASCOT_SPECIES } from '@app/shared';
 
 /**
- * Walls: Yope's "continuously evolving", "chaotic collage" of the week's photos, some turned into
- * cut-out stickers (research/02 §A4.3), editable and remixable with saved versions (spec §E).
+ * Walls: Yope's "continuously evolving" collage of the week's photos, editable and remixable with
+ * saved versions ([V-weak] research/02 §A4.3; spec §E). The arrangements are the ones in the user's
+ * INSPO folder [I]:
+ * - mosaic: Yope's week recap (frame yope-week-recap): photos tiled edge to edge in rows of one to
+ *   three, no gaps, on black;
+ * - scrapbook: Yope's recap (yope-03): the same tiling underneath, with a few photos lifted out as
+ *   tilted die-cut stickers and striped washi tape;
+ * - polaroid: Retro's recap (retro-04): photos in Polaroid frames, scattered, on black.
+ * There are no emoji or mascot decorations — none of the sources show any.
  */
 
-export type WallStyle = 'chaos' | 'scrapbook' | 'filmstrip' | 'grid';
-export const WALL_STYLES: { id: WallStyle; name: string; source: string }[] = [
-  { id: 'chaos', name: 'Chaos', source: 'Yope walls' },
-  { id: 'scrapbook', name: 'Scrapbook', source: 'Wrapped 2025 mixtape / scrapbook' },
-  { id: 'filmstrip', name: 'Film strip', source: 'Retro weekly film strip' },
-  { id: 'grid', name: 'Collage', source: 'Retro recap collage' },
+export type WallStyle = 'mosaic' | 'scrapbook' | 'polaroid';
+export const WALL_STYLES: { id: WallStyle; source: string }[] = [
+  { id: 'mosaic', source: '[I] frame yope-week-recap' },
+  { id: 'scrapbook', source: '[I] yope-03-recaps-collage' },
+  { id: 'polaroid', source: '[I] retro-04-recap' },
 ];
+const LEGACY: Record<string, WallStyle> = { chaos: 'mosaic', grid: 'mosaic', filmstrip: 'polaroid' };
+export const wallStyle = (s: string | undefined): WallStyle => (WALL_STYLES.some((x) => x.id === s) ? (s as WallStyle) : LEGACY[s ?? ''] ?? 'mosaic');
 
 export interface WallItem {
   id: string;
@@ -30,7 +38,7 @@ export interface WallItem {
   h: number;
   rot: number;
   z: number;
-  shape: 'photo' | 'sticker' | 'polaroid';
+  shape: 'tile' | 'photo' | 'sticker' | 'polaroid';
   caption?: string | null;
   tape?: boolean;
 }
@@ -55,60 +63,67 @@ export interface WallLayout {
   decos: WallDeco[];
 }
 
-const BGS = [PALETTE.black, PALETTE.g1, PALETTE.yellow, PALETTE.blue, PALETTE.purple, PALETTE.green, PALETTE.red];
+/** Rows of 1–3 tiles filling the whole canvas edge to edge [I]. */
+function mosaic(pool: PostFull[], rng: () => number, W: number, H: number, z0 = 0): WallItem[] {
+  const counts: number[] = [];
+  let left = pool.length;
+  while (left > 0) {
+    const n = Math.min(left, left <= 3 ? left : 1 + Math.floor(rng() * 3));
+    counts.push(n);
+    left -= n;
+  }
+  const rowH = H / Math.max(1, counts.length);
+  const items: WallItem[] = [];
+  let k = 0;
+  counts.forEach((n, r) => {
+    const weights = Array.from({ length: n }, () => 0.7 + rng() * 0.6);
+    const sum = weights.reduce((x, y) => x + y, 0);
+    let x = 0;
+    weights.forEach((wt) => {
+      const p = pool[k];
+      const w = (wt / sum) * W;
+      items.push({ id: `i${k}`, postId: p.id, src: p.media.thumb ?? p.media.main, x: x / W, y: (r * rowH) / H, w: w / W, h: rowH / H, rot: 0, z: z0 + k, shape: 'tile', caption: null });
+      x += w;
+      k++;
+    });
+  });
+  return items;
+}
 
-export function layoutWall(posts: PostFull[], opts: { style: WallStyle; seed: string; title: string; subtitle: string; emoji: string }): WallLayout {
+export function layoutWall(posts: PostFull[], opts: { style: WallStyle; seed: string; title: string; subtitle: string }): WallLayout {
   const rng = seeded(opts.seed);
   const W = 1080;
-  const H = 1920;
-  const items: WallItem[] = [];
-  const decos: WallDeco[] = [];
-  const pool = posts.slice(0, 14);
-  const bg = opts.style === 'scrapbook' ? PALETTE.swan : opts.style === 'filmstrip' ? PALETTE.black : BGS[Math.floor(rng() * BGS.length)];
-
-  if (opts.style === 'grid' || opts.style === 'filmstrip') {
-    const cols = opts.style === 'filmstrip' ? 1 : 2;
-    const gap = 24;
-    const top = 300;
-    const cellW = (W - gap * (cols + 1)) / cols;
-    const rows = Math.ceil(pool.length / cols);
-    const cellH = Math.min(cellW * (opts.style === 'filmstrip' ? 0.62 : 1), (H - top - gap * (rows + 1)) / Math.max(1, rows));
-    pool.forEach((p, i) => {
-      const c = i % cols;
-      const r = Math.floor(i / cols);
-      items.push({ id: `i${i}`, postId: p.id, src: p.media.thumb ?? p.media.main, x: (gap + c * (cellW + gap)) / W, y: (top + gap + r * (cellH + gap)) / H, w: cellW / W, h: cellH / H, rot: 0, z: i, shape: 'photo', caption: p.caption });
-    });
-  } else {
-    // Chaotic collage: jittered loose grid, mixed sizes, rotations, a few cut-out stickers.
-    const cols = 3;
-    const rows = Math.ceil(pool.length / cols) || 1;
-    const top = 330;
-    const cellW = W / cols;
-    const cellH = (H - top - 120) / rows;
-    pool.forEach((p, i) => {
-      const c = i % cols;
-      const r = Math.floor(i / cols);
-      const scale = 0.85 + rng() * 0.55;
-      const w = Math.min(W * 0.55, cellW * scale);
-      const aspect = p.media.height / Math.max(1, p.media.width);
-      const h = w * Math.min(1.4, Math.max(0.7, aspect));
-      const cx = c * cellW + cellW / 2 + (rng() - 0.5) * cellW * 0.5;
-      const cy = top + r * cellH + cellH / 2 + (rng() - 0.5) * cellH * 0.45;
-      const shape: WallItem['shape'] = opts.style === 'scrapbook' ? (rng() < 0.5 ? 'polaroid' : 'photo') : rng() < 0.3 ? 'sticker' : rng() < 0.2 ? 'polaroid' : 'photo';
+  const H = 1440;
+  const pool = [...posts].sort(() => rng() - 0.5).slice(0, 12);
+  let items: WallItem[] = [];
+  if (opts.style === 'mosaic') items = mosaic(pool, rng, W, H);
+  else if (opts.style === 'scrapbook') {
+    items = mosaic(pool, rng, W, H);
+    const lifted = pool.slice(0, Math.min(4, Math.max(1, Math.floor(pool.length / 3))));
+    lifted.forEach((p, i) => {
+      const w = W * (0.34 + rng() * 0.14);
+      const h = w * (1.05 + rng() * 0.25);
       items.push({
-        id: `i${i}`, postId: p.id, src: p.media.thumb ?? p.media.main,
-        x: Math.max(0, (cx - w / 2) / W), y: Math.max(0.12, (cy - h / 2) / H), w: w / W, h: h / H,
-        rot: (rng() - 0.5) * (opts.style === 'scrapbook' ? 14 : 22), z: Math.floor(rng() * 100), shape,
-        caption: shape === 'polaroid' ? p.caption : null, tape: opts.style === 'scrapbook' || rng() < 0.15,
+        id: `s${i}`, postId: p.id, src: p.media.thumb ?? p.media.main,
+        x: (0.04 + rng() * (0.92 - w / W)), y: (0.04 + rng() * (0.9 - h / H)), w: w / W, h: h / H,
+        rot: (rng() - 0.5) * 18, z: 100 + i, shape: 'sticker', caption: null, tape: rng() < 0.6,
       });
     });
-    const emojis = [opts.emoji, '✨', '📸', '💛', '🔥', '🫶', '⭐️'];
-    for (let i = 0; i < 6; i++) {
-      decos.push({ id: `d${i}`, kind: 'emoji', value: emojis[Math.floor(rng() * emojis.length)], x: rng() * 0.9, y: 0.15 + rng() * 0.8, size: 0.07 + rng() * 0.06, rot: (rng() - 0.5) * 40 });
+  } else {
+    const n = Math.min(pool.length, 7);
+    for (let i = 0; i < n; i++) {
+      const p = pool[i];
+      const w = W * 0.46;
+      const cx = (0.28 + (i % 2) * 0.44 + (rng() - 0.5) * 0.08) * W;
+      const cy = ((Math.floor(i / 2) + 0.5) / Math.ceil(n / 2)) * H + (rng() - 0.5) * 60;
+      items.push({
+        id: `p${i}`, postId: p.id, src: p.media.thumb ?? p.media.main,
+        x: (cx - w / 2) / W, y: (cy - w * 0.6) / H, w: w / W, h: w / H,
+        rot: (rng() - 0.5) * 12, z: i, shape: 'polaroid', caption: p.caption,
+      });
     }
-    decos.push({ id: 'mascot', kind: 'mascot', value: 'mascot', x: 0.74, y: 0.86, size: 0.16, rot: -8 });
   }
-  return { width: W, height: H, bg, title: opts.title, subtitle: opts.subtitle, items, decos };
+  return { width: W, height: H, bg: '#000000', title: opts.title, subtitle: opts.subtitle, items, decos: [] };
 }
 
 export function latestWall(groupId: string, weekKey: string) {
@@ -133,32 +148,25 @@ export function saveWall(group: Group, weekKey: string, layout: WallLayout, styl
   return version;
 }
 
+/** Yope's week label [I]: "18 aug-24 aug". */
 export function weekTitle(weekKey: string) {
-  const end = new Date(`${weekKey}T12:00:00Z`);
-  const start = new Date(end.getTime() - 6 * 86_400_000);
-  const f = (d: Date) => d.toLocaleDateString('en-US', { month: 'short', day: 'numeric', timeZone: 'UTC' });
-  return `${f(start)} – ${f(end)}`;
+  const end = Date.parse(`${weekKey}T12:00:00Z`);
+  return yope.weekRange(end - 6 * 86_400_000, end);
 }
 
-export function generateWall(group: Group, weekKey: string, style: WallStyle = 'chaos', createdBy: string | null = null, seed?: string) {
+export function generateWall(group: Group, weekKey: string, style: WallStyle = 'mosaic', createdBy: string | null = null, seed?: string) {
   const posts = postsForGroup(group.id, { weekKey });
   if (!posts.length) return null;
-  const layout = layoutWall(posts, { style, seed: seed ?? `${group.id}:${weekKey}:${Date.now()}`, title: group.name, subtitle: weekTitle(weekKey), emoji: group.emoji });
+  const layout = layoutWall(posts, { style: wallStyle(style), seed: seed ?? `${group.id}:${weekKey}:${Date.now()}`, title: group.name, subtitle: weekTitle(weekKey) });
   const version = saveWall(group, weekKey, layout, style, createdBy ? 'remix' : 'auto', createdBy);
   return { version, layout };
 }
 
 /* ───────────────────────── Render (export) ───────────────────────── */
 
-export async function renderWall(group: Group, layout: WallLayout) {
+export async function renderWall(_group: Group, layout: WallLayout) {
   const { width: W, height: H } = layout;
-  const species = MASCOT_SPECIES.find((s) => s.id === group.mascot.species) ?? MASCOT_SPECIES[0];
   const comps: sharp.OverlayOptions[] = [];
-  const header = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
-    <text x="64" y="170" font-family="Inter" font-weight="900" font-size="104" fill="${layout.bg === PALETTE.yellow || layout.bg === PALETTE.swan ? '#000' : '#fff'}" letter-spacing="-4">${escapeXml(layout.title)}</text>
-    <text x="68" y="236" font-family="Inter" font-weight="700" font-size="44" fill="${layout.bg === PALETTE.yellow || layout.bg === PALETTE.swan ? PALETTE.eel : PALETTE.hare}">${escapeXml(layout.subtitle)}</text>
-  </svg>`);
-  comps.push({ input: header, top: 0, left: 0 });
   for (const it of [...layout.items].sort((a, b) => a.z - b.z)) {
     let src: Buffer;
     try {
@@ -169,7 +177,9 @@ export async function renderWall(group: Group, layout: WallLayout) {
     const w = Math.round(it.w * W);
     const h = Math.round(it.h * H);
     let tile = await sharp(src).rotate().resize(w, h, { fit: 'cover' }).png().toBuffer();
-    if (it.shape === 'polaroid') tile = await sharp(tile).extend({ top: 18, left: 18, right: 18, bottom: 70, background: '#fff' }).png().toBuffer();
+    if (it.shape === 'tile') {
+      /* edge-to-edge tile [I] */
+    } else if (it.shape === 'polaroid') tile = await sharp(tile).extend({ top: 18, left: 18, right: 18, bottom: 70, background: '#efeee6' }).png().toBuffer();
     else if (it.shape === 'sticker') {
       const r = Math.round(Math.min(w, h) * 0.18);
       const mask = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}"><rect width="${w}" height="${h}" rx="${r}" fill="#fff"/></svg>`);
@@ -188,16 +198,9 @@ export async function renderWall(group: Group, layout: WallLayout) {
     const cropped = await sharp(rotated).extract({ left: cl - left, top: ct - top, width: Math.min((m.width ?? w) - (cl - left), W - cl), height: Math.min((m.height ?? h) - (ct - top), H - ct) }).png().toBuffer();
     comps.push({ input: cropped, left: cl, top: ct });
   }
-  const decoSvg = layout.decos
-    .map((d) => {
-      const size = Math.round(d.size * W);
-      if (d.kind === 'mascot') {
-        return `<g transform="translate(${d.x * W} ${d.y * H}) rotate(${d.rot})"><circle r="${size / 2}" cx="${size / 2}" cy="${size / 2}" fill="${species.body}"/><circle cx="${size * 0.35}" cy="${size * 0.42}" r="${size * 0.1}" fill="#fff"/><circle cx="${size * 0.65}" cy="${size * 0.42}" r="${size * 0.1}" fill="#fff"/><circle cx="${size * 0.37}" cy="${size * 0.44}" r="${size * 0.05}" fill="#000"/><circle cx="${size * 0.67}" cy="${size * 0.44}" r="${size * 0.05}" fill="#000"/></g>`;
-      }
-      return `<text x="${d.x * W}" y="${d.y * H}" font-size="${size}" transform="rotate(${d.rot} ${d.x * W} ${d.y * H})">${escapeXml(d.value)}</text>`;
-    })
-    .join('');
-  comps.push({ input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">${decoSvg}</svg>`), top: 0, left: 0 });
+  // Yope week-recap marks [I]: the range in bold capitals bottom left, the wordmark bottom right.
+  const marks = `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}"><g font-family="-apple-system, Helvetica, Arial" fill="#fff"><text x="56" y="${H - 56}" font-weight="800" font-size="58">${escapeXml(layout.subtitle.toUpperCase())}</text><text x="${W - 56}" y="${H - 56}" font-weight="800" font-size="46" text-anchor="end">${escapeXml(BRAND.name)}</text></g></svg>`;
+  comps.push({ input: Buffer.from(marks), top: 0, left: 0 });
   return sharp({ create: { width: W, height: H, channels: 3, background: layout.bg } }).composite(comps).jpeg({ quality: 88 }).toBuffer();
 }
 

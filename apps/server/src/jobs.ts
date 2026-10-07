@@ -58,7 +58,7 @@ export async function tickGroup(group: Group) {
 
 export async function developWeek(group: Group, weekKey: string, at = now()) {
   const ms = members(group.id);
-  const wall = generateWall(group, weekKey, 'chaos');
+  const wall = generateWall(group, weekKey, 'mosaic');
   if (wall) await generateRecap(group, weekKey, null).catch((e) => console.warn('[develop] recap failed', e));
   // One free pack per member who posted in the ritual; roll+ / Remix+ get one extra (spec §J).
   const ritualPosters = new Set(all<{ user_id: string }>('SELECT DISTINCT user_id FROM posts WHERE group_id = ? AND week_key = ? AND ritual = 1', group.id, weekKey).map((r) => r.user_id));
