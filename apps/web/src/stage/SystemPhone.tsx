@@ -4,6 +4,7 @@ import { BRAND, bereal, ios, locket, pets, spec, yope } from '@app/shared';
 import { api } from '../lib/api';
 import type { Post, PublicUser, MascotState } from '../lib/types';
 import { useUi } from '../lib/store';
+import { useMe } from '../lib/queries';
 import { Avatar } from '../components/ios';
 import { AppIcon } from '../components/Brand';
 import { Mascot } from '../components/Mascot';
@@ -166,6 +167,7 @@ function HomeScreen({ data }: { data: WidgetGroup[] }) {
   const main = data[0];
   const latest = main?.latest;
   const bestie = useBestieWidget().data?.bestie ?? null;
+  const meIcon = useMe().data?.user.settings.appIcon ?? null;
   return (
     <div className={s.home}>
       <div className={s.grid}>
@@ -198,7 +200,7 @@ function HomeScreen({ data }: { data: WidgetGroup[] }) {
           <span className={s.label}>{main?.group.mascot.name}</span>
         </div>
         <div className={s.app}>
-          <AppIcon size={60} />
+          <AppIcon size={60} iconId={meIcon} />
           <span className={s.label}>{BRAND.name}</span>
         </div>
         {ios.homeApps.slice(0, 3).map((a) => (

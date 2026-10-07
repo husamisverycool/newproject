@@ -9,7 +9,7 @@ import { haptic, sfx } from '../lib/feedback';
 import { firstName } from '../lib/format';
 import type { Message } from '../lib/types';
 import { Icon } from '../components/Icon';
-import { Avatar, Sheet } from '../components/ios';
+import { Alert, Avatar, Menu, Sheet } from '../components/ios';
 import { Mascot } from '../components/Mascot';
 import { PlanCard } from '../components/PlanCard';
 import s from './chat.module.css';
@@ -208,6 +208,20 @@ type MascotInfo = { species: string; stage: { level: number }; outfit: string[];
 /** A Locket stamp row shows when an hour has passed since the previous message [I]/[B-low]. */
 function Bubble({ msg, prev, next, mine, mascot, groupId }: { msg: Message; prev?: Message; next?: Message; mine: boolean; mascot?: MascotInfo; groupId: string }) {
   const nav = useNavigate();
+  // Touch and hold a message for its menu [HIG Messages]: Copy, and BeReal's "Report" on others' messages [V] (spec §S report on every surface).
+  const [menu, setMenu] = useState(false);
+  const [reported, setReported] = useState(false);
+  const hold = useRef<number | null>(null);
+  const press = {
+    onContextMenu: (e: React.MouseEvent) => { e.preventDefault(); setMenu(true); },
+    onPointerDown: () => { hold.current = window.setTimeout(() => { haptic('medium'); setMenu(true); }, 450); },
+    onPointerUp: () => hold.current && clearTimeout(hold.current),
+    onPointerLeave: () => hold.current && clearTimeout(hold.current),
+  };
+  const actions = [
+    ...(msg.body ? [{ label: ios.copy, icon: 'link', onClick: () => void navigator.clipboard?.writeText(msg.body ?? '').catch(() => undefined) }] : []),
+    ...(!mine ? [{ label: bereal.report, icon: 'flag', destructive: true, onClick: async () => { await api.post('/report', { kind: 'message', id: msg.id, reason: '' }); setReported(true); } }] : []),
+  ];
   const stamp = (!prev || msg.createdAt - prev.createdAt > 60 * 60_000) && <div className={s.stamp}>{locket.stamp(msg.createdAt)}</div>;
   const lastOfRun = !next || next.userId !== msg.userId || next.kind === 'system' || next.kind === 'gm' || next.createdAt - msg.createdAt > 60 * 60_000;
 
@@ -262,7 +276,7 @@ function Bubble({ msg, prev, next, mine, mascot, groupId }: { msg: Message; prev
     <>
       {stamp}
       {msg.kind === 'post_reply' && msg.post && <PostReply post={msg.post} mine={mine} />}
-      <div className={`${s.row} ${mine ? s.mine : ''} ${lastOfRun ? '' : s.tight}`}>
+      <div className={`${s.row} ${mine ? s.mine : ''} ${lastOfRun ? '' : s.tight}`} {...(actions.length ? press : null)}>
         {face}
         {msg.kind === 'sticker' && msg.media && <img src={msg.media} alt="" className={s.sticker} />}
         {msg.kind === 'photo' && msg.media && (
@@ -275,6 +289,8 @@ function Bubble({ msg, prev, next, mine, mascot, groupId }: { msg: Message; prev
         {msg.kind === 'voice' && msg.media && <VoicePlayer src={msg.media} duration={Number(msg.meta.duration ?? 0)} />}
         {(msg.kind === 'text' || msg.kind === 'post_reply') && msg.body && <span className={s.bubble}>{msg.body}</span>}
       </div>
+      <Menu open={menu} onClose={() => setMenu(false)} actions={actions} />
+      <Alert open={reported} title={bereal.report} message={bereal.reportsAnonymous} onDismiss={() => setReported(false)} actions={[{ label: ios.ok, preferred: true, onClick: () => setReported(false) }]} />
     </>
   );
 }

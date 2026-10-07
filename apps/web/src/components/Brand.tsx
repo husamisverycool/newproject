@@ -1,4 +1,4 @@
-import { BRAND } from '@app/shared';
+import { BRAND, BACKDROPS } from '@app/shared';
 
 /**
  * Wordmark: lowercase like "yope" [V], trailing period like "BeReal." [V], set as BeReal's "white name"
@@ -11,9 +11,12 @@ export function Wordmark({ size = 28, color = 'currentColor' }: { size?: number;
 }
 
 /** App icon: BeReal's pattern — "a black square with rounded corners, with the name and its ending period centered in it" [V]. iOS icon corner ≈ 22.37% [HIG]. */
-export function AppIcon({ size = 60 }: { size?: number }) {
+/** The app icon; `iconId` is an equipped Locket Gold "Custom app icons" color (Shop `icon_<color>` [V]), drawn like its Shop preview. */
+export function AppIcon({ size = 60, iconId }: { size?: number; iconId?: string | null }) {
+  const c = iconId ? BACKDROPS.find((b) => `icon_${b.id}` === iconId) : undefined;
+  const background = c ? `radial-gradient(circle at 50% 35%, ${c.from}, ${c.to})` : '#000';
   return (
-    <span style={{ width: size, height: size, borderRadius: size * 0.2237, background: '#000', color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 0.5px rgba(255,255,255,0.18)', flex: 'none' }}>
+    <span style={{ width: size, height: size, borderRadius: size * 0.2237, background, color: '#fff', display: 'inline-flex', alignItems: 'center', justifyContent: 'center', boxShadow: 'inset 0 0 0 0.5px rgba(255,255,255,0.18)', flex: 'none' }}>
       <Wordmark size={size * 0.3} color="#fff" />
     </span>
   );

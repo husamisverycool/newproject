@@ -9,6 +9,19 @@ import type { FaceDetector, ImageSegmenter } from '@mediapipe/tasks-vision';
 /** The in-Claude build ships the runtime and models next to the page, so paths are page-relative. */
 const at = (p: string) => (LIVE ? new URL(p.slice(1), document.baseURI).href : p);
 
+/**
+ * A model's base options. Artifacts serve only web media types, so the in-Claude build ships each
+ * model as base64 text (scripts/build-live.mjs) and hands MediaPipe the bytes.
+ */
+async function model(path: string): Promise<{ modelAssetPath: string } | { modelAssetBuffer: Uint8Array }> {
+  if (!LIVE) return { modelAssetPath: path };
+  const text = await (await fetch(at(`${path}.b64.txt`))).text();
+  const bin = atob(text.trim());
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return { modelAssetBuffer: bytes };
+}
+
 let segmenter: Promise<ImageSegmenter> | null = null;
 let faces: Promise<FaceDetector> | null = null;
 
@@ -21,9 +34,10 @@ async function vision() {
 function getSegmenter() {
   segmenter ??= (async () => {
     const { mp, files } = await vision();
+    const asset = await model('/models/selfie_segmenter.tflite');
     const make = (delegate: 'GPU' | 'CPU') =>
       mp.ImageSegmenter.createFromOptions(files, {
-        baseOptions: { modelAssetPath: at('/models/selfie_segmenter.tflite'), delegate },
+        baseOptions: { ...asset, delegate },
         runningMode: 'IMAGE',
         outputConfidenceMasks: true,
         outputCategoryMask: false,
@@ -36,8 +50,9 @@ function getSegmenter() {
 function getFaces() {
   faces ??= (async () => {
     const { mp, files } = await vision();
+    const asset = await model('/models/blaze_face_short_range.tflite');
     const make = (delegate: 'GPU' | 'CPU') =>
-      mp.FaceDetector.createFromOptions(files, { baseOptions: { modelAssetPath: at('/models/blaze_face_short_range.tflite'), delegate }, runningMode: 'IMAGE', minDetectionConfidence: 0.5 });
+      mp.FaceDetector.createFromOptions(files, { baseOptions: { ...asset, delegate }, runningMode: 'IMAGE', minDetectionConfidence: 0.5 });
     return make('GPU').catch(() => make('CPU'));
   })();
   return faces;

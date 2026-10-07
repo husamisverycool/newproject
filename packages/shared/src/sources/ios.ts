@@ -151,6 +151,12 @@ export const ios = {
   ofUsed: (n: number | string, of: number | string) => `${n} of ${of} Used`,
   /** [HIG] UISearchController empty state (Photos, Mail, Settings search) */
   noResults: 'No Results',
+  /** [HIG] Screen Time's limit screen title */
+  timeLimit: 'Time Limit',
+  /** [B-high] Screen Time's limit screen: "You've reached your limit on <App>." */
+  reachedLimit: (app: string) => `You’ve reached your limit on ${app}`,
+  /** [HIG] DateComponentsFormatter .short for Screen Time durations, e.g. "15 min", "1 hr" */
+  duration: (min: number) => (min % 60 === 0 ? `${min / 60} hr` : `${min} min`),
   /** [HIG] share-sheet action "Print" */
   print: 'Print',
   /** [HIG] NumberFormatter .currency (en_US), e.g. "$6.00" — App Store buttons show the price */

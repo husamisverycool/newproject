@@ -35,4 +35,6 @@ export const telegram = {
   rarityLine: 'Every collectible card is a unique work of art — and some will be more rare than others',
   /** [V] wearing gives "a glittering star effect" and matches the profile to "the backdrop and symbol" */
   wearLine: 'a glittering star effect',
+  /** [V] blog (Jan 2025): a collectible "can be posted to your story — generating an elegant animated preview"; path "Share > Post to Story" */
+  postToStory: 'Post to Story',
 } as const;

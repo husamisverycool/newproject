@@ -16,4 +16,12 @@ export const instagram = {
   /* ── "Add Yours" sticker (research/24 §7) → the weekly photo challenge (spec §K) ── */
   /** [V] sticker name and the viewer's button; the creator types a prompt, viewers respond with it pre-loaded */
   addYours: 'Add Yours',
+
+  /* ── Teen Accounts (spec §S: "time on Instants counts toward Instagram daily limits") ── */
+  /** [B-high] Teen Accounts setting "Daily limit" (a reminder to leave the app after a set time) */
+  dailyLimit: 'Daily limit',
+  /** [B-high] Teen Accounts: teens get a reminder after 60 minutes a day by default */
+  teenDefaultMin: 60,
+  /** [B-med] daily limit choices offered in Instagram's time settings */
+  limitChoices: [15, 30, 45, 60, 120] as const,
 } as const;

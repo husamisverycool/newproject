@@ -47,9 +47,11 @@ for (const f of ['vision_wasm_internal.js', 'vision_wasm_internal.wasm', 'vision
   files[`wasm/${f}`] = path.join(site, 'wasm', f);
 }
 fs.mkdirSync(path.join(site, 'models'), { recursive: true });
+// Artifacts serve only web media types, so each model goes as base64 text (lib/vision.ts decodes it).
 for (const f of fs.readdirSync(path.join(root, 'apps/web/public/models')).filter((x) => x.endsWith('.tflite'))) {
-  fs.copyFileSync(path.join(root, 'apps/web/public/models', f), path.join(site, 'models', f));
-  files[`models/${f}`] = { from: path.join(site, 'models', f), contentType: 'application/octet-stream' };
+  const name = `${f}.b64.txt`;
+  fs.writeFileSync(path.join(site, 'models', name), fs.readFileSync(path.join(root, 'apps/web/public/models', f)).toString('base64'));
+  files[`models/${name}`] = path.join(site, 'models', name);
 }
 
 // The page: the build's entry script and stylesheet, plus the theme the app expects.
@@ -73,5 +75,5 @@ html,body{background:#000;margin:0;height:100%}
 `;
 fs.writeFileSync(path.join(site, 'index.html'), page);
 fs.writeFileSync(path.join(site, 'files.json'), JSON.stringify(files, null, 1));
-const bytes = Object.values(files).reduce((n, f) => n + fs.statSync(typeof f === 'string' ? f : f.from).size, 0);
+const bytes = Object.values(files).reduce((n, f) => n + fs.statSync(f).size, 0);
 console.log(`live build: ${site} — ${Object.keys(files).length} files, ${(bytes / 1e6).toFixed(1)} MB`);

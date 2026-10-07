@@ -1,10 +1,10 @@
 import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { BACKDROPS, FLAIR, SYMBOLS, telegram, tcg } from '@app/shared';
+import { BACKDROPS, FLAIR, MASCOT_SPECIES, SYMBOLS, telegram, tcg } from '@app/shared';
 import { Sheet, Avatar, Spinner } from '../ios';
 import { Icon } from '../Icon';
-import { api } from '../../lib/api';
-import { invalidateCards, queryClient, useCollectible } from '../../lib/queries';
+import { api, downloadBlob } from '../../lib/api';
+import { invalidateCards, queryClient, useCollectible, useMe } from '../../lib/queries';
 import { haptic, sfx } from '../../lib/feedback';
 import type { CardT, Collectible } from '../../lib/types';
 import { TcgCard, SparkleGlyph, cardName } from './TcgCard';
@@ -75,6 +75,23 @@ export function CollectibleSheet({ open, onClose, groupId, cardId, dust }: { ope
 function CollectibleView({ data, groupId }: { data: Collectible; groupId: string }) {
   const t = data.traits!;
   const [busy, setBusy] = useState(false);
+  const [story, setStory] = useState<number | null>(null);
+  const me = useMe();
+  const species = me.data?.groups.find((g) => g.id === groupId)?.mascot.species;
+  const postToStory = async () => {
+    setStory(0);
+    try {
+      const { collectibleStory } = await import('./storyPreview');
+      const color = (MASCOT_SPECIES.find((m) => m.id === species) ?? MASCOT_SPECIES[0]).body;
+      const { blob, ext } = await collectibleStory(data, color, setStory);
+      haptic('success');
+      await downloadBlob(blob, `collectible-${data.card.serial}.${ext}`);
+    } catch {
+      haptic('heavy');
+    } finally {
+      setStory(null);
+    }
+  };
   const vars = { '--bd-from': t.backdrop.from, '--bd-to': t.backdrop.to } as CSSProperties;
   const wear = async () => {
     setBusy(true);
@@ -140,6 +157,9 @@ function CollectibleView({ data, groupId }: { data: Collectible; groupId: string
           {data.worn ? telegram.takeOff : telegram.wear}
         </button>
       )}
+      <button className={s.tgButton} data-gray onClick={postToStory} disabled={story !== null}>
+        {story !== null ? <Spinner size={20} /> : <Icon name="share" size={18} />} {telegram.postToStory}
+      </button>
     </motion.div>
   );
 }
