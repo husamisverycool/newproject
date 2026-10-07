@@ -332,9 +332,9 @@ export async function figurine(cutout: Buffer, original: Buffer, opts: { name: s
       <rect x="0" y="0" width="300" height="420" rx="10" fill="url(#box)"/>
       <rect x="0" y="0" width="300" height="420" rx="10" fill="none" stroke="#000" stroke-opacity="0.25" stroke-width="3"/>
       <rect x="18" y="18" width="264" height="44" rx="8" fill="#000"/>
-      <text x="150" y="48" text-anchor="middle" font-family="Inter" font-weight="900" font-size="22" fill="#fff">roll<tspan fill="${PALETTE.yellow}">.</tspan> FIGURE SERIES</text>
+      <text x="150" y="48" text-anchor="middle" font-family="Inter" font-weight="900" font-size="22" fill="#fff">roll<tspan fill="${PALETTE.locket}">.</tspan></text>
       <rect x="18" y="74" width="264" height="300" rx="6" fill="#fff"/>
-      <text x="150" y="400" text-anchor="middle" font-family="Inter" font-weight="900" font-size="20" fill="#000">${escapeXml(opts.name.toUpperCase())} · 1/7</text>
+      <text x="150" y="400" text-anchor="middle" font-family="Inter" font-weight="900" font-size="20" fill="#000">${escapeXml(opts.name.toUpperCase())}</text>
     </g>
     <!-- acrylic base -->
     <ellipse cx="440" cy="910" rx="150" ry="34" fill="#000" fill-opacity="0.3"/>

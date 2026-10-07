@@ -39,7 +39,7 @@ const PostView = lazy(() => import('./screens/PostView'));
 
 function Loading() {
   return (
-    <div className="screen" style={{ alignItems: 'center', justifyContent: 'center' }}>
+    <div className="ios-screen" data-dark style={{ alignItems: 'center', justifyContent: 'center' }}>
       <Spinner />
     </div>
   );

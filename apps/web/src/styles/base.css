@@ -56,12 +56,12 @@ img {
 }
 
 :focus-visible {
-  outline: 2px solid var(--blue);
+  outline: 2px solid var(--sys-blue);
   outline-offset: 2px;
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--yellow) 60%, transparent);
+  background: color-mix(in srgb, var(--locket-yellow) 60%, transparent);
 }
 
 .scroll {

@@ -27,6 +27,8 @@ export const PALETTE = {
   wolf: '#777777',
   eel: '#4B4B4B',
   yellow: '#FFC800',
+  /** [I] measured Locket yellow (research/30) — the wordmark period on exports */
+  locket: '#F6B100',
   orange: '#FF9600',
   red: '#FF4B4B',
   green: '#58CC02',

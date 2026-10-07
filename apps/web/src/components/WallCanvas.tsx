@@ -32,7 +32,7 @@ export function WallCanvas({ layout, mascot, editable, onChange, selected, onSel
   };
 
   return (
-    <div ref={ref} className={s.wall} style={{ background: layout.bg, aspectRatio: `${layout.width} / ${layout.height}`, color: light ? 'var(--black)' : 'var(--white)' }} onPointerDown={(e) => e.target === e.currentTarget && onSelect?.(null)}>
+    <div ref={ref} className={s.wall} style={{ background: layout.bg, aspectRatio: `${layout.width} / ${layout.height}`, color: light ? '#000' : '#fff' }} onPointerDown={(e) => e.target === e.currentTarget && onSelect?.(null)}>
       {items.map((it, idx) => (
         <WallPiece key={it.id} it={it} idx={idx} editable={editable} selected={selected === it.id} onSelect={() => onSelect?.(it.id)} container={ref} onMove={(patch) => update(it.id, patch)} animateIn={animateIn} />
       ))}

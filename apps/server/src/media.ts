@@ -150,7 +150,7 @@ export function watermarkSvg(width: number, height: number, opts: { mascotColor:
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">
     <defs><filter id="s" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="${size * 0.04}" stdDeviation="${size * 0.08}" flood-color="#000" flood-opacity="0.45"/></filter></defs>
     <g opacity="${opacity}" filter="url(#s)" transform="translate(${x} ${y})">
-      <text x="0" y="${size * 0.74}" font-family="Inter" font-weight="900" font-size="${fontSize}" fill="${PALETTE.white}" letter-spacing="-${fontSize * 0.04}">${BRAND.bare}<tspan fill="${PALETTE.yellow}">.</tspan></text>
+      <text x="0" y="${size * 0.74}" font-family="Inter" font-weight="900" font-size="${fontSize}" fill="${PALETTE.white}" letter-spacing="-${fontSize * 0.04}">${BRAND.bare}<tspan fill="${PALETTE.locket}">.</tspan></text>
       <g transform="translate(${textW + size * 0.25} 0)">${mascotGlyphSvg(opts.mascotColor, size)}</g>
       ${handle ? `<text x="${textW + size * 1.25}" y="${size + handleSize * 1.4}" text-anchor="end" font-family="Inter" font-weight="700" font-size="${handleSize}" fill="#fff">${escapeXml(handle)}</text>` : ''}
     </g>
