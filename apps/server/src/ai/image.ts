@@ -114,13 +114,14 @@ export function meme(template: Buffer, face: Buffer, box: { x: number; y: number
 
 export function telephoneRender(caption: string, seedPhoto: Buffer | null) {
   return withFallback(PROMPTS.telephone(caption), seedPhoto ? [jpeg(seedPhoto)] : [], async () => {
-    if (seedPhoto) return local.comic(seedPhoto, caption);
-    return local.comic(await placeholder(caption), caption);
+    // Never print the sentence on the drawing — the next player has to describe it (Gartic Phone).
+    if (seedPhoto) return local.comic(seedPhoto, null);
+    return local.comic(await placeholder(), null);
   });
 }
 
-async function placeholder(caption: string) {
+async function placeholder() {
   const sharp = (await import('sharp')).default;
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="720"><rect width="720" height="720" fill="#1CB0F6"/><circle cx="360" cy="380" r="200" fill="#FFC800"/><text x="360" y="400" text-anchor="middle" font-family="Inter" font-weight="900" font-size="44" fill="#000">${caption.slice(0, 20).replace(/[<&>]/g, '')}</text></svg>`;
-  return sharp(Buffer.from(svg)).jpeg().toBuffer();
+  // [HIG] systemGray6 canvas — an empty frame for the fallback renderer to draw on.
+  return sharp({ create: { width: 720, height: 720, channels: 3, background: '#f2f2f7' } }).jpeg().toBuffer();
 }

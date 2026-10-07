@@ -2,7 +2,8 @@ import './bootstrap.ts';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
-import { ritualWindow, weekKeyOffset, zonedToUtc, parseDateKey } from '@app/shared';
+import { duolingo, ritualWindow, weekKeyOffset, zonedToUtc, parseDateKey } from '@app/shared';
+import { POLL_BANK } from './ai/gm.ts';
 import { db, json, now, run } from './db.ts';
 import { ROOT } from './env.ts';
 import { createUser, getGroup, id, insertMessage, updateSettings, updateUser } from './repo.ts';
@@ -181,19 +182,21 @@ async function main() {
   for (const [u, body, hoursAgo] of chat) insertMessage({ groupId: gid, userId: u.id, kind: 'text', body, createdAt: t - hoursAgo * 3_600_000 });
   addMemory(gid, 'Jules wins every dance battle, no debate', null, ines.id);
 
-  // Past weeks' games (rotating kinds) with a few votes, closed by the develop step.
-  const kinds = ['superlatives', 'challenge', 'superlatives'] as const;
+  // Past weeks' games: tbh/Gas polls with verbatim questions (research/24), closed by the develop step.
+  const g0 = getGroup(gid)!;
   for (const [i, wk] of weeks.slice(0, 3).entries()) {
     const d = parseDateKey(wk);
     const startedAt = zonedToUtc(d.year, d.month, d.day, 21, 5, tz) - 7 * 86_400_000;
-    const state = kinds[i] === 'superlatives'
-      ? { intro: 'Superlatives week! Three questions, names on every vote.', questions: [
-          { text: i === 0 ? 'Who would plan the best surprise party?' : 'Who has the most golden-hour energy?', votes: { [theo.id]: maya.id, [ines.id]: maya.id, [sam.id]: jules.id } },
-          { text: i === 0 ? 'Who makes every group chat better?' : 'Who would be the best travel buddy?', votes: { [maya.id]: ines.id, [jules.id]: ines.id } },
-          { text: 'Who is secretly the funniest?', votes: { [maya.id]: sam.id, [ines.id]: sam.id, [theo.id]: sam.id } },
-        ] }
-      : { intro: 'This week\'s challenge just dropped.', challenge: 'A sky worth stopping for', entries: posted.filter((p) => p.weekKey === wk).slice(0, 3).map((p) => ({ userId: p.userId, postId: p.id, at: t })) };
-    run('INSERT INTO games (id, group_id, week_key, kind, state, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('g'), gid, wk, kinds[i], json.str(state), startedAt);
+    const qs = POLL_BANK.slice(i * 3, i * 3 + 3);
+    const state = {
+      intro: duolingo.hiItsDuo(g0.mascot.name),
+      questions: [
+        { text: qs[0], votes: { [theo.id]: maya.id, [ines.id]: maya.id, [sam.id]: jules.id } },
+        { text: qs[1], votes: { [maya.id]: ines.id, [jules.id]: ines.id } },
+        { text: qs[2], votes: { [maya.id]: sam.id, [ines.id]: sam.id, [theo.id]: sam.id } },
+      ],
+    };
+    run('INSERT INTO games (id, group_id, week_key, kind, state, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('g'), gid, wk, 'superlatives', json.str(state), startedAt);
   }
 
   // Develop past weeks (walls, recaps, packs, game results).

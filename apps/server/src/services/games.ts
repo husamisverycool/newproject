@@ -203,7 +203,7 @@ export async function startWeeklyGame(group: Group, opts: { kind?: gm.GameKind; 
   toGroup(group.id, { type: 'game', groupId: group.id, gameId: gid });
   if (!opts.silent) {
     for (const m of members(group.id)) {
-      push({ userId: m.userId, groupId: group.id, kind: 'game_open', title: `${group.emoji} ${group.name}`, body: g.intro, refIds: [gid], url: `/g/${group.id}/game` });
+      push({ userId: m.userId, groupId: group.id, kind: 'game_open', title: group.name, body: g.intro, refIds: [gid], url: `/g/${group.id}/game` });
     }
   }
   return currentGame(group)!;

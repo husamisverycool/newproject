@@ -1,3 +1,4 @@
+import { wrapped } from './sources/index.ts';
 /**
  * Group superlatives and roles, adapted from Spotify Wrapped Party awards and Wrapped Clubs roles
  * (research/04 §1.6–1.7). Awards are positive, named (never anonymous), never based on reaction
@@ -28,42 +29,34 @@ export interface MemberStats {
 
 export interface AwardDef {
   id: string;
+  /** The award's name from the Wrapped deck (sources/wrapped.ts). */
   title: string;
-  /** One-line definition, Wrapped Party style. */
-  line: string;
-  emoji: string;
   score: (s: MemberStats) => number;
   /** Minimum score for the award to be eligible. */
   min: number;
 }
 
+/** Wrapped Party award names [V-weak] (sources/wrapped.ts); the spec's two examples [S]. No invented lines or emoji. */
 export const AWARDS: AwardDef[] = [
-  { id: 'early_bird', title: 'Early Bird', line: 'Posted the most during sunrise hours', emoji: '🌅', score: (s) => s.sunrisePosts, min: 1 },
-  { id: 'night_owl', title: 'Night Owl', line: 'Still posting after midnight', emoji: '🦉', score: (s) => s.latePosts, min: 1 },
-  { id: 'first_to_post', title: 'First to Post', line: 'Opened the roll before anyone else', emoji: '🥇', score: (s) => s.firstPosts, min: 1 },
-  { id: 'most_sunsets', title: 'Most Sunsets', line: 'Caught golden hour the most', emoji: '🌇', score: (s) => s.goldenHourPosts, min: 1 },
-  { id: 'crate_digger', title: 'The Crate Digger', line: 'Dug the deepest into the camera roll', emoji: '📦', score: (s) => s.rewindPosts, min: 1 },
-  { id: 'onion_chopper', title: 'The Onion Chopper', line: 'Said it out loud — the most voice notes', emoji: '🧅', score: (s) => s.voicePosts, min: 1 },
-  { id: 'dinner_table', title: 'Dinner Table Explainer', line: 'Wrote the longest captions', emoji: '🍽️', score: (s) => s.captionWords, min: 12 },
-  { id: 'two_faced', title: 'Both Sides', line: 'Most front-and-back shots', emoji: '🔁', score: (s) => s.dualPosts, min: 1 },
-  { id: 'live_wire', title: 'Live Wire', line: 'Most moments with the live clip on', emoji: '⚡', score: (s) => s.livePosts, min: 2 },
-  { id: 'documentarian', title: 'The Documentarian', line: 'Posted the most, full stop', emoji: '🎞️', score: (s) => s.posts, min: 3 },
-  { id: 'biggest_fan', title: 'Most Obsessed Fan', line: "Reacted to everyone's everything", emoji: '🫶', score: (s) => s.reactionsGiven, min: 3 },
+  { id: 'early_bird', title: wrapped.awards.earlyBird, score: (s) => s.sunrisePosts, min: 1 },
+  { id: 'first_to_post', title: wrapped.awards.firstToPost, score: (s) => s.firstPosts, min: 1 },
+  { id: 'most_sunsets', title: wrapped.awards.mostSunsets, score: (s) => s.goldenHourPosts, min: 1 },
+  { id: 'crate_digger', title: wrapped.awards.crateDigger, score: (s) => s.rewindPosts, min: 1 },
+  { id: 'onion_chopper', title: wrapped.awards.onionChopper, score: (s) => s.voicePosts, min: 1 },
+  { id: 'dinner_table', title: wrapped.awards.dinnerTable, score: (s) => s.captionWords, min: 12 },
+  { id: 'documentarian', title: wrapped.awards.mostPhotos, score: (s) => s.posts, min: 3 },
 ];
 
 export interface GroupAwardDef {
   id: string;
   title: string;
-  line: string;
-  emoji: string;
   test: (all: MemberStats[], meta: { sameDayShare: number; spreadDays: number }) => boolean;
 }
 
-/** Wrapped Party group awards: "Copy and Paste" (everyone shares the same…) and "Chaos Crew". */
+/** Wrapped Party group awards [V-weak]: "Copy and Paste" (everyone shares the same…) and "Chaos Crew" (everyone completely different). */
 export const GROUP_AWARDS: GroupAwardDef[] = [
-  { id: 'copy_paste', title: 'Copy and Paste', line: 'Everyone posted on the same day', emoji: '📋', test: (_a, m) => m.sameDayShare >= 0.75 },
-  { id: 'chaos_crew', title: 'Chaos Crew', line: 'Posts landed on every day of the week', emoji: '🌀', test: (_a, m) => m.spreadDays >= 7 },
-  { id: 'full_house', title: 'Full House', line: 'Every single member posted', emoji: '🏠', test: (a) => a.length > 0 && a.every((s) => s.posts > 0) },
+  { id: 'copy_paste', title: wrapped.awards.copyAndPaste, test: (_a, m) => m.sameDayShare >= 0.75 },
+  { id: 'chaos_crew', title: wrapped.awards.chaosCrew, test: (_a, m) => m.spreadDays >= 7 },
 ];
 
 /** Deterministic PRNG so a session's awards are stable while different sessions differ. */
@@ -84,8 +77,6 @@ export function seeded(seed: string) {
 export interface AwardResult {
   id: string;
   title: string;
-  line: string;
-  emoji: string;
   winners: string[];
 }
 
@@ -96,7 +87,7 @@ export function computeAwards(stats: MemberStats[], sessionSeed: string, count =
     const scores = stats.map((s) => ({ id: s.userId, v: def.score(s) }));
     const top = Math.max(0, ...scores.map((x) => x.v));
     if (top < def.min) continue;
-    eligible.push({ id: def.id, title: def.title, line: def.line, emoji: def.emoji, winners: scores.filter((x) => x.v === top).map((x) => x.id) });
+    eligible.push({ id: def.id, title: def.title, winners: scores.filter((x) => x.v === top).map((x) => x.id) });
   }
   // Shuffle (Fisher–Yates) with the session seed, then prefer spreading wins across people.
   for (let i = eligible.length - 1; i > 0; i--) {
@@ -119,30 +110,33 @@ export function computeAwards(stats: MemberStats[], sessionSeed: string, count =
 }
 
 export function computeGroupAwards(stats: MemberStats[], meta: { sameDayShare: number; spreadDays: number }) {
-  return GROUP_AWARDS.filter((g) => g.test(stats, meta)).map(({ id, title, line, emoji }) => ({ id, title, line, emoji }));
+  return GROUP_AWARDS.filter((g) => g.test(stats, meta)).map(({ id, title }) => ({ id, title }));
 }
 
 /* ───────────────────────── Roles (Wrapped Clubs roles) ───────────────────────── */
 
 export interface RoleDef {
   id: string;
+  /** Wrapped Clubs role name and line [V], nouns substituted (sources/wrapped.ts). */
   title: string;
   line: string;
   score: (s: MemberStats) => number;
 }
 
-export const ROLES: RoleDef[] = [
-  { id: 'leader', title: 'Leader', line: 'Shows up for the roll, every single week', score: (s) => s.ritualPosts },
-  { id: 'scout', title: 'Scout', line: 'Always first to post something new', score: (s) => s.firstPosts },
-  { id: 'archivist', title: 'Archivist', line: 'Keeps the record — the most moments saved', score: (s) => s.posts },
-  { id: 'curator', title: 'Curator', line: 'Picks the words — the most captions', score: (s) => s.captions },
-  { id: 'collector', title: 'Collector', line: 'The fullest binder in the group', score: (s) => s.cards },
-  { id: 'recruiter', title: 'Recruiter', line: 'Brought the most people in', score: (s) => s.invites },
-  { id: 'loyalist', title: 'Loyalist', line: 'The longest personal streak', score: (s) => s.streakWeeks },
-  { id: 'supporter', title: 'Supporter', line: 'Reacts to everyone', score: (s) => s.reactionsGiven },
-  { id: 'broadcaster', title: 'Broadcaster', line: 'The voice of the group', score: (s) => s.voicePosts },
-  { id: 'specialist', title: 'Specialist', line: 'Front, back, live — every angle', score: (s) => s.dualPosts + s.livePosts },
-];
+const ROLE_SCORE: Record<string, (s: MemberStats) => number> = {
+  leader: (s) => s.ritualPosts, // "strongly aligned with group values"
+  scout: (s) => s.firstPosts, // "the freshest photos"
+  archivist: (s) => s.rewindPosts, // "delves into past eras"
+  curator: (s) => s.captions, // "combining the best of your group"
+  collector: (s) => s.cards, // "building a large group collection"
+  recruiter: (s) => s.invites, // "bringing in frequent new group members"
+  loyalist: (s) => s.streakWeeks, // "rarely skip a week"
+  supporter: (s) => s.reactionsGiven, // "ensuring they're heard around your group"
+  broadcaster: (s) => s.voicePosts, // "voice notes more than others"
+  specialist: (s) => s.dualPosts + s.livePosts, // "experimental styles"
+};
+
+export const ROLES: RoleDef[] = wrapped.roles.map((r) => ({ id: r.id, title: r.name, line: r.line, score: ROLE_SCORE[r.id] ?? ((s) => s.posts) }));
 
 /**
  * Every member gets exactly one role, assigned greedily by how far each person stands out in a
