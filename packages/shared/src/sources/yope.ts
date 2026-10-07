@@ -28,6 +28,8 @@ export const yope = {
   splitView: 'see what your friends are up to right now',
   /** [V] 1.227.0 */
   dropYoursBack: 'drop yours back',
+  /** [V] 1.227.0 feature name "split view" */
+  splitView: 'split view',
   /** [V] 1.229.0 "Your space with friends got a glow up — share your day, see theirs, stay close, with all your moments together in one place." */
   space: 'share your day, see theirs, stay close',
   /** [V-weak] walls: "Recaps are now walls where you can edit them, remix them, and make your own memory albums to save or share with your friends." */

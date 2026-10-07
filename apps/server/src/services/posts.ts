@@ -252,9 +252,10 @@ export function journal(group: Group, viewerId: string, weeks = 8): { weeks: Jou
 }
 
 /** Yope split view: what each friend is up to right now (latest post per member, last 6 hours). */
+/** Yope's split view [V] "see what your friends are up to right now": each member's latest photo this week (yope-05 [I]). */
 export function liveStrip(group: Group, viewerId: string) {
-  const since = now() - 6 * 3_600_000;
-  const posts = visiblePosts(group, viewerId).filter((p) => p.createdAt >= since);
+  const wk = ritualWindow(now(), group).weekKey;
+  const posts = visiblePosts(group, viewerId).filter((p) => p.weekKey === wk);
   const latest = new Map<string, PostFull>();
   for (const p of posts) if (!latest.has(p.userId) || latest.get(p.userId)!.createdAt < p.createdAt) latest.set(p.userId, p);
   return toDTO([...latest.values()].sort((a, b) => b.createdAt - a.createdAt), viewerId);

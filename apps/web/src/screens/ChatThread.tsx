@@ -3,7 +3,7 @@ import { useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
 import { bereal, duolingo, imessage, ios, jackbox, locket, whatsapp, yope } from '@app/shared';
 import { api } from '../lib/api';
-import { queryClient, useActiveGroup, useMe, useMessages } from '../lib/queries';
+import { queryClient, useActiveGroup, useGroup, useMe, useMessages } from '../lib/queries';
 import { sendRealtime, onRealtime } from '../lib/realtime';
 import { haptic, sfx } from '../lib/feedback';
 import { firstName } from '../lib/format';
@@ -35,6 +35,8 @@ export default function ChatThread() {
   const m = useMessages(groupId);
   const [text, setText] = useState('');
   const [stickers, setStickers] = useState(false);
+  const [view, setView] = useState<'chat' | 'now'>('chat');
+  const detail = useGroup(groupId);
   const [typing, setTyping] = useState<string | null>(null);
   const list = useRef<HTMLDivElement>(null);
   const camera = useRef<HTMLInputElement>(null);
@@ -94,12 +96,35 @@ export default function ChatThread() {
           )}
           <Icon name="chevronRight" size={16} strokeWidth={2.6} />
         </button>
-        <button className={s.circle} onClick={() => g && nav(`/g/${groupId}/week/${g.ritual.weekKey}`)} aria-label={yope.recap}>
+        <button className={`${s.circle} ${view === 'now' ? s.circleOn : ''}`} onClick={() => { haptic('light'); setView(view === 'chat' ? 'now' : 'chat'); }} aria-label={yope.splitView}>
           <Icon name="film" size={20} />
         </button>
       </header>
+      {view === 'now' && (
+        <>
+          {/* Yope's split view [V] "see what your friends are up to right now", laid out from yope-05 [I] */}
+          <div className={s.pageDots}>
+            {groups.map((x) => (
+              <i key={x.id} className={x.id === groupId ? s.dotOn : ''} />
+            ))}
+          </div>
+          <div className={s.now}>
+            {(detail.data?.live ?? []).map((p) => (
+              <button key={p.id} className={s.nowCard} onClick={() => nav(`/p/${p.id}`)}>
+                <img src={p.media.main} alt="" className={p.blurred ? s.blurred : ''} />
+                <strong>{yope.time(p.createdAt)}</strong>
+                {p.caption && !p.blurred && <em>{p.caption}</em>}
+                <span className={s.nowWho}>
+                  <Avatar user={p.user} size={30} />
+                  {firstName(p.user.name)}
+                </span>
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
-      <div ref={list} className={s.thread}>
+      <div ref={list} className={s.thread} hidden={view === 'now'}>
         {msgs.map((msg, i) => (
           <Bubble key={msg.id} msg={msg} prev={msgs[i - 1]} next={msgs[i + 1]} mine={msg.userId === myId} mascot={mascot} groupId={groupId} />
         ))}
