@@ -1,14 +1,15 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod/v4';
-import { seeded } from '@app/shared';
+import { characterai, duolingo, gartic, gas, instagram, seeded, tbh, wrapped } from '@app/shared';
 import { env } from '../env.ts';
 
 /**
- * The game master: the group mascot's voice (Duolingo's Duo as a brand character, spec §M), which
- * runs one weekly game and remembers group lore ONLY from opt-in items in the visible memory panel
- * (Character.ai memory, Series' AI context — spec §K). Claude writes the lines when an API key is
- * configured; a scripted game master covers offline runs.
+ * The game master: the group mascot speaking in Duolingo's voice (Duo as a brand character, spec §M).
+ * It runs one weekly game and knows group lore ONLY from the visible memory panel, shaped like
+ * Character.ai's memory (Story Memory + Facts, spec §K). Claude writes the lines when an API key is
+ * configured. Offline, the game master says only deck lines (packages/shared/src/sources):
+ * Duolingo's "Hi, it's Duo!" greeting, and poll questions taken verbatim from tbh and Gas.
  */
 
 export type GameKind = 'superlatives' | 'telephone' | 'challenge' | 'guess_whose';
@@ -19,10 +20,10 @@ export interface GmContext {
   groupName: string;
   mascotName: string;
   members: string[];
-  /** Opt-in memory items, newest first. */
-  memory: string[];
-  /** Last week's winners, e.g. "Maya — Early Bird". */
-  pastWinners: string[];
+  /** Story Memory (Character.ai): lines members wrote, pinned in chat, or marked to remember on a photo; newest first. */
+  story: string[];
+  /** Facts (Character.ai: "recorded automatically"): the last game's results, as "title: names". */
+  facts: string[];
   weekKey: string;
   postsThisWeek: number;
 }
@@ -34,27 +35,44 @@ export interface WeeklyGame {
   challenge: string | null;
 }
 
+/** Every verified tbh and Gas poll question (research/24 §1). */
+export const POLL_BANK: readonly string[] = [...tbh.questions, ...gas.questions];
+
 const WeeklyGameSchema = z.object({
-  intro: z.string().describe('One or two short sentences in the mascot voice announcing the game. Warm, playful, never guilt-tripping.'),
-  questions: z.array(z.string()).describe('For superlatives: exactly 3 positive "who\'s most likely to…" questions. Empty for other kinds.'),
-  challenge: z.string().nullable().describe('For challenge: a one-line photo challenge for the week. Null otherwise.'),
+  intro: z.string().describe('One or two short sentences in your voice announcing this week\'s game to the group chat.'),
+  questions: z.array(z.string()).describe(`For a poll week: exactly ${tbh.perRound} poll questions, each answered by picking one of ${tbh.names} friends. Empty for other weeks.`),
+  challenge: z.string().nullable().describe('For an "Add Yours" week: the one prompt everyone answers with a photo. Null otherwise.'),
 });
 
-const ReplySchema = z.object({ reply: z.string().describe('A short reply (max 2 sentences) in the mascot voice.') });
+const ReplySchema = z.object({ reply: z.string().describe('A short reply (at most 2 sentences) in your voice.') });
 
 const client = () => (env.anthropicKey ? new Anthropic({ apiKey: env.anthropicKey }) : null);
 
+const list = (xs: readonly string[], empty: string) => (xs.length ? xs.map((x) => `- ${x}`).join('\n') : `- ${empty}`);
+
+/**
+ * The brief. Voice: design.duolingo.com/writing/voice and /writing/duo (research/14 §1.7). Content
+ * rule: tbh's moderation rule, verbatim (research/24 §1). Names visible, no guilt, lore from the
+ * memory panel only: spec §K and §M.
+ */
 const SYSTEM = (ctx: GmContext) => `You are ${ctx.mascotName}, the mascot and game master of a private friends-only photo group called "${ctx.groupName}".
 Members: ${ctx.members.join(', ')}.
-You run one small game per week and talk in short, warm, playful lines.
+
+Voice. Write the way Duolingo writes for Duo. The Duolingo voice has four qualities:
+${Object.entries(duolingo.voiceDefinitions).map(([k, v]) => `- ${k}: ${v}`).join('\n')}
+Like Duo, you are the group's "${duolingo.duoRole}": ${duolingo.duoAdjectives.join(', ')}.
+
 Rules you never break:
-- Only positive, kind prompts. Never rank people negatively, never tease about looks, weight, money, grades or relationships.
-- Nothing anonymous: votes are always shown with names.
-- Never guilt-trip anyone for not posting.
-- Only refer to group lore that appears in the memory list below. If something is not listed, you don't know it.
-Group memory (opt-in, members can delete items at any time):
-${ctx.memory.length ? ctx.memory.map((m) => `- ${m}`).join('\n') : '- (nothing saved yet)'}
-Last week's winners: ${ctx.pastWinners.length ? ctx.pastWinners.join('; ') : 'none yet'}.`;
+- Everything you write is ${tbh.contentRule}. (This is the rule tbh applied to every poll.)
+- Polls are about friends and are never anonymous: everyone sees who voted for whom.
+- Never guilt anyone for not posting or not playing.
+- You only know the group lore listed under Story Memory and Facts below. If it is not listed, you don't know it.
+
+${characterai.storyMemory} (written, pinned or marked to remember by members; they can delete any line):
+${list(ctx.story, '(empty)')}
+
+${characterai.facts} (recorded automatically: last game's results as "award: winners"; members can delete any line):
+${list(ctx.facts, '(empty)')}`;
 
 async function ask<T>(ctx: GmContext, user: string, schema: z.ZodType<T>): Promise<T | null> {
   const c = client();
@@ -62,7 +80,7 @@ async function ask<T>(ctx: GmContext, user: string, schema: z.ZodType<T>): Promi
   try {
     const res = await c.beta.messages.parse({
       model: env.anthropicModel,
-      max_tokens: 2000,
+      max_tokens: 16000,
       betas: ['server-side-fallback-2026-07-01'],
       fallbacks: 'default',
       output_config: { effort: 'low', format: betaZodOutputFormat(schema) },
@@ -83,20 +101,31 @@ export function gameKindFor(weekKey: string): GameKind {
   return GAME_ROTATION[((n % GAME_ROTATION.length) + GAME_ROTATION.length) % GAME_ROTATION.length];
 }
 
+/** Per-game briefs, each naming the source mechanic the screen copies. */
+const BRIEF: Record<GameKind, string> = {
+  superlatives: `This week's game is a poll played like tbh and Gas: write exactly ${tbh.perRound} questions; for each, everyone picks one of ${tbh.names} friends.
+Every question must follow one of these patterns, taken from real tbh and Gas questions:
+${tbh.patterns.map((p) => `- ${p}`).join('\n')}
+Real examples (you may reuse them as written):
+${POLL_BANK.map((q) => `- ${q}`).join('\n')}
+Fill a blank only with something from the examples or from Story Memory / Facts. Do not invent new lore.`,
+  telephone: `This week's game is photo telephone, played like Gartic Phone: someone picks a photo, the next friend writes a sentence about it ("${gartic.writeASentence}"), the AI draws that sentence ("${gartic.draw}"), the next friend describes the drawing ("${gartic.describe}"), and every ${gartic.album.toLowerCase()} is revealed when the week develops. Announce it.`,
+  challenge: `This week's game is a photo challenge played like Instagram's "${instagram.addYours}" sticker: write one short prompt that everyone answers with a photo this week, then announce it.`,
+  guess_whose: `This week's game is a quiz like Spotify Wrapped's Top Song Quiz ("${wrapped.quizName}"): everyone guesses who took each of this week's photos. Announce it.`,
+};
+
 export async function weeklyGame(ctx: GmContext, kind: GameKind): Promise<WeeklyGame> {
-  const instructions: Record<GameKind, string> = {
-    superlatives: 'This week\'s game is SUPERLATIVES: write 3 positive "who\'s most likely to…" questions the group will vote on (names visible). Use the memory list if something fits.',
-    telephone: 'This week\'s game is PHOTO TELEPHONE: someone posts a photo, the next person captions it, an AI draws the caption, the next person guesses the original. Announce it.',
-    challenge: 'This week\'s game is a PHOTO CHALLENGE: give one simple, fun photo challenge anyone can do this week (no dangerous stunts, nothing that requires money).',
-    guess_whose: 'This week\'s game is GUESS WHOSE PHOTO: on ritual day the group guesses who took each of this week\'s photos. Announce it.',
-  };
-  const ai = await ask(ctx, instructions[kind], WeeklyGameSchema);
+  const ai = await ask(ctx, BRIEF[kind], WeeklyGameSchema);
   if (ai) {
+    const rng = seeded(`${ctx.groupName}:${ctx.weekKey}:${kind}`);
+    const questions = kind === 'superlatives' ? ai.questions.map((q) => q.trim().slice(0, 120)).filter(Boolean).slice(0, tbh.perRound) : [];
+    // Top up a short AI round with verbatim tbh / Gas questions.
+    if (kind === 'superlatives' && questions.length < tbh.perRound) questions.push(...pick(POLL_BANK.filter((q) => !questions.includes(q)), rng, tbh.perRound - questions.length));
     return {
       kind,
       intro: ai.intro.slice(0, 280),
-      questions: kind === 'superlatives' ? ai.questions.slice(0, 3).map((q) => q.slice(0, 120)) : [],
-      challenge: kind === 'challenge' ? (ai.challenge ?? scriptedChallenge(ctx)).slice(0, 140) : null,
+      questions,
+      challenge: kind === 'challenge' && ai.challenge?.trim() ? ai.challenge.trim().slice(0, 140) : null,
     };
   }
   return scriptedGame(ctx, kind);
@@ -105,85 +134,33 @@ export async function weeklyGame(ctx: GmContext, kind: GameKind): Promise<Weekly
 export async function reply(ctx: GmContext, from: string, text: string): Promise<string> {
   const ai = await ask(ctx, `${from} says to you in the group chat: "${text.slice(0, 500)}". Reply briefly.`, ReplySchema);
   if (ai) return ai.reply.slice(0, 280);
-  return scriptedReply(ctx, from, text);
+  return scriptedReply(ctx);
 }
 
-/* ───────────────────────── Scripted game master ───────────────────────── */
+/* ───────────────────────── Offline game master: deck lines only ───────────────────────── */
 
-/** Positive-only superlatives (tbh / Gas compliment polls, de-anonymised per spec §K). */
-export const SUPERLATIVE_BANK = [
-  'Who would plan the best surprise party?',
-  'Who has the most contagious laugh?',
-  'Who is most likely to turn a normal Tuesday into an adventure?',
-  'Who gives the best advice at 2am?',
-  'Who would survive longest on a deserted island?',
-  'Who is most likely to remember your birthday first?',
-  'Who takes the best photos of everyone else?',
-  'Who would win a dance battle?',
-  'Who has the best playlist right now?',
-  'Who is most likely to befriend a stranger\'s dog?',
-  'Who would be the best travel buddy?',
-  'Who makes every group chat better?',
-  'Who is most likely to start a new hobby this week?',
-  'Who would you call to help you move?',
-  'Who has the most golden-hour energy?',
-  'Who is secretly the funniest?',
-  'Who would make the best podcast host?',
-  'Who is most likely to cook for everyone?',
-  'Who keeps the group together?',
-  'Who would win a cozy-night-in competition?',
-];
-
-export const CHALLENGE_BANK = [
-  'Post something yellow 💛',
-  'Your view right now, from the floor',
-  'The best thing you ate this week',
-  'Something that made you laugh out loud',
-  'A shadow that looks like something else',
-  'Your favourite corner of your room',
-  'A sky worth stopping for',
-  'Something tiny, very close up',
-  'Two things that match by accident',
-  'Whatever is in your left pocket',
-];
-
-function pick<T>(list: T[], rng: () => number, n: number) {
-  const copy = [...list];
+function pick<T>(xs: readonly T[], rng: () => number, n: number) {
+  const copy = [...xs];
   const out: T[] = [];
   while (out.length < n && copy.length) out.push(copy.splice(Math.floor(rng() * copy.length), 1)[0]);
   return out;
 }
 
-function loreLine(ctx: GmContext, rng: () => number) {
-  if (ctx.pastWinners.length && rng() < 0.6) return ` Last week ${pick(ctx.pastWinners, rng, 1)[0]} — can anyone take the crown?`;
-  if (ctx.memory.length && rng() < 0.5) return ` (I haven't forgotten: ${pick(ctx.memory, rng, 1)[0]}.)`;
-  return '';
-}
-
-function scriptedChallenge(ctx: GmContext) {
-  return pick(CHALLENGE_BANK, seeded(`${ctx.groupName}:${ctx.weekKey}:challenge`), 1)[0];
-}
-
+/**
+ * No API key: the greeting is Duolingo's "Hi, it's Duo!" [V-weak] with the mascot's name; a poll week
+ * draws its questions verbatim from tbh and Gas; an "Add Yours" week has no prompt until a member
+ * types one (Instagram: the sticker's creator types the prompt). Nothing is written here.
+ */
 export function scriptedGame(ctx: GmContext, kind: GameKind): WeeklyGame {
   const rng = seeded(`${ctx.groupName}:${ctx.weekKey}:${kind}`);
-  const lore = loreLine(ctx, rng);
-  switch (kind) {
-    case 'superlatives':
-      return { kind, intro: `Superlatives week! Three questions, names on every vote.${lore}`, questions: pick(SUPERLATIVE_BANK, rng, 3), challenge: null };
-    case 'telephone':
-      return { kind, intro: `Photo telephone is open: one photo, one caption, one drawing, one guess. Let's see how far it drifts.${lore}`, questions: [], challenge: null };
-    case 'challenge':
-      return { kind, intro: `This week's challenge just dropped.${lore}`, questions: [], challenge: scriptedChallenge(ctx) };
-    case 'guess_whose':
-      return { kind, intro: `Guess Whose is on: on roll day I'll shuffle this week's photos and you guess who took each one.${lore}`, questions: [], challenge: null };
-  }
+  return {
+    kind,
+    intro: duolingo.hiItsDuo(ctx.mascotName),
+    questions: kind === 'superlatives' ? pick(POLL_BANK, rng, tbh.perRound) : [],
+    challenge: null,
+  };
 }
 
-export function scriptedReply(ctx: GmContext, from: string, text: string) {
-  const t = text.toLowerCase();
-  if (/remember|forget/.test(t)) return `I only remember what's pinned in the memory panel, ${from}. Tap 📌 on a caption to add it.`;
-  if (/game|play/.test(t)) return `This week's game is pinned at the top of the chat. Go go go!`;
-  if (/who|winner|won/.test(t) && ctx.pastWinners.length) return `Last week: ${ctx.pastWinners.join(', ')}.`;
-  if (/hi|hey|hello/.test(t)) return `Hi ${from}! ${ctx.postsThisWeek ? `${ctx.postsThisWeek} moments in the roll so far this week.` : 'The roll is wide open this week.'}`;
-  return `Noted, ${from}. Roll day is when it all develops.`;
+export function scriptedReply(ctx: GmContext) {
+  return duolingo.hiItsDuo(ctx.mascotName);
 }

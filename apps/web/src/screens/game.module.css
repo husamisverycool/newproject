@@ -1,482 +1,495 @@
 /*
- * Weekly game — Duolingo's game styling (round type, 2px outlined speech bubble beside the
- * character, lip buttons, Feather Green for "go") wrapped around the source party games:
- * tbh / Gas poll cards (full-bleed gradient card, four white name pills), Gartic Phone chains
- * and album replay, BeReal-style challenge card, Wordle share grid.
+ * Weekly game (spec §K). Each block copies the source game it names; anything the research leaves
+ * UNKNOWN is a stock iOS control [HIG] from styles/hig.css.
+ *
+ * .host*      Duolingo: a character speaks the prompt (research/14 §1.6 [V]) from a speech bubble [B-high];
+ *             Snow #FFF fill, Swan #E5E5E5 2px border, Eel #4B4B4B text [V], 16px radius [V-weak];
+ *             DIN Next Rounded body face [V]; dark: #202F36 card, #37464F border [V-weak].
+ * .poll*      tbh / Gas: "Full-screen solid or gradient color that changes each question", the question
+ *             above a 2×2 grid of white rounded name buttons, "shuffle" and "skip" below, "N of 12"
+ *             progress [B-med / V-weak]. Background hexes UNKNOWN → iOS system colors in HIG order, keeping
+ *             only those that reach 3:1 against white for large text [HIG contrast].
+ * .tile*      Kahoot!: four answer tiles, Triangle = Red · Diamond = Blue · Circle = Yellow · Square = Green
+ *             [V-weak]; hexes UNKNOWN → systemRed/Blue/Yellow/Green [HIG]; label color by HIG contrast.
+ * .task*      Gartic Phone: the step to answer at the top, the content on blank "paper", a text input at the
+ *             bottom and "Done" bottom right [V-weak]. Fonts/colors UNKNOWN → HIG.
+ * .sticker*   Instagram "Add Yours": white rounded sticker with the prompt, avatar stack, participant count
+ *             and an "Add yours" button [B-med].
+ * .award*     Spotify Wrapped 2025: "reduced color palette" black / white / green / red [V], "selective pops
+ *             of color used only for key moments" [V-weak]; Spotify Mix type [V]; green #1ED760 [B-high].
+ * .podium*    Kahoot!: the game ends on a podium for the top players [V]; 1st centre, 2nd left, 3rd right [B-med].
+ * .lobby*     Jackbox: Room Code, the VIP, players as they join, Audience [V]; layout UNKNOWN → HIG list.
  */
-.screen {
-  background: var(--black);
-}
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: calc(var(--safe-top) + 4px) 10px 6px;
-  flex: none;
-}
-.headTitle {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  font: 800 16px/20px var(--font-round);
-}
-.headTitle span {
-  font: 600 12px/16px var(--font-round);
-  color: var(--text-3);
-}
-.body {
+
+.scroll {
   flex: 1;
   min-height: 0;
-  padding: 4px var(--margin) 0;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding-bottom: calc(var(--safe-bottom) + 40px);
+}
+.scroll::-webkit-scrollbar {
+  display: none;
 }
 
-/* Character + speech bubble (Duolingo lesson character) */
-.gm {
+/* ── Duolingo host ─────────────────────────────────────────── */
+.host {
   display: flex;
-  align-items: center;
-  gap: 8px;
+  align-items: flex-end;
+  gap: 10px;
+  padding: 8px var(--margin) 18px;
 }
-.speech {
+.host > svg {
+  flex: none;
+}
+.bubble {
   position: relative;
   flex: 1;
+  min-width: 0;
+  margin-bottom: 26px;
   padding: 12px 14px;
-  border-radius: 16px;
-  border: 2px solid var(--g3);
-  font: 600 15px/21px var(--font-round);
-  color: var(--white);
+  border: 2px solid var(--duo-swan);
+  border-radius: var(--duo-r);
+  background: #ffffff;
+  color: var(--duo-eel);
+  font: 500 17px/22px var(--font-duo);
 }
-.speech::before {
+.bubble::before {
   content: '';
   position: absolute;
-  left: -9px;
-  top: 50%;
-  width: 14px;
-  height: 14px;
-  background: var(--black);
-  border-left: 2px solid var(--g3);
-  border-bottom: 2px solid var(--g3);
-  transform: translateY(-50%) rotate(45deg);
+  left: -8px;
+  bottom: 14px;
+  width: 12px;
+  height: 12px;
+  border-left: 2px solid var(--duo-swan);
+  border-bottom: 2px solid var(--duo-swan);
+  background: inherit;
+  transform: rotate(45deg);
+}
+@media (prefers-color-scheme: dark) {
+  .bubble {
+    background: var(--duo-dark-card);
+    border-color: var(--duo-dark-border);
+    color: #ffffff;
+  }
+  .bubble::before {
+    border-color: var(--duo-dark-border);
+  }
 }
 
-/* Superlatives — tbh / Gas */
+/* ── tbh / Gas poll ────────────────────────────────────────── */
+.pollScreen {
+  transition: background-color 360ms var(--ease-out);
+}
 .poll {
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 22px;
+  padding: 4px var(--margin) 28px;
+  color: #ffffff;
 }
-.pollDots {
-  display: flex;
-  justify-content: center;
-  gap: 6px;
+.progress {
+  font: 600 15px/20px var(--font-sf);
+  opacity: 0.8;
 }
-.pollDot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: var(--g3);
-  transition: width var(--dur) var(--ease-out), background var(--dur);
-}
-.pollDotDone {
-  background: var(--hare);
-}
-.pollDotOn {
-  width: 22px;
-  border-radius: 4px;
-  background: var(--white);
-}
-.pollCard {
-  border-radius: 28px;
-  padding: 26px 18px 16px;
-  min-height: 430px;
-  display: flex;
-  flex-direction: column;
-  color: var(--white);
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
-}
-.pollQ {
-  flex: 1;
+.question {
+  min-height: 102px;
   display: flex;
   align-items: center;
   justify-content: center;
   text-align: center;
-  padding: 10px 6px 24px;
-  font: 800 26px/32px var(--font-round);
-  letter-spacing: -0.01em;
-  text-wrap: balance;
+  font: 700 28px/34px var(--font-sf);
+  padding: 0 8px;
 }
-.pollOptions {
+.names {
+  width: 100%;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  gap: 12px;
 }
-.pollOption {
-  position: relative;
-  overflow: hidden;
+.name {
   display: flex;
   align-items: center;
-  gap: 8px;
-  height: 58px;
-  padding: 0 12px 0 10px;
-  border-radius: 18px;
-  background: var(--white);
-  color: var(--black);
-  font: 800 16px/1 var(--font-round);
+  gap: 10px;
+  min-height: 64px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #ffffff;
+  color: #000000;
+  font: var(--t-headline);
   text-align: left;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18);
-  transition: transform 80ms, box-shadow 80ms;
+  transition: transform 120ms var(--ease-out), opacity 200ms;
 }
-.pollOption > * {
-  position: relative;
+.name:active {
+  transform: scale(0.97);
 }
-.pollOption span:nth-of-type(2) {
+.nameLabel {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.pollOption:active:not(:disabled) {
-  transform: translateY(3px);
-  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
-}
-.pollMine {
-  box-shadow: inset 0 0 0 3px var(--black), 0 4px 0 rgba(0, 0, 0, 0.18);
-}
-.pollFill {
-  position: absolute !important;
-  inset: 0 auto 0 0;
-  background: var(--swan);
-  transition: width 600ms var(--ease-out);
+.nameDim {
+  opacity: 0.45;
 }
 .pollFoot {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  margin-top: 14px;
-  font: 600 12px/1 var(--font-round);
-  opacity: 0.85;
+  gap: 28px;
 }
 .pollFoot button {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  background: rgba(0, 0, 0, 0.22);
-  color: var(--white);
-  font: 800 12px/1 var(--font-round);
+  gap: 6px;
+  min-height: var(--tap);
+  color: #ffffff;
+  font: var(--t-headline);
 }
 
-/* Photo telephone — Gartic Phone */
-.tel {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-.err {
-  margin: 0;
-  font: 600 13px/18px var(--font-round);
-  color: var(--red);
-}
-.chain {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 12px;
-  border-radius: 20px;
-  border: 2px solid var(--g3);
-}
-.chainSteps {
-  display: flex;
+/* ── Kahoot! answer tiles ──────────────────────────────────── */
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 8px;
-  overflow-x: auto;
-  scrollbar-width: none;
 }
-.chainSteps::-webkit-scrollbar {
-  display: none;
-}
-.step {
-  flex: none;
-  width: 104px;
+.tile {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
+  align-items: center;
+  gap: 10px;
+  min-height: 72px;
+  padding: 12px;
+  border-radius: 8px;
+  font: var(--t-headline);
+  text-align: left;
+  transition: opacity 200ms;
 }
-.step img,
-.stepText {
-  width: 104px;
-  height: 104px;
-  border-radius: 14px;
+.tile:disabled {
+  cursor: default;
+}
+.tileRed {
+  background: var(--sys-red);
+  color: #ffffff;
+}
+.tileBlue {
+  background: var(--sys-blue);
+  color: #ffffff;
+}
+.tileYellow {
+  background: var(--sys-yellow);
+  color: #000000;
+}
+.tileGreen {
+  background: var(--sys-green);
+  color: #000000;
+}
+.tileDim {
+  opacity: 0.3;
+}
+.tileLabel {
+  flex: 1;
+  min-width: 0;
+}
+.quizGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  margin: 0 0 35px;
+}
+.quizTile {
+  position: relative;
+  aspect-ratio: 1;
+  overflow: hidden;
+  background: var(--sys-fill3);
+}
+.quizTile img {
+  width: 100%;
+  height: 100%;
   object-fit: cover;
 }
-.stepText {
+.quizBadge {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+}
+.quizShape {
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 8px;
-  background: var(--white);
-  color: var(--eel);
-  text-align: center;
-  font: 700 13px/17px var(--font-round);
-  overflow: hidden;
 }
-.stepBy {
-  font: 700 11px/1 var(--font-round);
-  color: var(--text-2);
-  text-align: center;
+.quizPhoto {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 10px;
+  margin-bottom: 12px;
+  background: var(--sys-fill3);
 }
-.go {
-  flex: none;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: 14px;
-  background: var(--green);
-  border-bottom: 4px solid var(--green-lip);
-  color: var(--white);
-  font: 800 14px/1 var(--font-round);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.go:disabled {
-  background: var(--g2);
-  border-color: var(--g1);
-  color: var(--wolf);
-}
-.waiting {
-  font: 600 13px/1 var(--font-round);
-  color: var(--text-3);
-}
-.replay {
-  align-self: flex-start;
+.rankCell {
   display: inline-flex;
   align-items: center;
+  gap: 10px;
+}
+.rank {
+  width: 22px;
+  text-align: center;
+  font: 600 17px/22px var(--font-sf);
+  font-variant-numeric: tabular-nums;
+  color: var(--sys-label2);
+}
+.meRow {
+  font-weight: 600;
+}
+
+/* ── Kahoot! podium ────────────────────────────────────────── */
+.podium {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  align-items: end;
+  gap: 8px;
+  margin: 0 var(--margin) 35px;
+}
+.podiumCol {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 6px;
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--purple);
-  color: var(--white);
-  font: 800 12px/1 var(--font-round);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+  font: var(--t-subhead);
+}
+.podiumStep {
+  width: 100%;
+  border-radius: 10px 10px 0 0;
+  background: var(--sys-fill2);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 8px;
+  font: 700 22px/28px var(--font-sf);
+}
+
+/* ── Gartic Phone task ─────────────────────────────────────── */
+.task {
+  margin: 0 var(--margin) 35px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.taskHead {
+  font: 600 20px/25px var(--font-sf);
+  text-align: center;
+}
+.paper {
+  border-radius: 10px;
+  overflow: hidden;
+  background: #ffffff;
+  aspect-ratio: 1;
+}
+.paper img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.taskBar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+.taskBar input {
+  flex: 1;
+}
+.startRow {
+  display: flex;
+  justify-content: center;
+  margin: 0 var(--margin) 35px;
 }
 .pickGrid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  padding-bottom: 16px;
+  gap: 2px;
 }
 .pickGrid button {
   aspect-ratio: 1;
-  border-radius: 10px;
   overflow: hidden;
+  background: var(--sys-fill3);
 }
 .pickGrid img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
-.replayView {
-  position: absolute;
-  inset: 0;
-  z-index: 40;
-  background: color-mix(in srgb, var(--black) 92%, transparent);
-  overflow-y: auto;
-  padding: calc(var(--safe-top) + 40px) 28px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 18px;
+.thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: cover;
+  flex: none;
+  background: var(--sys-fill3);
 }
-.replayStep {
+.albumStep {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 22px;
 }
-.replayStep:nth-child(even) {
-  align-items: flex-end;
+.albumBy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--t-subhead);
+  color: var(--sys-label2);
 }
-.replayBy {
-  font: 800 12px/1 var(--font-round);
-  color: var(--text-2);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
+.albumImg {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 10px;
 }
-.replayStep img {
-  width: 72%;
-  border-radius: 18px;
-}
-.replayText {
-  max-width: 82%;
-  padding: 12px 16px;
-  border-radius: 18px;
-  background: var(--white);
-  color: var(--eel);
-  font: 800 20px/26px var(--font-round);
+.albumText {
+  font: var(--t-title3);
 }
 
-/* Weekly challenge */
-.challenge {
+/* ── Instagram "Add Yours" sticker ─────────────────────────── */
+.sticker {
+  margin: 0 var(--margin) 22px;
+  padding: 16px;
+  border-radius: 16px;
+  background: #ffffff;
+  color: #000000;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
 }
-.challengeCard {
+.stickerHead {
+  font: 600 13px/18px var(--font-sf);
+  color: rgba(60, 60, 67, 0.6);
+}
+.stickerPrompt {
+  font: 700 22px/28px var(--font-sf);
+}
+.stickerMeta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: var(--t-subhead);
+  color: rgba(60, 60, 67, 0.6);
+}
+.stickerField {
+  width: 100%;
+  background: rgba(118, 118, 128, 0.12);
+  color: #000000;
+}
+.chain {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  padding: 0 var(--margin) 35px;
+}
+.chainItem {
+  flex: none;
+  width: 108px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  font: var(--t-footnote);
+  color: var(--sys-label2);
+}
+.chainItem img {
+  width: 108px;
+  height: 144px;
+  border-radius: 10px;
+  object-fit: cover;
+  background: var(--sys-fill3);
+}
+
+/* ── Spotify Wrapped Party awards ──────────────────────────── */
+.awards {
+  margin: 0 var(--margin) 35px;
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 26px 20px;
-  border-radius: 24px;
-  background: var(--white);
-  color: var(--black);
 }
-.challengeKicker {
-  font: 800 12px/1 var(--font-round);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--wolf);
+.award {
+  border-radius: 10px;
+  padding: 18px 16px;
+  background: #000000;
+  color: #ffffff;
+  font-family: var(--font-spotify);
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
-.challengeText {
-  font: 800 26px/31px var(--font-round);
+.awardTitle {
+  font: 700 22px/26px var(--font-spotify);
   letter-spacing: -0.01em;
 }
-.entries {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.awardWho {
+  display: flex;
+  align-items: center;
   gap: 8px;
+  font: 700 17px/22px var(--font-spotify);
+  color: var(--spotify-green);
 }
-.entry {
+
+/* ── Jackbox lobby ─────────────────────────────────────────── */
+.lobbyCode {
+  font: 700 22px/28px var(--font-sf);
+  letter-spacing: 0.12em;
+  color: var(--sys-label);
+}
+.seats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px 10px;
+  padding: 14px 16px;
+}
+.seat {
+  width: 58px;
   display: flex;
   flex-direction: column;
+  align-items: center;
   gap: 4px;
-  font: 700 12px/1 var(--font-round);
-  color: var(--text-2);
+  font: var(--t-caption);
+  text-align: center;
+  transition: opacity 200ms;
 }
-.entry img {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 14px;
-}
-
-/* Guess whose */
-.guess {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-.guessGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 6px;
-}
-.guessTile {
-  position: relative;
-  aspect-ratio: 1;
-  border-radius: 14px;
+.seatLabel {
+  max-width: 100%;
   overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.guessTile img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
+.seatOut {
+  opacity: 0.35;
 }
-.guessed {
-  position: absolute;
-  left: 6px;
-  bottom: 6px;
-  padding: 4px 8px;
+.vip {
+  padding: 1px 6px;
   border-radius: 999px;
-  background: var(--white);
-  color: var(--black);
-  font: 800 11px/1 var(--font-round);
-}
-.guessBig {
-  width: 100%;
-  aspect-ratio: 1;
-  object-fit: cover;
-  border-radius: 20px;
-  margin-bottom: 14px;
-}
-.guessOptions {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-  padding-bottom: 16px;
-}
-.guessOptions :global(.lip) {
-  text-transform: none;
-  letter-spacing: 0;
-  justify-content: flex-start;
-  padding: 0 12px;
+  background: var(--sys-label);
+  color: var(--sys-bg);
+  font: 700 10px/14px var(--font-sf);
 }
 
-/* Results */
-.results {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-}
-.resultsHead {
-  font: 800 20px/24px var(--font-round);
-}
-.result {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border-radius: 18px;
-  border: 2px solid var(--g3);
-  border-bottom-width: 4px;
-}
-.resultEmoji {
-  font-size: 30px;
-  flex: none;
-}
-.resultTitle {
-  display: block;
-  font: 800 15px/19px var(--font-round);
-}
-.resultLine {
-  display: block;
-  font: 500 13px/17px var(--font-round);
-  color: var(--text-2);
-}
-.resultWho {
-  display: flex;
-  flex: none;
-}
-.resultWho > * + * {
-  margin-left: -8px;
-}
-
-/* Share — Wordle grid */
-.shareGridBtn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  height: 46px;
-  border-radius: 14px;
-  border: 2px solid var(--g3);
-  border-bottom-width: 4px;
-  font: 800 14px/1 var(--font-round);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-}
-.miniGrid {
-  font-size: 12px;
-  letter-spacing: 0;
-}
+/* ── Share (Wordle) ────────────────────────────────────────── */
 .sharePre {
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   padding: 14px;
-  border-radius: 16px;
-  background: var(--g2);
-  font: 500 15px/21px var(--font-ui);
+  border-radius: 10px;
+  background: var(--sys-grouped2);
+  font: 400 17px/24px var(--font-sf);
   white-space: pre-wrap;
+}
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 24px;
 }
