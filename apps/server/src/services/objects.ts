@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { zipSync, strToU8 } from 'fflate';
-import { BRAND, MASCOT_SPECIES, PLANS, aiRemaining, canUseLikeness, sora, spec, type Group } from '@app/shared';
+import { BRAND, MASCOT_SPECIES, PLANS, PLAN_NAMES, aiRemaining, canUseLikeness, ios, sora, spec, yope, type Group } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
 import { exportAnimated, exportImage, readMedia, storePng, writeMedia, escapeXml } from '../media.ts';
 import { getGroup, getObject, getPost, getUser, groupsForUser, insertObject, objectsFor, publicUser, type UserFull } from '../repo.ts';
@@ -34,14 +34,15 @@ export function consent(actor: UserFull, subjectIds: string[], groupId: string |
     const r = stickerOff
       ? ({ ok: false, reason: 'not_allowed' } as const)
       : canUseLikeness({ owner, actorId: actor.id, groupId, ownerGroupIds: groupsForUser(sid).map((g) => g.id), actorGroupIds: actorGroups });
-    if (!r.ok) throw new GameError(`consent_${r.reason}`, `${owner.name} hasn't allowed this`);
+    // The owner's own Sora-style setting is the message [V] (sources/sora.ts).
+    if (!r.ok) throw new GameError(`consent_${r.reason}`, owner.likenessScope === 'no_one' ? sora.onlyMe : owner.likenessScope === 'specific_friends' ? sora.peopleIApprove : sora.mutuals);
   }
 }
 
 export function meter(actor: UserFull) {
   const used = img.aiUsedThisMonth(actor.id);
   const left = aiRemaining(actor.plan, used);
-  if (left <= 0) throw new GameError('ai_limit', `You've used all ${PLANS[actor.plan].aiMonthly} AI creations this month`);
+  if (left <= 0) throw new GameError('ai_limit', ios.ofUsed(PLANS[actor.plan].aiMonthly, PLANS[actor.plan].aiMonthly));
   return { used, left };
 }
 
@@ -88,7 +89,7 @@ export async function makeRemix(actor: UserFull, input: { postId: string; style:
 }
 
 export async function makeFigurine(actor: UserFull, input: { cutout: Buffer; original: Buffer; subjectId: string; groupId: string }) {
-  if (!PLANS[actor.plan].figurines) throw new GameError('plan_required', 'Figurines are part of Remix+');
+  if (!PLANS[actor.plan].figurines) throw new GameError('plan_required', PLAN_NAMES.ai);
   consent(actor, [input.subjectId], input.groupId);
   meter(actor);
   const group = getGroup(input.groupId)!;
@@ -131,8 +132,8 @@ export async function makeZine(actor: UserFull, group: Group, weekKey: string, p
   const pages: Buffer[] = [];
   const cover = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}"><rect width="100%" height="100%" fill="${species.body}"/>
     <text x="70" y="260" font-family="Inter" font-weight="900" font-size="150" fill="#000" letter-spacing="-6">${escapeXml(group.name)}</text>
-    <text x="74" y="360" font-family="Inter" font-weight="700" font-size="64" fill="#000">week of ${escapeXml(weekKey)}</text>
-    <text x="74" y="${ph - 90}" font-family="Inter" font-weight="900" font-size="90" fill="#000">roll<tspan fill="#fff">.</tspan> zine</text></svg>`);
+    <text x="74" y="360" font-family="Inter" font-weight="700" font-size="64" fill="#000">${escapeXml(yope.weekRange(Date.parse(`${weekKey}T12:00:00Z`) - 6 * 86_400_000, Date.parse(`${weekKey}T12:00:00Z`)))}</text>
+    <text x="74" y="${ph - 90}" font-family="Inter" font-weight="900" font-size="90" fill="#000">${escapeXml(BRAND.bare)}<tspan fill="#fff">.</tspan></text></svg>`);
   pages.push(await sharp(cover).png().toBuffer());
   for (const p of posts) {
     const photo = await sharp(readMedia(p.media.main)).rotate().resize(Math.round(pw - 120), Math.round(ph - 360), { fit: 'cover' }).png().toBuffer();

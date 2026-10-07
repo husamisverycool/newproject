@@ -463,7 +463,7 @@ export function LikenessCapture({ onDone }: { onDone: () => void }) {
   return (
     <>
       <Section>
-        {([['no_one', sora.onlyMe], ['specific_friends', sora.peopleIApprove], ['my_groups', sora.myGroups]] as const).map(([v, l]) => (
+        {([['no_one', sora.onlyMe], ['specific_friends', sora.peopleIApprove], ['my_groups', sora.mutuals], ['everyone', sora.everyone]] as const).map(([v, l]) => (
           <Row key={v} title={l} onClick={() => setScope(v)} chevron={false} accessory={scope === v ? <Icon name="check" size={20} color="var(--sys-blue)" strokeWidth={2.6} /> : undefined} />
         ))}
       </Section>

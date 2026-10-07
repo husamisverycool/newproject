@@ -13,8 +13,6 @@ export const sora = {
   mutuals: 'Mutuals',
   /** [V] option 4 */
   everyone: 'Everyone',
-  /** [S] spec §S "my groups" in place of Sora's "Mutuals" */
-  myGroups: 'My groups',
   /** [V-weak] path: edit → preferences → restrictions */
   restrictions: 'Restrictions',
   /** [V] official examples of restriction instructions */

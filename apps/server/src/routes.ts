@@ -13,6 +13,10 @@ import {
   type Rarity,
   type LikenessScope,
   partiful,
+  FREE_GROUP_RECAPS_PER_WEEK,
+  ios,
+  locket,
+  snapchat,
 } from '@app/shared';
 import { all, get, json, now, run, setClockOffset } from './db.ts';
 import { env } from './env.ts';
@@ -122,7 +126,7 @@ api.post('/auth/start', async (c) => {
   const name = String(body.name ?? '').trim().slice(0, 32);
   const birthYear = Number(body.birthYear);
   if (!name) return fail(c, 400, 'name_required');
-  if (!(birthYear > 1900 && birthYear <= new Date().getFullYear() - 13)) return fail(c, 400, 'age', 'You need to be 13 or older');
+  if (!(birthYear > 1900 && birthYear <= new Date().getFullYear() - 13)) return fail(c, 400, 'age', snapchat.whensYourBirthday);
   const palette = ['#FFC800', '#1CB0F6', '#CE82FF', '#58CC02', '#FF9600', '#FF4B4B', '#2B70C9'];
   const user = createUser({ name, birthYear, color: body.color ?? palette[Math.floor(Math.random() * palette.length)], timeZone: body.timeZone });
   setSessionCookie(c, createSession(user.id));
@@ -394,7 +398,7 @@ api.post('/join/:code', (c) => {
   if (!g) return fail(c, 404, 'not_found');
   const ms = members(g.id);
   if (!membership(g.id, user.id)) {
-    if (!canJoin(ms.length)) return fail(c, 409, 'full', `Groups max out at ${GROUP_MAX}`);
+    if (!canJoin(ms.length)) return fail(c, 409, 'full', locket.friendsAllowed(GROUP_MAX, GROUP_MAX));
     const inviter = new URL(c.req.url).searchParams.get('from');
     run('INSERT INTO memberships (group_id, user_id, role, joined_at, invited_by) VALUES (?, ?, ?, ?, ?)', g.id, user.id, 'member', now(), inviter && membership(g.id, inviter) ? inviter : null);
     updateMascot(g.id, (m) => ({ ...m, xp: m.xp + 20 }));
@@ -540,7 +544,7 @@ api.post('/groups/:groupId/recap/:weekKey', async (c) => {
   const g = memberGroup(c);
   const { style } = await c.req.json<{ style?: string }>().catch(() => ({ style: undefined }));
   const res = await walls.generateRecap(g, c.req.param('weekKey'), c.get('user').id, style ?? 'comic');
-  if (!res.ok) return fail(c, 429, res.reason, res.reason === 'free_limit' ? 'Free groups get one AI recap a week' : 'No photos to recap');
+  if (!res.ok) return fail(c, 429, res.reason, res.reason === 'free_limit' ? ios.ofUsed(FREE_GROUP_RECAPS_PER_WEEK, FREE_GROUP_RECAPS_PER_WEEK) : '');
   return c.json({ recap: res.object });
 });
 

@@ -25,7 +25,7 @@ import s from './settings.module.css';
  * - Sign Out [HIG] and Delete Account (App Review 5.1.1(v)) [HIG].
  */
 
-const SCOPE_LABEL: Record<LikenessScope, string> = { no_one: sora.onlyMe, my_groups: sora.myGroups, specific_friends: sora.peopleIApprove, everyone: sora.everyone };
+const SCOPE_LABEL: Record<LikenessScope, string> = { no_one: sora.onlyMe, my_groups: sora.mutuals, specific_friends: sora.peopleIApprove, everyone: sora.everyone };
 
 const atHour = (h: number) => new Date(2000, 0, 1, h).getTime();
 

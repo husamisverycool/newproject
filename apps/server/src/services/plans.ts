@@ -89,7 +89,7 @@ function planRow(planId: string) {
 export function rsvp(planId: string, userId: string, status: RsvpStatus) {
   const p = planRow(planId);
   if (!membership(p.group_id, userId)) throw new GameError('forbidden');
-  if (p.starts_at && p.starts_at + 6 * 3_600_000 < now()) throw new GameError('ended', "RSVPs can't change after the event has ended");
+  if (p.starts_at && p.starts_at + 6 * 3_600_000 < now()) throw new GameError('ended', '');
   run('INSERT OR REPLACE INTO plan_rsvps (plan_id, user_id, status, updated_at) VALUES (?, ?, ?, ?)', planId, userId, status, now());
   toGroup(p.group_id, { type: 'group', groupId: p.group_id });
 }
@@ -118,7 +118,7 @@ export function blast(planId: string, userId: string, text: string, audience: Rs
   const p = planRow(planId);
   if (p.created_by !== userId) throw new GameError('host_only');
   const sent = get<{ n: number }>("SELECT COUNT(*) AS n FROM messages WHERE ref_id = ? AND json_extract(meta, '$.blast') = 1", planId)?.n ?? 0;
-  if (sent >= MAX_BLASTS) throw new GameError('blast_limit', `Hosts can send up to ${MAX_BLASTS} blasts per plan`);
+  if (sent >= MAX_BLASTS) throw new GameError('blast_limit', ios.ofUsed(MAX_BLASTS, MAX_BLASTS));
   const msg = insertMessage({ groupId: p.group_id, userId, kind: 'text', body: text.slice(0, 500), refId: planId, meta: { blast: 1, planTitle: p.title } });
   toGroup(p.group_id, { type: 'message', groupId: p.group_id, messageId: msg.id });
   const rsvps = new Map(all<{ user_id: string; status: RsvpStatus }>('SELECT user_id, status FROM plan_rsvps WHERE plan_id = ?', planId).map((r) => [r.user_id, r.status]));
