@@ -308,6 +308,12 @@ CREATE TABLE IF NOT EXISTS blocks (
   created_at INTEGER NOT NULL,
   PRIMARY KEY (user_id, blocked_id)
 );
+CREATE TABLE IF NOT EXISTS join_waitlist (
+  group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (group_id, user_id)
+);
 CREATE TABLE IF NOT EXISTS wall_reactions (
   id TEXT PRIMARY KEY,
   group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,

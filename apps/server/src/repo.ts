@@ -132,7 +132,7 @@ export function toGroup(r: GroupRow): Group {
     id: r.id,
     name: r.name,
     emoji: r.emoji,
-    mascot: json.parse(r.mascot, { name: 'Blob', species: 'blob', xp: 0, outfit: [] }),
+    mascot: json.parse(r.mascot, { name: 'Cat', species: 'cat', xp: 0, outfit: [] }),
     ritualDay: r.ritual_day,
     developHour: r.develop_hour,
     timeZone: r.time_zone,

@@ -1,105 +1,295 @@
 /*
- * roll. design tokens — every value is traced to a source in docs/INSPIRATION.md.
- * Rule: no hex value appears here unless it appears in the research
- * (simple-icons official brand colours, the Duolingo palette, Apple system colours).
+ * Design tokens, namespaced by source app. Each value carries its provenance tag (see
+ * packages/shared/src/sources/README.md). Rule for unknown hexes: a color the research only
+ * names ("yellow", "teal", "purple-to-pink") maps to Apple's system color of that name [HIG],
+ * because the source apps are native iOS apps. Replace those when captures arrive (docs/CAPTURE.md).
  */
 
 :root {
-  /* ── Canvas & neutrals ─────────────────────────────────────────────── */
-  --black: #000000; /* BeReal brand colour (simple-icons); black canvas [multi] research/03 §1.3 */
-  --white: #ffffff; /* BeReal white text on black */
-  --g1: #1c1c1e; /* Apple secondarySystemBackground (dark) — Locket/BeReal are native iOS apps */
-  --g2: #2c2c2e; /* Apple tertiarySystemBackground (dark) */
-  --g3: #3a3a3c; /* Apple systemGray4 (dark) */
-  --swan: #e5e5e5; /* Duolingo Swan */
-  --hare: #afafaf; /* Duolingo Hare */
-  --wolf: #777777; /* Duolingo Wolf */
-  --eel: #4b4b4b; /* Duolingo Eel — "used instead of pure black" on light surfaces */
+  /* ── Apple system colors, light [HIG] ─────────────────────────────── */
+  --sys-bg: #ffffff; /* systemBackground */
+  --sys-bg2: #f2f2f7; /* secondarySystemBackground */
+  --sys-bg3: #ffffff; /* tertiarySystemBackground */
+  --sys-grouped: #f2f2f7; /* systemGroupedBackground */
+  --sys-grouped2: #ffffff; /* secondarySystemGroupedBackground */
+  --sys-label: #000000; /* label */
+  --sys-label2: rgba(60, 60, 67, 0.6); /* secondaryLabel */
+  --sys-label3: rgba(60, 60, 67, 0.3); /* tertiaryLabel */
+  --sys-sep: rgba(60, 60, 67, 0.29); /* separator */
+  --sys-fill: rgba(120, 120, 128, 0.2); /* systemFill */
+  --sys-fill2: rgba(120, 120, 128, 0.16); /* secondarySystemFill */
+  --sys-fill3: rgba(118, 118, 128, 0.12); /* tertiarySystemFill */
+  --sys-gray: #8e8e93;
+  --sys-gray2: #aeaeb2;
+  --sys-gray3: #c7c7cc;
+  --sys-gray4: #d1d1d6;
+  --sys-gray5: #e5e5ea;
+  --sys-gray6: #f2f2f7;
+  --sys-blue: #007aff;
+  --sys-green: #34c759;
+  --sys-indigo: #5856d6;
+  --sys-orange: #ff9500;
+  --sys-pink: #ff2d55;
+  --sys-purple: #af52de;
+  --sys-red: #ff3b30;
+  --sys-teal: #30b0c7;
+  --sys-cyan: #32ade6;
+  --sys-mint: #00c7be;
+  --sys-yellow: #ffcc00;
+  --sys-brown: #a2845e;
 
-  /* ── Accents ───────────────────────────────────────────────────────── */
-  --yellow: #ffc800; /* Locket yellow role (icon, recording outline) ← Duolingo Bee hex (streak/reward) */
-  --orange: #ff9600; /* Duolingo Fox — streak flame, film date-stamp */
-  --red: #ff4b4b; /* Duolingo Cardinal — destructive, record dot, Wrapped red */
-  --green: #58cc02; /* Duolingo Feather Green — game CTA */
-  --green-light: #89e219; /* Duolingo Mask Green — "the surface Duo can sit on" */
-  --blue: #1cb0f6; /* Duolingo Macaw — links, selected */
-  --purple: #ce82ff; /* Duolingo Beetle — holo, plan gradient */
-  --navy: #2b70c9; /* Duolingo Humpback */
-  --spotify: #1ed760; /* Spotify brand (simple-icons) — Wrapped green */
-  --pink: #ff0069; /* Instagram brand (simple-icons) — Partiful purple-to-pink */
-  --periwinkle: #aecbfa; /* Partiful periwinkle-to-white backgrounds ← Google light blue (simple-icons) */
-  --gemini: #8e75b2; /* Google Gemini (simple-icons) — AI objects */
-  --imessage: #34da50; /* iMessage (simple-icons) */
-  --whatsapp: #25d366; /* WhatsApp (simple-icons) */
+  /* ── Locket ([HIG] fallbacks; Locket's own hexes UNKNOWN) ─────────── */
+  --locket-bg: #000000; /* [B-high] camera screen is black */
+  --locket-yellow: #ffd60a; /* [HIG] systemYellow (dark) — Locket yellow hex UNKNOWN, [B-low] range #FFC300–#FFD60A */
+  --locket-pill: rgba(255, 255, 255, 0.14); /* [B-med] translucent dark pills over the camera */
+  --locket-field: #1c1c1e; /* [HIG] secondarySystemBackground (dark) — dark rounded reply field [B-med] */
+  --locket-viewfinder-r: 52px; /* [B-low] "roughly a 40–60pt radius on about a 350pt square" (midpoint) */
 
-  /* Semantic */
-  --bg: var(--black);
-  --surface: var(--g1);
-  --control: var(--g2);
-  --pressed: var(--g3);
-  --text: var(--white);
-  --text-2: var(--hare);
-  --text-3: var(--wolf);
-  --hairline: rgba(255, 255, 255, 0.12);
-  --accent: var(--yellow);
+  /* ── BeReal ───────────────────────────────────────────────────────── */
+  --bereal-bg: #000000; /* [V-weak] white name on a black background */
+  --bereal-fg: #ffffff; /* [V-weak] */
 
-  /* Derived (never new hexes — mixes of tokens) */
-  --green-lip: color-mix(in srgb, var(--green) 78%, black);
-  --yellow-lip: color-mix(in srgb, var(--yellow) 78%, black);
-  --blue-lip: color-mix(in srgb, var(--blue) 78%, black);
-  --red-lip: color-mix(in srgb, var(--red) 78%, black);
-  --swan-lip: color-mix(in srgb, var(--swan) 80%, black);
+  /* ── Duolingo ─────────────────────────────────────────────────────── */
+  --duo-feather: #58cc02; /* [V] Feather Green */
+  --duo-feather-lip: #58a700; /* [V-weak] primary button border-bottom 4px */
+  --duo-mask: #89e219; /* [V] Mask Green; hover fill [V-weak] */
+  --duo-bee: #ffc800; /* [V] Bee */
+  --duo-fox: #ff9600; /* [V] Fox */
+  --duo-cardinal: #ff4b4b; /* [V] Cardinal */
+  --duo-cardinal-lip: #ea2b2b; /* [B-med] Fire Ant */
+  --duo-macaw: #1cb0f6; /* [V] Macaw */
+  --duo-macaw-lip: #1899d6; /* [B-med] Whale */
+  --duo-humpback: #2b70c9; /* [V] Humpback */
+  --duo-beetle: #ce82ff; /* [V] Beetle */
+  --duo-eel: #4b4b4b; /* [V] Eel */
+  --duo-wolf: #777777; /* [V] Wolf */
+  --duo-hare: #afafaf; /* [V] Hare */
+  --duo-swan: #e5e5e5; /* [V] Swan */
+  --duo-polar: #f7f7f7; /* [B-med] Polar */
+  --duo-dark-bg: #131f24; /* [V-weak] dark canvas */
+  --duo-dark-card: #202f36; /* [V-weak] */
+  --duo-dark-raised: #2b3d46; /* [V-weak] */
+  --duo-dark-border: #37464f; /* [V-weak] */
+  --duo-r: 16px; /* [V-weak] button radius */
+  --duo-lip: 4px; /* [V-weak] "chunky 4px bottom-shadow on every button" */
 
-  /* ── Type ──────────────────────────────────────────────────────────── */
-  /* UI: SF Pro on iPhone (native-iOS sources), Inter elsewhere (the face tied to BeReal's UI). */
-  --font-ui: -apple-system, BlinkMacSystemFont, 'Inter Variable', 'Inter', system-ui, sans-serif;
-  /* Games: SF Pro Rounded / Google Sans Flex ROND (Duolingo's DIN Next Rounded role). */
-  --font-round: ui-rounded, 'SF Pro Rounded', 'Google Sans Flex Variable', var(--font-ui);
-  /* Wrapped / recap display: variable width + weight (Spotify Mix role). */
-  --font-display: 'Roboto Flex Variable', 'Roboto Flex', var(--font-ui);
-  /* Plan titles: Partiful title-font options "manrope" and "display". */
-  --font-plan: 'Manrope Variable', 'Manrope', var(--font-ui);
-  /* AI chrome: Google Photos tools. */
-  --font-google: 'Google Sans Flex Variable', var(--font-ui);
-  /* Card text: physical Pokémon TCG (Gill Sans body, Futura HP). */
-  --font-card: 'Gill Sans', 'Gill Sans MT', var(--font-ui);
-  --font-card-num: Futura, 'Futura PT', var(--font-display);
+  /* ── Spotify Wrapped 2025 ─────────────────────────────────────────── */
+  --spotify-green: #1ed760; /* [B-high] current brand green */
+  --spotify-black: #121212; /* [B-high] app background */
+  --spotify-white: #ffffff; /* [V] black/white/green/red "reduced color palette" (red hex UNKNOWN) */
 
-  /* iOS Dynamic Type (Large) — Apple HIG */
-  --t-large: 700 34px/41px var(--font-ui);
-  --t-title1: 700 28px/34px var(--font-ui);
-  --t-title2: 700 22px/28px var(--font-ui);
-  --t-title3: 600 20px/25px var(--font-ui);
-  --t-headline: 600 17px/22px var(--font-ui);
-  --t-body: 400 17px/22px var(--font-ui);
-  --t-callout: 400 16px/21px var(--font-ui);
-  --t-subhead: 400 15px/20px var(--font-ui);
-  --t-footnote: 400 13px/18px var(--font-ui);
-  --t-caption: 400 12px/16px var(--font-ui);
-  --t-caption2: 400 11px/13px var(--font-ui);
+  /* ── Partiful ─────────────────────────────────────────────────────── */
+  --partiful-ink: #000000; /* [V-weak] black actions, borders, headings */
+  --partiful-purple: #af52de; /* [HIG] systemPurple — "purple-to-pink" hexes UNKNOWN */
+  --partiful-pink: #ff2d55; /* [HIG] systemPink */
+  --partiful-periwinkle: color-mix(in srgb, #5856d6 22%, #ffffff); /* [HIG] systemIndigo toward white — "soft periwinkle-to-white" hex UNKNOWN */
 
-  /* ── Shape ─────────────────────────────────────────────────────────── */
-  --r-widget: 28px; /* iOS 26 widget corner — the photo frame previews the widget (Locket) */
-  --r-card: 16px;
-  --r-control: 14px;
-  --r-pill: 999px;
-  --r-sheet: 38px;
-  --r-device: 55px;
-  --margin: 16px;
-  --margin-la: 20px; /* Live Activity margin — Apple HIG */
+  /* ── TCG Pocket ───────────────────────────────────────────────────── */
+  --tcg-bg: #ffffff; /* [B-low] white or very light panels */
+  --tcg-panel: #f2f2f7; /* [HIG] secondarySystemBackground for "very light grey" */
+  --tcg-teal: #30b0c7; /* [HIG] systemTeal — "teal or turquoise pills" [B-low] */
+  --tcg-frame: #c7c7cc; /* [HIG] systemGray3 — "thin light silver/grey frame" [B-low-med] */
+  --tcg-gold: #ffcc00; /* [HIG] systemYellow — immersive cards' "golden stars" [V] */
 
-  /* Liquid Glass (iOS 26) for floating controls */
+  /* ── Discord ──────────────────────────────────────────────────────── */
+  --discord-blurple: #5865f2; /* [B-high] */
+
+  /* ── Google Photos ────────────────────────────────────────────────── */
+  --google-blue: #1a73e8; /* [B-high] */
+  --google-surface: #ffffff; /* [B-med] Material surface */
+  --google-ink: #1f1f1f; /* [B-med] Material on-surface */
+
+  /* ── Snapchat ─────────────────────────────────────────────────────── */
+  --snap-yellow: #fffc00; /* [B-high] */
+
+  /* ── Messages ─────────────────────────────────────────────────────── */
+  --msg-out: #007aff; /* [HIG] systemBlue outgoing bubble */
+  --msg-in: #e9e9eb; /* [B-med] incoming bubble (light) */
+
+  /* ── Wordle ───────────────────────────────────────────────────────── */
+  --wordle-green: #6aaa64; /* [B-med-high] */
+  --wordle-yellow: #c9b458; /* [B-med-high] */
+  --wordle-gray: #787c7e; /* [B-med-high] */
+
+  /* ── Type ([HIG] system stacks; source faces listed first where the source names one) ── */
+  --font-sf: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif; /* [HIG] */
+  --font-sf-rounded: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; /* [B-med] Locket */
+  --font-duo: 'din-round', 'DIN Next Rounded', sans-serif; /* [B-med-high] duolingo.com CSS */
+  --font-duo-head: 'Feather Bold', 'din-round', 'DIN Next Rounded', sans-serif; /* [V] Feather Bold, lowercase headlines */
+  --font-spotify: 'Spotify Mix', 'SpotifyMixUI', 'CircularSp', 'Helvetica Neue', Helvetica, Arial, sans-serif; /* [V] Spotify Mix; fallbacks [B-med] */
+  --font-partiful-display: 'Partiful Display Medium', var(--font-sf); /* [V-weak] */
+  --font-partiful: 'TWK Lausanne Pan', var(--font-sf); /* [V-weak] */
+  --font-google: 'Google Sans Flex Variable', 'Google Sans', Roboto, sans-serif; /* [B-high] Google Sans family; Flex is its open release */
+  --font-discord: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; /* [B-high] */
+  --font-card: 'Gill Sans', 'Gill Sans MT', var(--font-sf); /* [V] physical TCG body text */
+  --font-card-num: Futura, 'Futura PT', var(--font-sf); /* [V] physical TCG HP numerals */
+
+  /* iOS Dynamic Type, Large (default) [HIG] */
+  --t-large: 700 34px/41px var(--font-sf);
+  --t-title1: 400 28px/34px var(--font-sf);
+  --t-title2: 400 22px/28px var(--font-sf);
+  --t-title3: 400 20px/25px var(--font-sf);
+  --t-headline: 600 17px/22px var(--font-sf);
+  --t-body: 400 17px/22px var(--font-sf);
+  --t-callout: 400 16px/21px var(--font-sf);
+  --t-subhead: 400 15px/20px var(--font-sf);
+  --t-footnote: 400 13px/18px var(--font-sf);
+  --t-caption: 400 12px/16px var(--font-sf);
+  --t-caption2: 400 11px/13px var(--font-sf);
+
+  /* Shape [HIG / B] */
+  --r-sheet: 38px; /* [B-med] iOS 26 sheet corners, concentric with the device */
+  --r-device: 55px; /* [B-med] iPhone display corner */
+  --r-widget: 22px; /* [B-med] WidgetKit container corner */
+  --r-grouped: 10px; /* [HIG] inset grouped list corner (iOS 13–18); iOS 26 rounder [B-med] */
+  --margin: 16px; /* [HIG] layout margin */
+  --margin-la: 20px; /* [HIG] Live Activity margin */
+  --tap: 44px; /* [HIG] minimum hit target */
+
+  /* Liquid Glass (iOS 26) [B-med] */
   --glass-bg: rgba(255, 255, 255, 0.14);
   --glass-border: rgba(255, 255, 255, 0.22);
   --glass-blur: blur(22px) saturate(180%);
   --glass-dark: rgba(28, 28, 30, 0.62);
 
-  /* ── Motion: iOS-like springs ──────────────────────────────────────── */
+  /* Motion [HIG] default spring-ish curve */
   --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
-  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   --dur-fast: 160ms;
   --dur: 280ms;
 
   --safe-top: env(safe-area-inset-top, 0px);
   --safe-bottom: env(safe-area-inset-bottom, 0px);
+
+  /* Semantic aliases used by system-styled screens */
+  --bg: var(--sys-bg);
+  --surface: var(--sys-bg2);
+  --text: var(--sys-label);
+  --text-2: var(--sys-label2);
+  --text-3: var(--sys-label3);
+  --hairline: var(--sys-sep);
+  color-scheme: light dark;
+}
+
+/* Apple system colors, dark [HIG] */
+@media (prefers-color-scheme: dark) {
+  :root {
+    --sys-bg: #000000;
+    --sys-bg2: #1c1c1e;
+    --sys-bg3: #2c2c2e;
+    --sys-grouped: #000000;
+    --sys-grouped2: #1c1c1e;
+    --sys-label: #ffffff;
+    --sys-label2: rgba(235, 235, 245, 0.6);
+    --sys-label3: rgba(235, 235, 245, 0.3);
+    --sys-sep: rgba(84, 84, 88, 0.65);
+    --sys-fill: rgba(120, 120, 128, 0.36);
+    --sys-fill2: rgba(120, 120, 128, 0.32);
+    --sys-fill3: rgba(118, 118, 128, 0.24);
+    --sys-gray2: #636366;
+    --sys-gray3: #48484a;
+    --sys-gray4: #3a3a3c;
+    --sys-gray5: #2c2c2e;
+    --sys-gray6: #1c1c1e;
+    --sys-blue: #0a84ff;
+    --sys-green: #30d158;
+    --sys-indigo: #5e5ce6;
+    --sys-orange: #ff9f0a;
+    --sys-pink: #ff375f;
+    --sys-purple: #bf5af2;
+    --sys-red: #ff453a;
+    --sys-teal: #40c8e0;
+    --sys-cyan: #64d2ff;
+    --sys-mint: #63e6e2;
+    --sys-yellow: #ffd60a;
+    --sys-brown: #ac8e68;
+    --msg-out: #0a84ff;
+    --msg-in: #262629; /* [B-low] incoming bubble (dark) */
+    --tcg-bg: #ffffff; /* TCG Pocket stays light */
+  }
+}
+
+/* Surfaces that are always dark (Locket camera/History, BeReal, Wrapped, Sora) opt in with [data-dark]. */
+[data-dark] {
+  --sys-bg: #000000;
+  --sys-bg2: #1c1c1e;
+  --sys-bg3: #2c2c2e;
+  --sys-grouped: #000000;
+  --sys-grouped2: #1c1c1e;
+  --sys-label: #ffffff;
+  --sys-label2: rgba(235, 235, 245, 0.6);
+  --sys-label3: rgba(235, 235, 245, 0.3);
+  --sys-sep: rgba(84, 84, 88, 0.65);
+  --sys-fill: rgba(120, 120, 128, 0.36);
+  --sys-fill2: rgba(120, 120, 128, 0.32);
+  --sys-fill3: rgba(118, 118, 128, 0.24);
+  --sys-gray4: #3a3a3c;
+  --sys-gray5: #2c2c2e;
+  --sys-gray6: #1c1c1e;
+  --sys-blue: #0a84ff;
+  --sys-red: #ff453a;
+  --sys-yellow: #ffd60a;
+  color-scheme: dark;
+}
+/* Surfaces that are always light (Partiful page, TCG Pocket, Google Photos) opt in with [data-light]. */
+[data-light] {
+  --sys-bg: #ffffff;
+  --sys-bg2: #f2f2f7;
+  --sys-bg3: #ffffff;
+  --sys-grouped: #f2f2f7;
+  --sys-grouped2: #ffffff;
+  --sys-label: #000000;
+  --sys-label2: rgba(60, 60, 67, 0.6);
+  --sys-label3: rgba(60, 60, 67, 0.3);
+  --sys-sep: rgba(60, 60, 67, 0.29);
+  --sys-fill: rgba(120, 120, 128, 0.2);
+  --sys-fill2: rgba(120, 120, 128, 0.16);
+  --sys-fill3: rgba(118, 118, 128, 0.12);
+  --sys-gray4: #d1d1d6;
+  --sys-gray5: #e5e5ea;
+  --sys-gray6: #f2f2f7;
+  --sys-blue: #007aff;
+  --sys-red: #ff3b30;
+  --sys-yellow: #ffcc00;
+  color-scheme: light;
+}
+
+/* LEGACY ALIASES — temporary while screens are rebuilt; removed when `grep -r "var(--g1" src` is empty. */
+:root {
+  --black: #000000;
+  --white: #ffffff;
+  --g1: #1c1c1e;
+  --g2: #2c2c2e;
+  --g3: #3a3a3c;
+  --swan: var(--duo-swan);
+  --hare: var(--duo-hare);
+  --wolf: var(--duo-wolf);
+  --eel: var(--duo-eel);
+  --yellow: var(--locket-yellow);
+  --orange: var(--duo-fox);
+  --red: var(--sys-red);
+  --green: var(--duo-feather);
+  --green-light: var(--duo-mask);
+  --blue: var(--sys-blue);
+  --purple: var(--partiful-purple);
+  --navy: var(--duo-humpback);
+  --spotify: var(--spotify-green);
+  --pink: var(--partiful-pink);
+  --periwinkle: var(--partiful-periwinkle);
+  --gemini: var(--sys-purple);
+  --control: var(--sys-fill);
+  --pressed: var(--sys-fill2);
+  --accent: var(--locket-yellow);
+  --green-lip: var(--duo-feather-lip);
+  --yellow-lip: color-mix(in srgb, var(--locket-yellow) 78%, black);
+  --blue-lip: var(--duo-macaw-lip);
+  --red-lip: var(--duo-cardinal-lip);
+  --swan-lip: var(--duo-swan);
+  --font-ui: var(--font-sf);
+  --font-round: var(--font-sf-rounded);
+  --font-display: var(--font-spotify);
+  --font-plan: var(--font-partiful-display);
+  --r-card: 16px;
+  --r-control: 14px;
+  --r-pill: 999px;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
 }

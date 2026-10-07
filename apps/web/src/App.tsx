@@ -16,6 +16,7 @@ const Rewind = lazy(() => import('./screens/Rewind'));
 const ChatList = lazy(() => import('./screens/ChatList'));
 const ChatThread = lazy(() => import('./screens/ChatThread'));
 const PlanPage = lazy(() => import('./screens/PlanPage'));
+const RollComposer = lazy(() => import('./screens/RollComposer'));
 const Binder = lazy(() => import('./screens/cards/Binder'));
 const PackOpening = lazy(() => import('./screens/cards/PackOpening'));
 const WonderPick = lazy(() => import('./screens/cards/WonderPick'));
@@ -63,6 +64,7 @@ function AppRoutes() {
         <Route path="/welcome/*" element={<Onboarding />} />
         <Route path="/j/:code" element={<JoinPage />} />
         <Route path="/" element={<CameraHome />} />
+        <Route path="/roll" element={<RollComposer />} />
         <Route path="/journal" element={<Journal />} />
         <Route path="/g/:groupId/week/:weekKey" element={<WeekView />} />
         <Route path="/rewind" element={<Rewind />} />

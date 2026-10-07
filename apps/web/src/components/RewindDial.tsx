@@ -1,28 +1,39 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
+import { ios, retro, spec } from '@app/shared';
 import { haptic, sfx } from '../lib/feedback';
-import { dateStamp, yearsAgo } from '../lib/format';
 import { Icon } from './Icon';
+import { Menu } from './ios';
 import s from './rewind.module.css';
 
 export interface DialItem {
   id: string;
   src: string;
   takenAt: number;
-  label?: string;
 }
 
 /**
- * Retro's Rewind dial: "iPod-inspired", it "clicks" with "a subtle vibration as each new memory
- * loads"; you "spin the dial to move forward or backward in time, watching the photos … flip by",
- * "pause on specific moments, or jump to random memories" (research/02 §B4.6). Press and hold the
- * photo to see it uncropped (spec §A1).
+ * Retro's Rewind dial [V] (Fast Company / TechCrunch / App Store story): an "iPod-inspired dial" that
+ * "clicks back into your past", "a subtle vibration as each new memory loads", "spin the dial to move
+ * forward or backward in time, watching the photos … flip by"; "pause on specific moments, or jump to
+ * random memories"; "share or send the photos to a friend, or hide those they'd rather not see".
+ * Drawn as the iPod click wheel [B-high]: MENU top, ⏮ ⏭ sides, ⏯ bottom, centre button.
+ * Press and hold the photo to see it uncropped (spec §A1).
  */
-export function RewindDial({ items, picked, onTogglePick, onShare, onHide, compact }: { items: DialItem[]; picked?: Set<string>; onTogglePick?: (id: string) => void; onShare?: (item: DialItem) => void; onHide?: (item: DialItem) => void; compact?: boolean }) {
+export function RewindDial({ items, picked, onSelect, onSend, onHide }: {
+  items: DialItem[];
+  /** Selected ids (e.g. photos chosen for the starter wall). */
+  picked?: Set<string>;
+  /** Centre button. */
+  onSelect?: (item: DialItem) => void;
+  onSend?: (item: DialItem) => void;
+  onHide?: (item: DialItem) => void;
+}) {
   const [i, setI] = useState(0);
   const [dir, setDir] = useState(1);
   const [playing, setPlaying] = useState(false);
   const [uncrop, setUncrop] = useState(false);
+  const [menu, setMenu] = useState(false);
   const wheel = useRef<HTMLDivElement>(null);
   const last = useRef<number | null>(null);
   const acc = useRef(0);
@@ -39,15 +50,23 @@ export function RewindDial({ items, picked, onTogglePick, onShare, onHide, compa
       return n;
     });
   };
+  const random = () => {
+    const n = Math.floor(Math.random() * items.length);
+    setDir(n > i ? 1 : -1);
+    setI(n);
+    sfx.click();
+    haptic('medium');
+  };
 
   useEffect(() => {
     if (!playing) return;
-    const id = setInterval(() => {
+    const t = setInterval(() => {
       setDir(1);
       setI((x) => (x + 1) % items.length);
       sfx.click();
+      haptic('light');
     }, 900);
-    return () => clearInterval(id);
+    return () => clearInterval(t);
   }, [playing, items.length]);
 
   const angle = (e: React.PointerEvent) => {
@@ -56,38 +75,31 @@ export function RewindDial({ items, picked, onTogglePick, onShare, onHide, compa
   };
 
   if (!item) return null;
-  const ago = yearsAgo(item.takenAt);
-  const isPicked = picked?.has(item.id);
+  const years = new Date().getFullYear() - new Date(item.takenAt).getFullYear();
 
   return (
-    <div className={`${s.dial} ${compact ? s.compact : ''}`}>
+    <div className={s.dial}>
+      <div className={s.when}>{years >= 1 ? spec.thisWeekYearsAgo(years) : ios.longDate(item.takenAt)}</div>
       <div className={s.photoArea} onPointerDown={() => setUncrop(true)} onPointerUp={() => setUncrop(false)} onPointerLeave={() => setUncrop(false)}>
         <AnimatePresence initial={false} custom={dir}>
           <motion.div
             key={item.id}
             className={s.photo}
-            custom={dir}
-            initial={{ rotateX: dir > 0 ? -70 : 70, opacity: 0, y: dir > 0 ? -30 : 30 }}
-            animate={{ rotateX: 0, opacity: 1, y: 0 }}
-            exit={{ rotateX: dir > 0 ? 70 : -70, opacity: 0, y: dir > 0 ? 30 : -30 }}
-            transition={{ duration: 0.22, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ rotateX: dir > 0 ? -80 : 80, opacity: 0 }}
+            animate={{ rotateX: 0, opacity: 1 }}
+            exit={{ rotateX: dir > 0 ? 80 : -80, opacity: 0 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
           >
             <img src={item.src} alt="" style={{ objectFit: uncrop ? 'contain' : 'cover' }} />
-            <span className={s.stamp}>{dateStamp(item.takenAt)}</span>
-            {isPicked && (
+            {picked?.has(item.id) && (
               <span className={s.picked}>
-                <Icon name="check" size={18} strokeWidth={3} />
+                <Icon name="check" size={16} strokeWidth={3} />
               </span>
             )}
           </motion.div>
         </AnimatePresence>
       </div>
-      <div className={s.when}>
-        <span className={s.whenBig}>{ago >= 1 ? `${ago} ${ago === 1 ? 'year' : 'years'} ago` : new Date(item.takenAt).toLocaleDateString([], { month: 'long', day: 'numeric' })}</span>
-        <span className={s.whenSmall}>
-          {new Date(item.takenAt).toLocaleDateString([], { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })} · {i + 1}/{items.length}
-        </span>
-      </div>
+      <div className={s.date}>{ios.longDate(item.takenAt)}</div>
       <div
         ref={wheel}
         className={s.wheel}
@@ -104,12 +116,12 @@ export function RewindDial({ items, picked, onTogglePick, onShare, onHide, compa
           if (d < -180) d += 360;
           last.current = a;
           acc.current += d;
-          while (acc.current > 26) {
-            acc.current -= 26;
+          while (acc.current > 24) {
+            acc.current -= 24;
             step(1);
           }
-          while (acc.current < -26) {
-            acc.current += 26;
+          while (acc.current < -24) {
+            acc.current += 24;
             step(-1);
           }
         }}
@@ -117,37 +129,27 @@ export function RewindDial({ items, picked, onTogglePick, onShare, onHide, compa
           last.current = null;
         }}
       >
-        <button className={`${s.label} ${s.top}`} onClick={() => (onTogglePick ? onTogglePick(item.id) : onShare?.(item))}>
-          {onTogglePick ? (isPicked ? 'PICKED' : 'PICK') : 'SHARE'}
+        <button className={`${s.label} ${s.top}`} onClick={() => setMenu(true)}>{ios.ipodMenu}</button>
+        <button className={`${s.label} ${s.left}`} onClick={() => step(-1)} aria-label={retro.rewind}>
+          <Icon name="skipBack" size={18} />
         </button>
-        <button className={`${s.label} ${s.left}`} onClick={() => step(-1)} aria-label="Newer">
-          <Icon name="rewind" size={16} style={{ transform: 'scaleX(-1)' }} />
+        <button className={`${s.label} ${s.right}`} onClick={() => step(1)} aria-label={retro.rewind}>
+          <Icon name="skipForward" size={18} />
         </button>
-        <button className={`${s.label} ${s.right}`} onClick={() => step(1)} aria-label="Older">
-          <Icon name="rewind" size={16} />
+        <button className={`${s.label} ${s.bottom}`} onClick={() => setPlaying(!playing)} aria-label={retro.rewindPause}>
+          <Icon name="playPause" size={18} />
         </button>
-        <button className={`${s.label} ${s.bottom}`} onClick={() => setPlaying(!playing)} aria-label={playing ? 'Pause' : 'Play'}>
-          <Icon name={playing ? 'pause' : 'play'} size={15} />
-        </button>
-        <button
-          className={s.center}
-          onClick={() => {
-            const n = Math.floor(Math.random() * items.length);
-            setDir(n > i ? 1 : -1);
-            setI(n);
-            sfx.click();
-            haptic('medium');
-          }}
-          aria-label="Jump to a random memory"
-        >
-          <Icon name="shuffle" size={20} />
-        </button>
+        <button className={s.center} onClick={() => { haptic('medium'); onSelect?.(item); }} aria-label={ios.select} />
       </div>
-      {onHide && !compact && (
-        <button className={s.hide} onClick={() => onHide(item)}>
-          <Icon name="eyeOff" size={16} /> Hide this one
-        </button>
-      )}
+      <Menu
+        open={menu}
+        onClose={() => setMenu(false)}
+        actions={[
+          { label: retro.rewindRandom, icon: 'shuffle', onClick: random },
+          ...(onSend ? [{ label: retro.rewindSend, icon: 'send', onClick: () => onSend(item) }] : []),
+          ...(onHide ? [{ label: retro.rewindHide, icon: 'eyeOff', onClick: () => onHide(item) }] : []),
+        ]}
+      />
     </div>
   );
 }

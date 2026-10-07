@@ -65,9 +65,23 @@ const P: Record<string, string> = {
   dual: 'M4 6.5A2.5 2.5 0 0 1 6.5 4h11A2.5 2.5 0 0 1 20 6.5v11a2.5 2.5 0 0 1-2.5 2.5h-11A2.5 2.5 0 0 1 4 17.5v-11ZM6.5 6.5h5v5h-5v-5Z',
   eye: 'M2.5 12C3.5 9.5 7 5 12 5s8.5 4.5 9.5 7c-1 2.5-4.5 7-9.5 7s-8.5-4.5-9.5-7ZM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z',
   undo: 'M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11',
+  // SF Symbols stand-ins: backward.end.fill / forward.end.fill / playpause.fill (iPod click wheel glyphs)
+  skipBack: 'M5 5v14M19 5l-8 7 8 7V5ZM12 5l-6 7 6 7V5Z',
+  skipForward: 'M19 5v14M5 5l8 7-8 7V5ZM12 5l6 7-6 7V5Z',
+  playPause: 'M3 6v12l8-6-8-6ZM15 6v12M20 6v12',
+  // magnifyingglass, star, person.2, paperplane, square.grid.3x3, arrow.up, person.crop.circle
+  searchGlass: 'M10.5 17a6.5 6.5 0 1 0 0-13 6.5 6.5 0 0 0 0 13ZM15.5 15.5 20 20',
+  star: 'M12 3.5l2.6 5.4 5.9.8-4.3 4.1 1 5.9L12 17l-5.2 2.7 1-5.9L3.5 9.7l5.9-.8L12 3.5Z',
+  paperplane: 'M21 3 3 10.5l7 2.5M21 3l-7.5 18-3.5-8M21 3 10 13',
+  grid3: 'M4 4h4.5v4.5H4V4ZM9.75 4h4.5v4.5h-4.5V4ZM15.5 4H20v4.5h-4.5V4ZM4 9.75h4.5v4.5H4v-4.5ZM9.75 9.75h4.5v4.5h-4.5v-4.5ZM15.5 9.75H20v4.5h-4.5v-4.5ZM4 15.5h4.5V20H4v-4.5ZM9.75 15.5h4.5V20h-4.5v-4.5ZM15.5 15.5H20V20h-4.5v-4.5Z',
+  arrowUp: 'M12 19V5M5.5 11.5 12 5l6.5 6.5',
+  personCircle: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM12 12.5a3.2 3.2 0 1 0 0-6.4 3.2 3.2 0 0 0 0 6.4ZM6.2 18.4c1.2-2.3 3.4-3.6 5.8-3.6s4.6 1.3 5.8 3.6',
+  notebook: 'M6 3.5h11a1.5 1.5 0 0 1 1.5 1.5v14a1.5 1.5 0 0 1-1.5 1.5H6V3.5ZM6 3.5v17M3.5 7.5H8M3.5 12H8M3.5 16.5H8',
+  sparkle: 'M12 3c.6 4.8 4.2 8.4 9 9-4.8.6-8.4 4.2-9 9-.6-4.8-4.2-8.4-9-9 4.8-.6 8.4-4.2 9-9Z',
+  zigzag: 'M3 12l3-3 3 3 3-3 3 3 3-3 3 3',
 };
 
-const FILLED = new Set(['bolt', 'play', 'heart', 'flame', 'rewind']);
+const FILLED = new Set(['bolt', 'play', 'heart', 'flame', 'rewind', 'skipBack', 'skipForward', 'star', 'sparkle']);
 
 export function Icon({ name, size = 24, color = 'currentColor', filled, strokeWidth = 2, style, className }: { name: keyof typeof P | string; size?: number; color?: string; filled?: boolean; strokeWidth?: number; style?: CSSProperties; className?: string }) {
   const d = P[name] ?? P.info;

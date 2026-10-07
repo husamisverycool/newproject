@@ -2,7 +2,7 @@ import './bootstrap.ts';
 import fs from 'node:fs';
 import path from 'node:path';
 import sharp from 'sharp';
-import { MASCOT_SPECIES, ritualWindow, weekKeyOffset, zonedToUtc, parseDateKey } from '@app/shared';
+import { ritualWindow, weekKeyOffset, zonedToUtc, parseDateKey } from '@app/shared';
 import { db, json, now, run } from './db.ts';
 import { ROOT } from './env.ts';
 import { createUser, getGroup, id, insertMessage, updateSettings, updateUser } from './repo.ts';
@@ -98,7 +98,7 @@ async function main() {
   const gid = id('grp');
   run(
     'INSERT INTO groups (id, name, emoji, mascot, ritual_day, develop_hour, time_zone, invite_code, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    gid, 'Sunday Club', '🌻', json.str({ name: 'Pip', species: MASCOT_SPECIES[0].id, xp: 420, outfit: ['outfit_party_hat'] }), 0, 21, tz, 'SUNDAY', maya.id, createdAt,
+    gid, 'Sunday Club', '🌻', json.str({ name: 'Pip', species: 'cat', xp: 120, outfit: ['outfit_formal'] }), 0, 21, tz, 'SUNDAY', maya.id, createdAt,
   );
   users.forEach((u, i) => run('INSERT INTO memberships (group_id, user_id, role, joined_at, invited_by) VALUES (?, ?, ?, ?, ?)', gid, u.id, i === 0 ? 'admin' : 'member', createdAt + i * 3_600_000, i === 0 ? null : maya.id));
   run('INSERT INTO purchases (id, user_id, group_id, item, price_sparks, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('buy'), maya.id, gid, 'outfit_party_hat', 80, createdAt);
@@ -238,7 +238,7 @@ async function main() {
   // A second, smaller group so the group switcher has something to switch to.
   const g2 = id('grp');
   run('INSERT INTO groups (id, name, emoji, mascot, ritual_day, develop_hour, time_zone, invite_code, created_by, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-    g2, 'Roomies', '🏠', json.str({ name: 'Moss', species: 'frog', xp: 90, outfit: [] }), 0, 21, tz, 'ROOMIE', maya.id, t - 9 * 86_400_000);
+    g2, 'Roomies', '🏠', json.str({ name: 'Moss', species: 'penguin', xp: 9, outfit: [] }), 0, 21, tz, 'ROOMIE', maya.id, t - 9 * 86_400_000);
   for (const [i, u] of [maya, sam].entries()) run('INSERT INTO memberships (group_id, user_id, role, joined_at) VALUES (?, ?, ?, ?)', g2, u.id, i === 0 ? 'admin' : 'member', t - 9 * 86_400_000);
 
   console.log(`Seeded ${users.length} users, ${posted.length} moments. Demo group invite: /j/SUNDAY`);

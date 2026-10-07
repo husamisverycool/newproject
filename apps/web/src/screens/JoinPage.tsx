@@ -2,31 +2,33 @@ import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'motion/react';
-import { COPY } from '@app/shared';
+import { imessage, ios, jackbox, partiful } from '@app/shared';
 import { api } from '../lib/api';
 import { queryClient } from '../lib/queries';
 import { useUi } from '../lib/store';
-import { haptic, sfx } from '../lib/feedback';
+import { haptic } from '../lib/feedback';
 import type { MascotState, WallLayout } from '../lib/types';
 import { Mascot } from '../components/Mascot';
 import { WallCanvas } from '../components/WallCanvas';
-import { Wordmark } from '../components/ui';
-import { weekRange } from '../lib/format';
+import { Wordmark } from '../components/Brand';
 import s from './join.module.css';
 
 interface JoinData {
-  group: { name: string; emoji: string; mascot: MascotState; code: string; memberCount: number; members: { name: string; color: string; avatar: string | null }[]; full: boolean };
+  group: { name: string; emoji: string; mascot: MascotState; code: string; memberCount: number; members: { name: string; color: string; avatar: string | null }[]; full: boolean; hosts?: string[] };
   latest: { weekKey: string; layout: WallLayout } | null;
   reactions: { emoji: string; n: number }[];
   mine: string[];
   signedIn: boolean;
   isMember: boolean;
+  waitlisted?: boolean;
 }
 
 /**
- * Join by link, no install (spec §A2): Partiful's RSVP-by-link page — poster on top, title, the
- * guest list, one black action — showing the group mascot, member count and latest recap.
- * Anyone can view and react without an account; joining needs the app.
+ * Join by link, no install (spec §A2) — Partiful's guest event page [V/B-med]: poster, title in the
+ * display face, "Hosted by …", "# Going", emoji RSVP buttons (👍 Going · 😢 Can't Go, "Maybe" turned off
+ * as hosts can [V]), "Join Waitlist" at capacity, then the "Activity Feed". Jackbox's four-letter
+ * "Room Code" [V]. Reactions: iOS 27 shared albums take any emoji [V-weak]; the quick set is the
+ * Messages Tapback set [V]. Viewing and reacting need no account; joining needs the app (spec §A2).
  */
 export default function JoinPage() {
   const { code = '' } = useParams();
@@ -40,8 +42,7 @@ export default function JoinPage() {
     return (
       <div className={s.page} data-light>
         <div className={s.missing}>
-          <Wordmark size={40} color="var(--black)" />
-          <p>This invite doesn’t exist anymore.</p>
+          <Wordmark size={40} />
         </div>
       </div>
     );
@@ -50,24 +51,31 @@ export default function JoinPage() {
   const react = async (emoji: string) => {
     if (!d.latest) return;
     haptic('light');
-    sfx.pop();
     setBurst(emoji + Date.now());
     await api.post(`/join/${code}/react`, { emoji, weekKey: d.latest.weekKey });
     void q.refetch();
   };
-  const join = async () => {
+  const going = async () => {
     if (!d.signedIn) {
       nav(`/welcome?join=${code}`);
       return;
     }
     setBusy(true);
+    haptic('medium');
+    if (d.group.full) {
+      await api.post(`/join/${code}/waitlist`);
+      void q.refetch();
+      setBusy(false);
+      return;
+    }
     const r = await api.post<{ groupId: string }>(`/join/${code}`);
     setActive(r.groupId);
     await queryClient.invalidateQueries({ queryKey: ['me'] });
     nav('/');
   };
+  const hosts = d.group.hosts?.length ? d.group.hosts : d.group.members.slice(0, 1).map((m) => m.name.split(' ')[0]);
   return (
-    <div className={`${s.page} scroll`} data-light>
+    <div className={`${s.page} ios-scroll`} data-light>
       <div className={s.poster}>
         {d.latest ? (
           <WallCanvas layout={d.latest.layout} mascot={{ species: d.group.mascot.species, level: d.group.mascot.stage.level, outfit: d.group.mascot.outfit }} animateIn />
@@ -78,63 +86,64 @@ export default function JoinPage() {
         )}
       </div>
       <div className={s.body}>
-        <div className={s.kicker}>
-          <Wordmark size={16} color="var(--black)" /> · {d.latest ? `latest roll · ${weekRange(d.latest.weekKey)}` : 'a new group'}
-        </div>
-        <h1 className={s.title}>
-          {d.group.emoji} {d.group.name}
-        </h1>
-        <div className={s.hosts}>
+        <h1 className={s.title}>{d.group.name}</h1>
+        <div className={s.hosted}>{partiful.hostedBy(hosts.join(' & '))}</div>
+        <div className={s.going}>
           <span className={s.faces}>
-            {d.group.members.map((m, i) => (
-              <span key={i} className={s.face} style={{ background: m.avatar ? `center/cover url(${m.avatar})` : m.color, marginLeft: i ? -10 : 0 }}>
+            {d.group.members.slice(0, 6).map((m, i) => (
+              <span key={i} className={s.face} style={{ background: m.avatar ? `center/cover url(${m.avatar})` : undefined, marginLeft: i ? -8 : 0 }}>
                 {!m.avatar && m.name[0]}
               </span>
             ))}
           </span>
-          <span>
-            {d.group.members.slice(0, 3).map((m) => m.name).join(', ')}
-            {d.group.memberCount > 3 ? ` + ${d.group.memberCount - 3} more` : ''}
-          </span>
+          <span>{partiful.countGoing(d.group.memberCount)}</span>
         </div>
-        <div className={s.mascotLine}>
-          <Mascot species={d.group.mascot.species} level={d.group.mascot.stage.level} outfit={d.group.mascot.outfit} size={44} idle={false} />
-          <span>
-            <b>{d.group.mascot.name}</b> is level {d.group.mascot.stage.level} · {d.group.mascot.stage.name}
-          </span>
+        <div className={s.mascot}>
+          <Mascot species={d.group.mascot.species} level={d.group.mascot.stage.level} outfit={d.group.mascot.outfit} size={40} />
+          <b>{d.group.mascot.name}</b>
+        </div>
+
+        {d.isMember ? (
+          <button className={s.open} onClick={() => nav('/')}>{ios.open}</button>
+        ) : (
+          <div className={s.rsvp}>
+            <button className={s.rsvpBtn} onClick={going} disabled={busy || d.waitlisted}>
+              <span className={s.rsvpEmoji}>{partiful.rsvpEmoji.going}</span>
+              {d.group.full ? partiful.joinWaitlist : partiful.going}
+            </button>
+            <button className={s.rsvpBtn} onClick={() => nav(-1)}>
+              <span className={s.rsvpEmoji}>{partiful.rsvpEmoji.cant_go}</span>
+              {partiful.cantGo}
+            </button>
+          </div>
+        )}
+
+        <div className={s.room}>
+          <span>{jackbox.roomCode}</span>
+          <b>{d.group.code}</b>
         </div>
 
         {d.latest && (
-          <div className={s.reactRow}>
-            {['💛', '🔥', '😂', '😍', '🫶'].map((e) => {
-              const n = d.reactions.find((r) => r.emoji === e)?.n ?? 0;
-              return (
-                <button key={e} className={`${s.reactBtn} ${d.mine.includes(e) ? s.reactMine : ''}`} onClick={() => react(e)}>
-                  <span>{e}</span>
-                  {n > 0 && <span className={s.reactN}>{n}</span>}
-                </button>
-              );
-            })}
-            {burst && (
-              <motion.span key={burst} className={s.burst} initial={{ y: 0, opacity: 1, scale: 1 }} animate={{ y: -80, opacity: 0, scale: 1.8 }} transition={{ duration: 0.8 }}>
-                {burst.slice(0, 2)}
-              </motion.span>
-            )}
-          </div>
+          <section className={s.feed}>
+            <h2 className={s.feedHead}>{partiful.activityFeed}</h2>
+            <div className={s.reactRow}>
+              {imessage.tapbacks.map((e) => {
+                const n = d.reactions.find((r) => r.emoji === e)?.n ?? 0;
+                return (
+                  <button key={e} className={`${s.reactBtn} ${d.mine.includes(e) ? s.reactMine : ''}`} onClick={() => react(e)}>
+                    <span>{e}</span>
+                    {n > 0 && <span className={s.reactN}>{n}</span>}
+                  </button>
+                );
+              })}
+              {burst && (
+                <motion.span key={burst} className={s.burst} initial={{ y: 0, opacity: 1, scale: 1 }} animate={{ y: -80, opacity: 0, scale: 1.8 }} transition={{ duration: 0.8 }}>
+                  {[...burst][0]}
+                </motion.span>
+              )}
+            </div>
+          </section>
         )}
-        <p className={s.note}>{d.signedIn ? 'Reacting as you.' : 'You can react without an account. Posting needs the app.'}</p>
-      </div>
-      <div className={s.actions}>
-        {d.isMember ? (
-          <button className={s.primary} onClick={() => { nav('/'); }}>Open roll.</button>
-        ) : d.group.full ? (
-          <button className={s.primary} disabled>This group is full</button>
-        ) : (
-          <button className={s.primary} onClick={join} disabled={busy}>
-            {d.signedIn ? `Join ${d.group.name}` : COPY.joinParty.replace('Party', 'the group')}
-          </button>
-        )}
-        <div className={s.code}>room code <b>{d.group.code}</b></div>
       </div>
     </div>
   );

@@ -29,7 +29,7 @@ export interface User {
   createdAt: number;
 }
 
-export type MascotSpecies = 'blob' | 'bun' | 'moth' | 'frog';
+export type MascotSpecies = 'cat' | 'dog' | 'bird' | 'panda' | 'polarbear' | 'duck' | 'penguin';
 
 export interface Mascot {
   name: string;
@@ -192,7 +192,8 @@ export type NotificationKind =
   | 'trade_offer'
   | 'wonder_pick'
   | 'plan'
-  | 'likeness_used';
+  | 'likeness_used'
+  | 'waitlist';
 
 export interface AppNotification {
   id: ID;

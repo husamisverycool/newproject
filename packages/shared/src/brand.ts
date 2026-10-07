@@ -91,28 +91,38 @@ export const COPY = {
 export interface MascotSpeciesDef {
   id: string;
   name: string;
-  /** Body color — the group palette "comes straight from the mascot" (Duolingo). */
+  /** Flat fill, darker same-hue shade, belly, accent (beak/feet/nose) — Duolingo palette [V] / shades [B-med]. */
   body: string;
+  shade: string;
   belly: string;
   accent: string;
+  /** One of Duolingo's five eye styles: round, glasses, almond, linear, dots [V]. */
+  eyes: 'round' | 'almond' | 'dots';
 }
 
-/** Rounded-geometric creatures (Duo construction), co-pet growth (Widgetable / Pengu). */
+/**
+ * Species: Widgetable "Raise Pets Together" list (cat, dog, bird, panda, polar bear, rubber duck) [V-weak]
+ * plus Pengu's penguin [V]. Drawn by Duolingo's character rules (design.duolingo.com/illustration) [V].
+ * Fill colors are the Duolingo palette nearest each animal's natural color.
+ */
 export const MASCOT_SPECIES: MascotSpeciesDef[] = [
-  { id: 'blob', name: 'Blob', body: '#FFC800', belly: '#FFFFFF', accent: '#FF9600' },
-  { id: 'bun', name: 'Bun', body: '#CE82FF', belly: '#FFFFFF', accent: '#FF0069' },
-  { id: 'moth', name: 'Moth', body: '#1CB0F6', belly: '#FFFFFF', accent: '#2B70C9' },
-  { id: 'frog', name: 'Frog', body: '#58CC02', belly: '#89E219', accent: '#FF4B4B' },
+  { id: 'cat', name: 'Cat', body: '#FF9600', shade: '#CD7900', belly: '#FFFFFF', accent: '#FF4B4B', eyes: 'almond' },
+  { id: 'dog', name: 'Dog', body: '#777777', shade: '#4B4B4B', belly: '#E5E5E5', accent: '#4B4B4B', eyes: 'dots' },
+  { id: 'bird', name: 'Bird', body: '#1CB0F6', shade: '#1899D6', belly: '#FFFFFF', accent: '#FFC800', eyes: 'round' },
+  { id: 'panda', name: 'Panda', body: '#FFFFFF', shade: '#E5E5E5', belly: '#FFFFFF', accent: '#4B4B4B', eyes: 'round' },
+  { id: 'polarbear', name: 'Polar bear', body: '#FFFFFF', shade: '#E5E5E5', belly: '#F7F7F7', accent: '#4B4B4B', eyes: 'dots' },
+  { id: 'duck', name: 'Rubber duck', body: '#FFC800', shade: '#E5A000', belly: '#FFC800', accent: '#FF9600', eyes: 'round' },
+  { id: 'penguin', name: 'Penguin', body: '#4B4B4B', shade: '#3C3C3C', belly: '#FFFFFF', accent: '#FF9600', eyes: 'round' },
 ];
 
-/** Mascot growth stages by XP. */
+/** Growth levels at Duolingo's streak milestones (7, 30, 50, 100, 365) [V-weak], counted in group posts. */
 export const MASCOT_STAGES = [
-  { level: 1, xp: 0, name: 'Egg' },
-  { level: 2, xp: 60, name: 'Sprout' },
-  { level: 3, xp: 200, name: 'Kid' },
-  { level: 4, xp: 500, name: 'Teen' },
-  { level: 5, xp: 1000, name: 'Grown' },
-  { level: 6, xp: 2000, name: 'Legend' },
+  { level: 1, xp: 0 },
+  { level: 2, xp: 7 },
+  { level: 3, xp: 30 },
+  { level: 4, xp: 50 },
+  { level: 5, xp: 100 },
+  { level: 6, xp: 365 },
 ] as const;
 
 export function mascotStage(xp: number) {
@@ -123,4 +133,5 @@ export function mascotStage(xp: number) {
 }
 
 /** XP the mascot earns per group activity. */
-export const MASCOT_XP = { post: 5, ritualPost: 12, game: 10, plan: 8, newMember: 20 } as const;
+/** One post = one "lesson": the mascot grows by group posts (Duolingo milestones above). */
+export const MASCOT_XP = { post: 1, ritualPost: 1, game: 0, plan: 0, newMember: 0 } as const;

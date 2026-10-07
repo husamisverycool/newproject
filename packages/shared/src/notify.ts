@@ -57,6 +57,7 @@ export const PUSH_LIMITS: Record<NotificationKind, { perWeek?: number; minGap?: 
   wonder_pick: { minGap: 6 * HOUR },
   plan: { minGap: 30 * MIN },
   likeness_used: { minGap: 0, quietHoursExempt: true },
+  waitlist: { minGap: 0 },
 };
 
 export const QUIET_HOURS = { start: 22, end: 8 } as const;

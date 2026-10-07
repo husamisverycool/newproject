@@ -12,6 +12,7 @@ import {
   type Plan,
   type Rarity,
   type LikenessScope,
+  partiful,
 } from '@app/shared';
 import { all, get, json, now, run, setClockOffset } from './db.ts';
 import { env } from './env.ts';
@@ -38,7 +39,7 @@ import {
 } from './repo.ts';
 import { imageSize, isGoldenHour, storeBlob, storeImage, framesToLive, storePng, readMedia } from './media.ts';
 import { refreshMembership, toGroup } from './realtime.ts';
-import { markRead, notificationsFor, savePushSubscription, vapidPublicKey } from './services/notify.ts';
+import { markRead, notificationsFor, push, savePushSubscription, vapidPublicKey } from './services/notify.ts';
 import * as posts from './services/posts.ts';
 import * as walls from './services/walls.ts';
 import * as cards from './services/cards.ts';
@@ -280,6 +281,14 @@ api.post('/groups/:groupId/leave', (c) => {
   const g = memberGroup(c);
   run('DELETE FROM memberships WHERE group_id = ? AND user_id = ?', g.id, c.get('user').id);
   refreshMembership(c.get('user').id);
+  // Partiful: a spot opened, so the next waitlisted person is added automatically and notified.
+  const next = get<{ user_id: string }>('SELECT user_id FROM join_waitlist WHERE group_id = ? ORDER BY created_at LIMIT 1', g.id);
+  if (next && canJoin(members(g.id).length)) {
+    run('DELETE FROM join_waitlist WHERE group_id = ? AND user_id = ?', g.id, next.user_id);
+    run('INSERT OR IGNORE INTO memberships (group_id, user_id, role, joined_at, invited_by) VALUES (?, ?, ?, ?, ?)', g.id, next.user_id, 'member', now(), null);
+    refreshMembership(next.user_id);
+    void push({ userId: next.user_id, groupId: g.id, kind: 'waitlist', title: g.name, body: partiful.going, refIds: [g.id], url: '/' });
+  }
   return c.json({ ok: true });
 });
 
@@ -303,13 +312,29 @@ api.get('/join/:code', (c) => {
   const reactions = developed ? all<{ emoji: string; n: number }>('SELECT emoji, COUNT(*) AS n FROM wall_reactions WHERE group_id = ? AND week_key = ? GROUP BY emoji', g.id, developed.week_key) : [];
   const user = currentUser(c);
   return c.json({
-    group: { name: g.name, emoji: g.emoji, mascot: { ...g.mascot, stage: mascotStage(g.mascot.xp) }, code: g.inviteCode, memberCount: ms.length, members: ms.slice(0, 6).map((m) => ({ name: m.user.name.split(' ')[0], color: m.user.color, avatar: m.user.avatar })), full: !canJoin(ms.length) },
+    group: {
+      name: g.name, emoji: g.emoji, mascot: { ...g.mascot, stage: mascotStage(g.mascot.xp) }, code: g.inviteCode, memberCount: ms.length,
+      members: ms.slice(0, 6).map((m) => ({ name: m.user.name.split(' ')[0], color: m.user.color, avatar: m.user.avatar })), full: !canJoin(ms.length),
+      // Partiful "Hosted by [name] & [name]" — the group's admins.
+      hosts: ms.filter((m) => m.role === 'admin' || m.userId === g.createdBy).map((m) => m.user.name.split(' ')[0]),
+    },
     latest: wall ? { weekKey: developed!.week_key, layout: wall.layout } : null,
     reactions,
     mine: developed ? all<{ emoji: string }>('SELECT emoji FROM wall_reactions WHERE group_id = ? AND week_key = ? AND (guest = ? OR user_id = ?)', g.id, developed.week_key, guest, user?.id ?? '').map((r) => r.emoji) : [],
     signedIn: Boolean(user),
     isMember: user ? Boolean(membership(g.id, user.id)) : false,
+    waitlisted: user ? Boolean(get('SELECT 1 AS x FROM join_waitlist WHERE group_id = ? AND user_id = ?', g.id, user.id)) : false,
   });
+});
+
+/** Partiful waitlist [V]: "If a spot opens up, we'll automatically add the next waitlisted guest and notify them" — first in, first out. */
+api.post('/join/:code/waitlist', (c) => {
+  const user = currentUser(c);
+  if (!user) return fail(c, 401, 'unauthenticated');
+  const g = groupByCode(c.req.param('code'));
+  if (!g) return fail(c, 404, 'not_found');
+  run('INSERT OR IGNORE INTO join_waitlist (group_id, user_id, created_at) VALUES (?, ?, ?)', g.id, user.id, now());
+  return c.json({ ok: true });
 });
 
 api.post('/join/:code/react', async (c) => {
@@ -382,6 +407,10 @@ api.post('/posts', async (c) => {
   return c.json({ posts: created.map((p) => ({ id: p.id, groupId: p.groupId, ritual: p.ritual })) });
 });
 
+api.post('/groups/:groupId/roll', async (c) => {
+  const { postIds } = await c.req.json<{ postIds: string[] }>();
+  return c.json(posts.shareRoll(memberGroup(c), c.get('user').id, Array.isArray(postIds) ? postIds : []));
+});
 api.get('/groups/:groupId/feed', (c) => c.json({ posts: posts.feed(memberGroup(c), c.get('user').id) }));
 api.get('/groups/:groupId/journal', (c) => c.json(posts.journal(memberGroup(c), c.get('user').id, Number(c.req.query('weeks') ?? 8))));
 api.get('/groups/:groupId/live', (c) => c.json({ posts: posts.liveStrip(memberGroup(c), c.get('user').id) }));
@@ -544,20 +573,24 @@ api.post('/groups/:groupId/packs/buy', async (c) => {
   const { with: currency } = await c.req.json<{ with: 'sparks' | 'usd' }>();
   return c.json({ packId: currency === 'usd' ? cards.buyPaidPack(g, c.get('user').id) : cards.buyPackWithSparks(g, c.get('user').id) });
 });
-api.get('/groups/:groupId/wonder', (c) => c.json({ offers: cards.wonderOffers(memberGroup(c), c.get('user').id) }));
+api.get('/groups/:groupId/wonder', (c) => {
+  const g = memberGroup(c);
+  return c.json({ offers: cards.wonderOffers(g, c.get('user').id), binder: cards.binder(g, c.get('user').id) });
+});
 api.post('/groups/:groupId/wonder/:wonderId', async (c) => {
   const { choice } = await c.req.json<{ choice: number }>();
   return c.json(cards.wonderPick(memberGroup(c), c.get('user').id, c.req.param('wonderId'), choice));
 });
-api.get('/groups/:groupId/trades', (c) => {
-  const g = memberGroup(c);
-  return c.json({ trades: cards.tradesFor(g, c.get('user').id), market: cards.tradeable(g, c.get('user').id) });
+api.get('/groups/:groupId/trades', (c) => c.json(cards.tradeHub(memberGroup(c), c.get('user').id)));
+api.post('/groups/:groupId/trades', async (c) => {
+  const b = await c.req.json<{ toUserId: string; offerCardId: string; wantCardId?: string | null }>();
+  return c.json({ id: cards.proposeTrade(memberGroup(c), c.get('user').id, b) });
 });
-api.post('/groups/:groupId/trades', async (c) => c.json({ id: cards.proposeTrade(memberGroup(c), c.get('user').id, await c.req.json()) }));
-api.post('/groups/:groupId/trades/:tradeId/:action', (c) => {
-  const action = c.req.param('action') as 'accept' | 'decline' | 'cancel';
-  if (!['accept', 'decline', 'cancel'].includes(action)) return fail(c, 400, 'bad_action');
-  return c.json(cards.respondTrade(memberGroup(c), c.get('user').id, c.req.param('tradeId'), action));
+api.post('/groups/:groupId/trades/:tradeId/:action', async (c) => {
+  const action = c.req.param('action') as 'accept' | 'decline' | 'cancel' | 'finish';
+  if (!['accept', 'decline', 'cancel', 'finish'].includes(action)) return fail(c, 400, 'bad_action');
+  const b = await c.req.json<{ giveCardId?: string | null }>().catch(() => ({}) as { giveCardId?: string | null });
+  return c.json(cards.respondTrade(memberGroup(c), c.get('user').id, c.req.param('tradeId'), action, b.giveCardId ?? null));
 });
 api.post('/groups/:groupId/wishlist', async (c) => {
   const b = await c.req.json<{ postId: string; rarity: Rarity; on: boolean; highlighted?: boolean }>();
@@ -568,12 +601,32 @@ api.post('/groups/:groupId/exchange', async (c) => {
   const b = await c.req.json<{ postId: string; rarity: Rarity }>();
   return c.json({ card: cards.exchange(memberGroup(c), c.get('user').id, b.postId, b.rarity) });
 });
-api.post('/cards/:cardId/upgrade', (c) => c.json(cards.upgrade(c.get('user').id, c.req.param('cardId'))));
+api.get('/groups/:groupId/missions', (c) => c.json(cards.missions(memberGroup(c), c.get('user').id)));
+api.post('/groups/:groupId/missions/claim', (c) => c.json(cards.claimMissions(memberGroup(c), c.get('user').id)));
+api.get('/groups/:groupId/cards/:cardId', (c) => c.json(cards.collectible(memberGroup(c), c.get('user').id, c.req.param('cardId'))));
+api.post('/cards/:cardId/upgrade', (c) => {
+  const g = cards.groupOfCard(c.req.param('cardId'));
+  if (!g || !membership(g.id, c.get('user').id)) return fail(c, 404, 'not_found');
+  cards.upgrade(c.get('user').id, c.req.param('cardId'));
+  return c.json(cards.collectible(g, c.get('user').id, c.req.param('cardId')));
+});
 api.post('/cards/:cardId/flair', (c) => c.json(cards.applyFlair(c.get('user').id, c.req.param('cardId'))));
 api.post('/groups/:groupId/badge', async (c) => {
   const g = memberGroup(c);
   const { cardId } = await c.req.json<{ cardId: string | null }>();
-  return c.json({ badges: cards.badge(c.get('user').id, g.id, cardId) });
+  const badges = cards.badge(c.get('user').id, g.id, cardId);
+  toGroup(g.id, { type: 'group', groupId: g.id });
+  return c.json({ badges });
+});
+api.get('/groups/:groupId/social', (c) => c.json(cards.social(memberGroup(c), c.get('user').id)));
+api.post('/groups/:groupId/showcases', async (c) => {
+  const b = await c.req.json<{ id?: string; kind: 'binder' | 'display'; cardIds: string[]; style?: string | null; visibility: 'private' | 'friends' }>();
+  const u = c.get('user');
+  return c.json({ id: cards.saveShowcase(memberGroup(c), u.id, b, shopSvc.usable(u.id)) });
+});
+api.delete('/groups/:groupId/showcases/:showcaseId', (c) => {
+  cards.deleteShowcase(memberGroup(c), c.get('user').id, c.req.param('showcaseId'));
+  return c.json({ ok: true });
 });
 
 /* ───────────────────────── games & memory ───────────────────────── */
@@ -732,10 +785,16 @@ api.post('/shop/buy', async (c) => {
   const b = await c.req.json<{ item: string; groupId?: string }>();
   return c.json(shopSvc.buy(c.get('user').id, b.item, b.groupId ?? null));
 });
+api.post('/shop/equip', async (c) => {
+  const b = await c.req.json<{ kind: 'sleeve' | 'theme' | 'icon'; item: string | null }>();
+  if (!['sleeve', 'theme', 'icon'].includes(b.kind)) return fail(c, 400, 'bad_kind');
+  return c.json({ equipped: shopSvc.equip(c.get('user').id, b.kind, b.item ?? null) });
+});
 api.post('/gift', async (c) => {
-  const b = await c.req.json<{ toUserId: string; kind: 'plus_month' | 'pack'; groupId?: string }>();
+  const b = await c.req.json<{ toUserId: string; kind: 'plus_month' | 'pack' | 'item'; groupId?: string; itemId?: string }>();
+  if (!['plus_month', 'pack', 'item'].includes(b.kind)) return fail(c, 400, 'bad_kind');
   if (b.groupId && !membership(b.groupId, c.get('user').id)) return fail(c, 403, 'forbidden');
-  shopSvc.gift(c.get('user').id, b.toUserId, b.kind, b.groupId ?? null);
+  shopSvc.gift(c.get('user').id, b.toUserId, b.kind, b.groupId ?? null, b.itemId);
   return c.json({ ok: true });
 });
 api.get('/groups/:groupId/orders', (c) => c.json({ orders: shopSvc.ordersFor(memberGroup(c).id), prices: shopSvc.PRINT }));

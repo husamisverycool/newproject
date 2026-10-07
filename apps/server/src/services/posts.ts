@@ -137,6 +137,30 @@ export function createPost(group: Group, input: NewPostInput, opts: { silent?: b
   return post;
 }
 
+/**
+ * Locket Rollcall [V]: "share your favorite 10 photos from the past week". The picks are the poster's own
+ * in-app photos from this week (ritual posts stay camera-only, spec §D); they join the week's roll.
+ */
+export function shareRoll(group: Group, userId: string, postIds: string[]) {
+  const w = ritualWindow(now(), group);
+  if (!w.isOpen) return { ok: false as const };
+  const ids = postIds.slice(0, 10);
+  const own = all<{ id: string }>(
+    `SELECT id FROM posts WHERE group_id = ? AND user_id = ? AND week_key = ? AND from_roll = 0 AND kind != 'rewind' AND id IN (${ids.map(() => '?').join(',') || "''"})`,
+    group.id, userId, w.weekKey, ...ids,
+  ).map((r) => r.id);
+  const already = all<{ n: number }>('SELECT COUNT(*) AS n FROM posts WHERE group_id = ? AND user_id = ? AND week_key = ? AND ritual = 1', group.id, userId, w.weekKey)[0]?.n ?? 0;
+  for (const id of own) run('UPDATE posts SET ritual = 1 WHERE id = ?', id);
+  if (own.length && !already) {
+    addCurrency(userId, { sparks: SPARKS_EARN.ritualPost });
+    updateMascot(group.id, (m) => ({ ...m, xp: m.xp + MASCOT_XP.ritualPost }));
+  }
+  const ms = members(group.id);
+  const posted = all<{ n: number }>('SELECT COUNT(DISTINCT user_id) AS n FROM posts WHERE group_id = ? AND week_key = ? AND ritual = 1', group.id, w.weekKey)[0]?.n ?? 0;
+  toGroup(group.id, { type: 'ritual', groupId: group.id, posted, of: ms.length });
+  return { ok: true as const, shared: own.length };
+}
+
 export function addMemory(groupId: string, text: string, sourcePostId: string | null, addedBy: string) {
   const mid = id('mem');
   run('INSERT INTO memory (id, group_id, text, source_post_id, added_by, created_at) VALUES (?, ?, ?, ?, ?, ?)', mid, groupId, text.slice(0, 200), sourcePostId, addedBy, now());

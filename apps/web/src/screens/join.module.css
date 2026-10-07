@@ -1,149 +1,164 @@
-/* Partiful: white canvas, periwinkle-to-white gradient, purple-to-pink hero wash, black actions. */
+/*
+ * Partiful guest page: "soft periwinkle-to-white gradient", "purple-to-pink" washes, black actions,
+ * black headings [V-weak]; display face "Partiful Display Medium", UI face "TWK Lausanne Pan" [V-weak].
+ * Hexes per tokens.css (--partiful-*). Layout order [B-med]: poster, title, host line, guests, RSVP, feed.
+ */
 .page {
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, var(--periwinkle), var(--white) 46%);
-  color: var(--black);
-  display: flex;
-  flex-direction: column;
+  background: linear-gradient(180deg, var(--partiful-periwinkle), #ffffff 46%);
+  color: var(--partiful-ink);
+  font-family: var(--font-partiful);
   padding-top: var(--safe-top);
 }
-.poster {
-  margin: 10px 20px 0;
-  border-radius: 22px;
-  box-shadow: 0 24px 50px color-mix(in srgb, var(--purple) 45%, transparent), 0 6px 18px rgba(0, 0, 0, 0.18);
-  position: relative;
-  flex: none;
-}
-.posterEmpty {
-  aspect-ratio: 1;
-  border-radius: 22px;
-  background: linear-gradient(135deg, var(--purple), var(--pink));
+.missing {
+  height: 100%;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .poster {
-  max-height: 380px;
+  margin: 12px 20px 0;
+  border-radius: 20px;
   overflow: hidden;
-  -webkit-mask-image: linear-gradient(#000 82%, transparent);
-  mask-image: linear-gradient(#000 82%, transparent);
+  position: relative;
+  max-height: 400px;
+  box-shadow: 0 20px 44px color-mix(in srgb, var(--partiful-purple) 40%, transparent);
 }
-.body {
-  padding: 18px 22px 0;
-}
-.kicker {
+.posterEmpty {
+  aspect-ratio: 1;
+  background: linear-gradient(135deg, var(--partiful-purple), var(--partiful-pink));
   display: flex;
   align-items: center;
-  gap: 6px;
-  font: 600 13px/1 var(--font-ui);
-  color: var(--eel);
+  justify-content: center;
+}
+.body {
+  padding: 20px 20px calc(var(--safe-bottom) + 32px);
 }
 .title {
-  margin: 10px 0 12px;
-  font: 800 36px/40px var(--font-plan);
+  margin: 0;
+  font: 500 40px/1.05 var(--font-partiful-display);
   letter-spacing: -0.03em;
 }
-.hosts {
+.hosted {
+  margin-top: 10px;
+  font: 500 15px/20px var(--font-partiful);
+}
+.going {
   display: flex;
   align-items: center;
   gap: 10px;
-  font: 600 14px/18px var(--font-ui);
-  color: var(--eel);
+  margin-top: 14px;
+  font: 600 15px/1 var(--font-partiful);
 }
 .faces {
   display: inline-flex;
 }
 .face {
-  width: 30px;
-  height: 30px;
+  width: 28px;
+  height: 28px;
   border-radius: 50%;
+  background: #c7c7cc;
+  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font: 700 12px/1 var(--font-ui);
-  box-shadow: 0 0 0 2px var(--white);
+  font: 600 12px/1 var(--font-sf);
+  box-shadow: 0 0 0 2px #fff;
 }
-.mascotLine {
+.mascot {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-top: 14px;
-  padding: 8px 14px 8px 8px;
+  margin-top: 12px;
+  font: 600 15px/1 var(--font-partiful);
+}
+.rsvp {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 22px;
+}
+.rsvpBtn {
+  height: 64px;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1.5px var(--partiful-ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font: 600 14px/1 var(--font-partiful);
+  color: var(--partiful-ink);
+}
+.rsvpBtn:disabled {
+  opacity: 0.4;
+}
+.rsvpEmoji {
+  font-size: 22px;
+  line-height: 1;
+}
+.open {
+  margin-top: 22px;
+  width: 100%;
+  height: 54px;
   border-radius: 999px;
-  background: var(--white);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-  width: fit-content;
-  font: 500 14px/1 var(--font-ui);
+  background: var(--partiful-ink);
+  color: #fff;
+  font: 600 17px/1 var(--font-partiful);
+}
+.room {
+  margin-top: 18px;
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 10px;
+  font: 600 13px/1 var(--font-sf);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: rgba(60, 60, 67, 0.6);
+}
+.room b {
+  font: 800 24px/1 var(--font-sf);
+  letter-spacing: 0.18em;
+  color: var(--partiful-ink);
+}
+.feed {
+  margin-top: 26px;
+}
+.feedHead {
+  margin: 0 0 12px;
+  font: 500 22px/1.1 var(--font-partiful-display);
 }
 .reactRow {
   position: relative;
   display: flex;
   gap: 8px;
-  margin-top: 18px;
+  flex-wrap: wrap;
 }
 .reactBtn {
-  height: 44px;
-  min-width: 52px;
-  padding: 0 10px;
+  height: 40px;
+  min-width: 44px;
+  padding: 0 12px;
   border-radius: 999px;
-  background: var(--white);
-  box-shadow: inset 0 0 0 1.5px var(--swan);
+  background: #ffffff;
+  box-shadow: inset 0 0 0 1px rgba(60, 60, 67, 0.18);
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 4px;
-  font-size: 22px;
+  gap: 6px;
+  font-size: 18px;
 }
 .reactMine {
-  box-shadow: inset 0 0 0 2px var(--black);
+  box-shadow: inset 0 0 0 2px var(--partiful-ink);
 }
 .reactN {
-  font: 700 13px/1 var(--font-ui);
+  font: 600 13px/1 var(--font-sf);
 }
 .burst {
   position: absolute;
   left: 40%;
   top: 0;
-  font-size: 32px;
+  font-size: 30px;
   pointer-events: none;
-}
-.note {
-  font: var(--t-footnote);
-  color: var(--wolf);
-}
-.actions {
-  margin-top: auto;
-  padding: 12px 22px calc(var(--safe-bottom) + 14px);
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  align-items: center;
-  position: sticky;
-  bottom: 0;
-  background: linear-gradient(transparent, var(--white) 30%);
-}
-.primary {
-  width: 100%;
-  height: 56px;
-  border-radius: 999px;
-  background: var(--black);
-  color: var(--white);
-  font: 700 17px/1 var(--font-ui);
-}
-.primary:disabled {
-  opacity: 0.4;
-}
-.code {
-  font: 500 13px/1 var(--font-ui);
-  color: var(--wolf);
-  letter-spacing: 0.04em;
-}
-.code b {
-  color: var(--black);
-  letter-spacing: 0.2em;
-}
-.missing {
-  margin: auto;
-  text-align: center;
 }
