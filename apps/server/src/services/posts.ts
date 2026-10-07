@@ -271,6 +271,25 @@ export function onThisDay(group: Group, viewerId: string) {
   return out;
 }
 
+/**
+ * Retro's Rewind [V]: "photos from this time last year and older", "a new batch of photos to explore"
+ * each week. The group's own photos older than two weeks: this week in past years first, then the
+ * rest newest first; the batch changes with the week.
+ */
+export function rewindBatch(group: Group, viewerId: string, limit = 80) {
+  const t = now();
+  const sameWeek: PostFull[] = [];
+  for (let y = 1; y <= 10; y++) {
+    const w = sameWeekYearsAgo(t, y, group.timeZone);
+    sameWeek.push(...visiblePosts(group, viewerId).filter((p) => p.takenAt >= w.start && p.takenAt < w.end));
+  }
+  const seen = new Set(sameWeek.map((p) => p.id));
+  const older = visiblePosts(group, viewerId)
+    .filter((p) => !seen.has(p.id) && p.takenAt < t - 14 * 86_400_000)
+    .sort((a, b) => b.takenAt - a.takenAt);
+  return { onThisWeek: toDTO(sameWeek, viewerId), older: toDTO(older.slice(0, limit), viewerId) };
+}
+
 export function ritualState(group: Group, viewerId?: string) {
   const t = now();
   const w = ritualWindow(t, group);

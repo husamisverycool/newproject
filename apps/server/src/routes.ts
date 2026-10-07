@@ -177,6 +177,21 @@ api.post('/me/push', async (c) => {
   return c.json({ ok: true });
 });
 
+/** BeReal's "My BeReals" calendar [I] (bereal-04): your own photos by day, newest first. Only you see it [V]. */
+api.get('/me/memories', (c) => {
+  const rows = all<{ id: string; media: string; created_at: number }>(
+    'SELECT id, media, created_at FROM posts WHERE user_id = ? ORDER BY created_at DESC LIMIT 2000',
+    c.get('user').id,
+  );
+  const days = new Map<string, { id: string; thumb: string; createdAt: number }>();
+  for (const r of rows) {
+    const day = new Date(r.created_at).toISOString().slice(0, 10);
+    if (days.has(day)) continue;
+    const m = json.parse<{ main?: string; thumb?: string }>(r.media, {});
+    days.set(day, { id: r.id, thumb: m.thumb ?? m.main ?? '', createdAt: r.created_at });
+  }
+  return c.json({ days: [...days.values()] });
+});
 api.get('/me/likeness', (c) => c.json({ likeness: objects.likenessOf(c.get('user').id), log: objects.likenessLog(c.get('user').id), scope: c.get('user').likenessScope, allow: c.get('user').likenessAllow }));
 
 api.post('/me/likeness', async (c) => {
@@ -414,6 +429,7 @@ api.post('/groups/:groupId/roll', async (c) => {
 api.get('/groups/:groupId/feed', (c) => c.json({ posts: posts.feed(memberGroup(c), c.get('user').id) }));
 api.get('/groups/:groupId/journal', (c) => c.json(posts.journal(memberGroup(c), c.get('user').id, Number(c.req.query('weeks') ?? 8))));
 api.get('/groups/:groupId/live', (c) => c.json({ posts: posts.liveStrip(memberGroup(c), c.get('user').id) }));
+api.get('/groups/:groupId/rewind', (c) => c.json(posts.rewindBatch(memberGroup(c), c.get('user').id)));
 api.get('/groups/:groupId/onthisday', (c) => c.json({ memories: posts.onThisDay(memberGroup(c), c.get('user').id) }));
 api.get('/groups/:groupId/ritual', (c) => c.json(posts.ritualState(memberGroup(c), c.get('user').id)));
 

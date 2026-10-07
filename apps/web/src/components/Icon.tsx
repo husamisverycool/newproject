@@ -6,6 +6,14 @@ import type { CSSProperties } from 'react';
  */
 const P: Record<string, string> = {
   bolt: 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z',
+  /** Retro Rewind tab glyph [I] (retro-01/-05): a clock with a counter-clockwise arrow */
+  clockBack: 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.5V9H9M12 7.5V12l3 2',
+  /** Yope tab glyphs [I] (yope-01 tab bar), drawn filled: two chat bubbles */
+  chats: 'M3 10.5C3 7 6 4.5 9.8 4.5s6.8 2.5 6.8 6-3 6-6.8 6c-.9 0-1.8-.1-2.6-.4L4 17.5l.8-2.9C3.7 13.5 3 12.1 3 10.5ZM18.3 9.2c1.6.9 2.7 2.5 2.7 4.3 0 1.2-.5 2.3-1.2 3.2l.6 2.3-2.6-1c-.7.2-1.5.3-2.3.3-1.6 0-3-.4-4.1-1.2',
+  /** Yope tab [I]: two stacked cards */
+  cardStack: 'M8.5 3h7A2.5 2.5 0 0 1 18 5.5v.5H9.5A3.5 3.5 0 0 0 6 9.5V17h-.5A2.5 2.5 0 0 1 3 14.5v0M9.5 7.5h9A2.5 2.5 0 0 1 21 10v9a2.5 2.5 0 0 1-2.5 2.5h-9A2.5 2.5 0 0 1 7 19v-9a2.5 2.5 0 0 1 2.5-2.5Z',
+  /** Yope tab [I]: archive box with a film band */
+  archive: 'M5 4h14v3H5V4ZM6 8.5h12V19a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 6 19V8.5ZM9.5 12.5h5',
   /** Locket reply bar "add reaction" glyph [I]: a smiley with a + at its top right */
   smilePlus: 'M19.5 10.4A8.5 8.5 0 1 1 13.6 3.6M9 10h.01M15 10h.01M8.5 14.5a4.5 4.5 0 0 0 7 0M19 2.5v6M16 5.5h6',
   /** Locket Rollcall megaphone with sparkle lines [I] */

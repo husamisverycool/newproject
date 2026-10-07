@@ -1,97 +1,110 @@
-/* Retro Rewind dial as an iPod click wheel [B-high]; colors follow system appearance [HIG]. */
-.dial {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  width: 100%;
-}
-.when {
-  font: var(--t-headline);
-  color: var(--sys-label);
-  margin-bottom: 12px;
+/*
+ * Retro Rewind, measured from research/inspo/store/retro-05-rewind [I] (1 pt ≈ 0.79 px): full-bleed
+ * photo; serif date ≈ 34 pt heavy, white, top left with "On this week" (SF 15, white 85%) under it;
+ * "•••" in a 36 pt translucent circle top right; tick ring ≈ 120 pt across, ≈ 140 pt above the
+ * bottom, 40 ticks, one long bright tick; ❙❙ centred.
+ */
+.root {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-sf);
+  user-select: none;
+  -webkit-user-select: none;
 }
 .photoArea {
-  position: relative;
-  width: calc(100% - 2 * var(--margin));
-  max-width: 330px;
-  aspect-ratio: 1;
-  perspective: 900px;
+  position: absolute;
+  inset: 0;
 }
 .photo {
   position: absolute;
   inset: 0;
-  border-radius: 16px;
-  overflow: hidden;
-  background: var(--sys-bg2);
-  transform-origin: center;
-}
-.photo img {
   width: 100%;
   height: 100%;
-  background: var(--sys-label);
+  object-fit: cover;
+  display: block;
+}
+.photoArea::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.35) 0%, transparent 22%, transparent 70%, rgba(0, 0, 0, 0.3) 100%);
+  pointer-events: none;
 }
 .picked {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 26px;
-  height: 26px;
+  top: calc(var(--safe-top) + 92px);
+  right: 16px;
+  width: 30px;
+  height: 30px;
   border-radius: 50%;
-  background: var(--sys-blue);
+  background: var(--sys-blue, #0a84ff);
+  border: 2px solid #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.head {
+  position: absolute;
+  top: calc(var(--safe-top) + 10px);
+  left: 16px;
+  right: 16px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  pointer-events: none;
+}
+.date {
+  margin: 0;
+  font: 800 34px/1.05 var(--font-retro);
+  letter-spacing: -0.025em;
+  text-shadow: 0 1px 10px rgba(0, 0, 0, 0.25);
+}
+.sub {
+  margin: 4px 0 0;
+  font: 400 15px/20px var(--font-sf);
+  color: rgba(255, 255, 255, 0.85);
+}
+.more {
+  pointer-events: auto;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.22);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  box-shadow: 0 0 0 2px #fff;
 }
-.date {
-  font: var(--t-footnote);
-  color: var(--sys-label2);
-  margin: 8px 0 14px;
-}
-.wheel {
-  position: relative;
-  width: 196px;
-  height: 196px;
-  border-radius: 50%;
-  background: var(--sys-gray5);
-  touch-action: none;
-  flex: none;
-}
-.label {
+.dial {
   position: absolute;
+  left: 50%;
+  bottom: calc(var(--safe-bottom) + 108px);
+  width: 124px;
+  height: 124px;
+  margin-left: -62px;
+  touch-action: none;
+}
+.ticks {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
+}
+.play {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 64px;
+  height: 64px;
+  margin: -32px 0 0 -32px;
+  border-radius: 50%;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 56px;
-  height: 40px;
-  color: var(--sys-gray);
-  font: 700 13px/1 var(--font-sf);
-  letter-spacing: 0.04em;
-}
-.top {
-  top: 8px;
-  left: calc(50% - 28px);
-}
-.bottom {
-  bottom: 8px;
-  left: calc(50% - 28px);
-}
-.left {
-  left: 4px;
-  top: calc(50% - 20px);
-}
-.right {
-  right: 4px;
-  top: calc(50% - 20px);
-}
-.center {
-  position: absolute;
-  inset: 31%;
-  border-radius: 50%;
-  background: var(--sys-bg);
-  box-shadow: inset 0 0 0 1px var(--sys-gray4);
-}
-.center:active {
-  background: var(--sys-gray6);
+  color: #fff;
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35));
 }

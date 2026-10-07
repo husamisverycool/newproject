@@ -81,3 +81,18 @@ export function initials(name: string) {
     .map((p) => p[0]?.toUpperCase() ?? '')
     .join('');
 }
+
+/** ISO-8601 week number (Retro's "Week 27" for Jul 3–9, 2023 [I] retro-01/-02). */
+export function isoWeek(ts: number) {
+  const d = new Date(ts);
+  const day = (d.getUTCDay() + 6) % 7;
+  d.setUTCDate(d.getUTCDate() - day + 3);
+  const firstThu = new Date(Date.UTC(d.getUTCFullYear(), 0, 4));
+  return 1 + Math.round(((d.getTime() - firstThu.getTime()) / 86_400_000 - 3 + ((firstThu.getUTCDay() + 6) % 7)) / 7);
+}
+
+/** Start and end (ms) of the ritual week that ends on `weekKey` (a yyyy-mm-dd date). */
+export function weekBounds(weekKey: string) {
+  const end = new Date(`${weekKey}T12:00:00Z`).getTime();
+  return { start: end - 6 * 86_400_000, end };
+}

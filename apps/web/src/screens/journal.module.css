@@ -1,239 +1,140 @@
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: calc(var(--safe-top) + 2px) 10px 6px;
-  flex: none;
-}
-.headTitle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font: 800 20px/1 var(--font-ui);
-}
-.body {
-  flex: 1;
-  min-height: 0;
-}
-
-.nowStrip {
-  padding: 4px 0 12px;
-}
-.nowLabel {
-  font: 800 12px/1 var(--font-ui);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  color: var(--text-3);
-  padding: 0 var(--margin) 10px;
-}
-.nowRow {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  padding: 0 var(--margin);
-}
-.nowItem {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  flex: none;
-}
-.nowThumb {
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  padding: 3px;
-  box-shadow: inset 0 0 0 2px var(--g3);
-}
-.nowUnseen {
-  box-shadow: inset 0 0 0 2.5px var(--yellow);
-}
-.nowThumb img {
-  width: 100%;
-  height: 100%;
-  border-radius: 50%;
-  object-fit: cover;
-}
-.nowName {
-  font: 600 12px/1 var(--font-ui);
-}
-.blur {
-  filter: blur(8px) brightness(0.8);
-}
-
-.cards {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 0 var(--margin) 8px;
-}
-.gameCard {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 12px 14px 12px 8px;
-  border-radius: 22px;
-  background: var(--g1);
-  text-align: left;
-}
-.gameKicker {
-  display: block;
-  font: 800 11px/1 var(--font-round);
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--green);
-  margin-bottom: 4px;
-}
-.gameIntro {
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  font: 600 14px/18px var(--font-round);
-}
-
-/* Duolingo Friends Quest card */
-.quest {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border-radius: 22px;
-  background: var(--g1);
-  text-align: left;
-}
-.questTitle {
-  font: 800 15px/1.2 var(--font-round);
-}
-.questBar {
-  position: relative;
-  height: 18px;
-  border-radius: 9px;
-  background: var(--g3);
-  overflow: hidden;
-}
-.questBar span {
-  position: absolute;
-  inset: 0 auto 0 0;
-  border-radius: 9px;
-  background: var(--yellow);
-  box-shadow: inset 0 -4px 0 var(--yellow-lip);
-}
-.questBar b {
+/*
+ * Retro weekly feed, measured from research/inspo/store/retro-01-weekly-feed and retro-02-profile [I]
+ * (1 pt ≈ 0.79 px): white screen; serif title ≈ 34 pt heavy (--font-retro); day tiles ≈ 72×90 pt
+ * flush together, outer corners ≈ 12 pt, weekday label white semibold at the bottom centre; the "+"
+ * tile light gray; friends' cards ≈ 205×285 pt, radius ≈ 16 pt, "6 new" red pill; section heads
+ * "Week 26" semibold 15 + gray range, "•••" at the right. Friends Quest module: Duolingo [V].
+ */
+.root {
   position: absolute;
   inset: 0;
+  background: #fff;
+  color: #000;
+  font-family: var(--font-sf);
+}
+.scroll {
+  position: absolute;
+  inset: 0;
+  overflow-y: auto;
+  padding-top: var(--safe-top);
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+.header {
   display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 14px 16px 10px;
+}
+.titles {
+  flex: 1;
+  min-width: 0;
+}
+.title {
+  margin: 0;
+  font: 800 36px/1.05 var(--font-retro);
+  letter-spacing: -0.025em;
+}
+.groupName {
+  margin-top: 2px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 400 15px/20px var(--font-sf);
+  color: #8e8e93;
+}
+.glyph {
+  width: 32px;
+  height: 40px;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  font: 800 11px/1 var(--font-round);
-  color: var(--white);
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+  color: #000;
 }
 
 .gate {
-  margin: 4px var(--margin) 12px;
-  padding: 12px 14px;
-  border-radius: 22px;
-  background: var(--g1);
+  margin: 4px 16px 14px;
+  width: calc(100% - 32px);
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 10px 14px;
+  border-radius: 16px;
+  background: #f2f2f2;
+  font: 600 15px/20px var(--font-sf);
+  text-align: left;
+}
+.gate span {
+  flex: 1;
 }
 
-.week {
-  padding: 18px 0 6px;
-}
-.weekHead {
-  display: flex;
-  align-items: flex-end;
-  justify-content: space-between;
-  padding: 0 var(--margin) 12px;
-}
-.weekTitle {
-  font: 800 24px/28px var(--font-ui);
-  letter-spacing: -0.02em;
-}
-.weekSub {
-  font: 600 13px/18px var(--font-ui);
-  color: var(--text-2);
-}
+/* Day tiles [I] */
 .strip {
   display: flex;
-  gap: 12px;
-  overflow-x: auto;
-  padding: 0 var(--margin);
-  scroll-snap-type: x proximity;
-}
-.wallTile {
-  width: 118px;
-  flex: none;
-  scroll-snap-align: start;
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 0 0 1px var(--hairline);
-}
-.wallTile > div {
-  border-radius: 16px;
-}
-.friend {
-  display: flex;
-  flex-direction: column;
   gap: 8px;
-  flex: none;
-  scroll-snap-align: start;
+  padding: 6px 16px 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
 }
-/* Retro film strip: thumbnails flush, rounded on the outside only */
-.film {
+.strip::-webkit-scrollbar {
+  display: none;
+}
+.tiles {
   display: flex;
-  height: 172px;
-  border-radius: 18px;
+  flex: none;
+  border-radius: 12px;
   overflow: hidden;
-  background: var(--g1);
 }
-.film img {
-  width: 122px;
+.past .tiles {
+  margin: 0 16px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  max-width: calc(100% - 16px);
+  border-radius: 12px 0 0 12px;
+}
+.tile {
+  position: relative;
+  width: 74px;
+  height: 92px;
+  flex: none;
+}
+.tile img {
+  width: 100%;
   height: 100%;
   object-fit: cover;
+  display: block;
 }
-.friendName {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font: 700 14px/1 var(--font-ui);
-  padding-left: 2px;
+.tile span {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 7px;
+  text-align: center;
+  font: 600 14px/1 var(--font-sf);
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.45);
 }
-.friendN {
-  font: 700 11px/1 var(--font-ui);
-  color: var(--text-2);
-  background: var(--g2);
-  border-radius: 999px;
-  padding: 3px 6px;
-}
-.emptyWeek {
-  width: 220px;
-  height: 172px;
-  border-radius: 18px;
-  border: 1.5px dashed var(--g3);
-  display: flex;
-  flex-direction: column;
+.plus {
+  width: 74px;
+  height: 92px;
+  flex: none;
+  border-radius: 12px;
+  background: var(--retro-plus);
+  color: #000;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: var(--text-3);
-  font: 600 13px/1.3 var(--font-ui);
-  text-align: center;
-  padding: 16px;
-  flex: none;
 }
-/* Retro: "this week in" card at the end of the row */
+/* Retro "this week in" [V] — same tile size, the caption over it */
 .thisWeekIn {
   position: relative;
-  width: 122px;
-  height: 172px;
-  border-radius: 18px;
-  overflow: hidden;
+  width: 74px;
+  height: 92px;
   flex: none;
+  border-radius: 12px;
+  overflow: hidden;
 }
 .thisWeekIn img {
   width: 100%;
@@ -241,43 +142,161 @@
   object-fit: cover;
   filter: saturate(0.7);
 }
-.twiLabel {
+.thisWeekIn span {
   position: absolute;
-  left: 8px;
-  right: 8px;
-  bottom: 10px;
-  font: 600 13px/16px var(--font-ui);
+  inset: auto 4px 6px;
+  font: 600 11px/13px var(--font-sf);
+  color: #fff;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+
+/* Friends carousel [I] */
+.carousel {
+  display: flex;
+  gap: 12px;
+  padding: 6px 16px 22px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+.friend {
+  flex: none;
+  width: 206px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  scroll-snap-align: start;
   text-align: left;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.8);
 }
-.twiLabel b {
-  display: block;
-  font: 900 26px/1 var(--font-display);
+.friendName {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font: 500 15px/1 var(--font-sf);
 }
-.rewindTile {
-  width: 92px;
-  height: 172px;
-  border-radius: 18px;
-  background: var(--g1);
+.card {
+  position: relative;
+  width: 206px;
+  height: 286px;
+  border-radius: 16px;
+  overflow: hidden;
+  background: #f2f2f2;
+}
+.card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.blur {
+  filter: blur(22px);
+  transform: scale(1.15);
+}
+.newPill {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--retro-red);
+  color: #fff;
+  font: 600 12px/22px var(--font-sf);
+}
+.lock {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 6px;
-  font: 700 13px/1 var(--font-ui);
-  color: var(--text-2);
-  flex: none;
+  color: #fff;
+  font: 600 15px/1 var(--font-sf);
 }
-.lockBar {
-  margin: 10px var(--margin) 0;
-  width: calc(100% - 2 * var(--margin));
-  height: 40px;
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--yellow) 14%, transparent);
-  color: var(--yellow);
-  font: 700 14px/1 var(--font-ui);
+
+/* Duolingo Friends Quest module [V] (research/14): white card, 2 px swan border, radius 16, yellow
+   progress bar with the count inside, gift at the end */
+.quest {
+  margin: 0 16px 22px;
+  padding: 14px 16px;
+  border-radius: 16px;
+  border: 2px solid var(--duo-swan);
+  font-family: var(--font-duo);
+}
+.questHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  font: 700 17px/22px var(--font-duo);
+  color: var(--duo-eel);
+}
+.questHead span {
+  font: 700 13px/18px var(--font-duo);
+  color: var(--duo-fox);
+}
+.questGoal {
+  margin: 6px 0 10px;
+  font: 500 15px/20px var(--font-duo);
+  color: var(--duo-wolf);
+}
+.questBar {
+  position: relative;
+  height: 18px;
+  margin-right: 30px;
+  border-radius: 999px;
+  background: var(--duo-swan);
+}
+.questBar > span {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 999px;
+  background: var(--duo-bee);
+}
+.questBar b {
+  position: absolute;
+  inset: 0;
+  text-align: center;
+  font: 700 12px/18px var(--font-duo);
+  color: var(--duo-eel);
+}
+.questBar svg {
+  position: absolute;
+  right: -32px;
+  top: -5px;
+}
+
+/* Past weeks [I] retro-02 */
+.past {
+  padding-bottom: 20px;
+}
+.pastHead {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  padding: 0 16px 8px;
+}
+.pastHead button:first-child {
+  font: 400 15px/20px var(--font-sf);
+  color: #000;
+}
+.pastHead b {
+  font-weight: 600;
+}
+.pastHead span {
+  color: #8e8e93;
+}
+.dots {
+  width: 36px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
-  gap: 6px;
+  color: #000;
+}
+.tabSpace {
+  height: calc(var(--safe-bottom) + 96px);
 }

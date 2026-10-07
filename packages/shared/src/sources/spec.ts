@@ -29,6 +29,8 @@ export const spec = {
   guessWhose: 'guess whose photo',
   /** [S] §P "a 'plan' card" */
   plan: 'Plan',
+  /** [S] §E heading "Wall / journal" */
+  journal: 'Journal',
   /** [S] §J feature name */
   friendCards: 'Friend Cards',
   /** [S] §J currency */

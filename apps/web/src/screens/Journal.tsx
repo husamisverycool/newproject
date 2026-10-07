@@ -1,178 +1,220 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router';
-import { useQuery } from '@tanstack/react-query';
-import { COPY } from '@app/shared';
-import { api } from '../lib/api';
+import { bereal, duolingo, ios, locket, retro, spec } from '@app/shared';
 import { useActiveGroup, useGroup, useJournal } from '../lib/queries';
-import { firstName, weekRange } from '../lib/format';
+import { useUi } from '../lib/store';
+import { haptic } from '../lib/feedback';
+import { firstName, isoWeek, weekBounds } from '../lib/format';
 import type { JournalWeek, Post } from '../lib/types';
 import { Icon } from '../components/Icon';
-import { Avatar, AvatarStack, IconButton, StreakBadge } from '../components/ui';
+import { Avatar, Menu, Row, Section, Sheet } from '../components/ios';
 import { Mascot } from '../components/Mascot';
-import { WallCanvas } from '../components/WallCanvas';
-import { BottomNav } from '../components/BottomNav';
+import { AppTabs } from '../components/AppTabs';
 import s from './journal.module.css';
 
 /**
- * Retro's weekly journal: "week-by-week", each week a horizontal "film strip" with rounded outer
- * corners; "tap on someone's card" to see their week; a "this week in" card at the end of the row
- * with Rewind just past it. The current week stays blurred until you post (Retro / BeReal, softened
- * per spec §E). Above it: Yope's "right now" split view, the Duolingo-style group quest, this week's game.
+ * The group's journal — Retro's weekly feed, laid out from research/inspo/store/retro-01-weekly-feed
+ * and retro-02-profile [I]: light screen; the large serif "Week 27" title with two glyphs at the
+ * right; your week as day tiles flush together ("Mon", "Tue", …) ending in a gray "+" tile; friends'
+ * weeks as tall cards in a carousel, name above, a red "6 new" pill; earlier weeks as sections
+ * "Week 26 Jun 26 - Jul 2" with "•••" and their day strip. Retro's "this week in" card [V] ends the
+ * current strip. The current week is blurred until you post (BeReal's "Share to view" [I], spec §E,
+ * never past weeks). The Duolingo Friends Quest module [V] carries the group quest (spec §K).
  */
 export default function Journal() {
   const nav = useNavigate();
-  const { group } = useActiveGroup();
+  const { group, groups } = useActiveGroup();
+  const setActive = useUi((st) => st.setActiveGroup);
   const j = useJournal(group?.id);
   const detail = useGroup(group?.id);
-  const game = useQuery({ queryKey: ['game', group?.id], queryFn: () => api.get<{ game: { id: string; kind: string; intro: string; closed: boolean } | null }>(`/groups/${group!.id}/game`), enabled: Boolean(group) });
+  const [picker, setPicker] = useState(false);
   if (!group) return null;
+  const weeks = j.data?.weeks ?? [];
+  const current = weeks.find((w) => w.current);
+  const past = weeks.filter((w) => !w.current);
   const d = detail.data;
-  return (
-    <div className="screen">
-      <header className={s.header}>
-        <IconButton icon="chevronDown" label="Back to camera" onClick={() => nav('/')} />
-        <button className={s.headTitle} onClick={() => nav(`/g/${group.id}/settings`)}>
-          <span>{group.emoji} {group.name}</span>
-          <StreakBadge weeks={group.ritual.streak} size={14} />
-        </button>
-        <IconButton icon="gear" label="Group settings" onClick={() => nav(`/g/${group.id}/settings`)} />
-      </header>
-      <div className={`${s.body} scroll`}>
-        {/* Yope split view: what friends are up to right now */}
-        {d && d.live.length > 0 && (
-          <div className={s.nowStrip}>
-            <div className={s.nowLabel}>right now</div>
-            <div className={`${s.nowRow} scroll`}>
-              {d.live.map((p) => (
-                <button key={p.id} className={s.nowItem} onClick={() => nav(`/p/${p.id}`)}>
-                  <span className={`${s.nowThumb} ${p.seen ? '' : s.nowUnseen}`}>
-                    <img src={p.media.thumb ?? p.media.main} alt="" className={p.blurred ? s.blur : ''} />
-                  </span>
-                  <span className={s.nowName}>{p.mine ? 'You' : firstName(p.user.name)}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+  const start = current ? weekBounds(current.weekKey).start : Date.now();
 
-        <div className={s.cards}>
-          {game.data?.game && (
-            <button className={s.gameCard} onClick={() => nav(`/g/${group.id}/game`)}>
-              <Mascot species={group.mascot.species} level={group.mascot.stage.level} outfit={group.mascot.outfit} size={64} mood="party" />
-              <span className="grow">
-                <span className={s.gameKicker}>this week’s game</span>
-                <span className={s.gameIntro}>{game.data.game.intro}</span>
-              </span>
-              <Icon name="chevronRight" size={20} color="var(--hare)" />
+  return (
+    <div className={s.root} data-light>
+      <div className={s.scroll}>
+        <header className={s.header}>
+          <div className={s.titles}>
+            <h1 className={s.title}>{retro.week(isoWeek(start))}</h1>
+            <button className={s.groupName} onClick={() => setPicker(true)}>
+              {group.name}
+              <Icon name="chevronDown" size={14} strokeWidth={2.6} />
             </button>
-          )}
-          {d && (
-            <button className={s.quest} onClick={() => nav(`/g/${group.id}/game`)}>
-              <div className="hstack gap8">
-                <Icon name="flame" size={20} color="var(--orange)" />
-                <span className={s.questTitle}>{d.quest.label}</span>
-              </div>
-              <div className={s.questBar}>
-                <span style={{ width: `${Math.min(100, (d.quest.progress / Math.max(1, d.quest.goal)) * 100)}%` }} />
-                <b>{d.quest.progress} / {d.quest.goal}</b>
-              </div>
-              <div className="hstack gap8">
-                <AvatarStack users={d.quest.members.filter((m) => m.count >= 3).map((m) => m.user)} size={22} max={6} />
-                <span className="t-cap">{d.quest.rewarded ? 'Done! Bonus packs delivered 🎁' : `Reward: ${d.quest.reward}`}</span>
-              </div>
-            </button>
-          )}
-        </div>
+          </div>
+          <button className={s.glyph} onClick={() => nav('/journal/calendar')} aria-label={bereal.myPhotos}>
+            <Icon name="book" size={26} strokeWidth={1.8} />
+          </button>
+          <button className={s.glyph} onClick={() => nav('/rewind')} aria-label={retro.rewind}>
+            <Icon name="clockBack" size={26} strokeWidth={1.8} />
+          </button>
+        </header>
 
         {j.data && !j.data.unlocked && (
-          <div className={s.gate}>
-            <Mascot species={group.mascot.species} level={group.mascot.stage.level} size={70} mood="sleepy" />
-            <div>
-              <div className="t-headline">{COPY.gateProgress(j.data.memberCount, 3)}</div>
-              <div className="t-foot">The wall wakes up at 3 members.</div>
-            </div>
-            <button className="chip chip-on" onClick={() => nav(`/g/${group.id}/settings?invite=1`)}>Invite</button>
-          </div>
+          <button className={s.gate} onClick={() => nav(`/g/${group.id}/settings`)}>
+            <Mascot species={group.mascot.species} level={group.mascot.stage.level} outfit={group.mascot.outfit} size={56} />
+            <span>{locket.friendsAdded(Math.max(0, j.data.memberCount - 1), 2)}</span>
+            <Icon name="chevronRight" size={18} />
+          </button>
         )}
 
-        {j.data?.weeks.map((w) => <WeekRow key={w.weekKey} w={w} groupId={group.id} mascot={{ species: group.mascot.species, level: group.mascot.stage.level, outfit: group.mascot.outfit }} />)}
-        <div style={{ height: 120 }} />
+        {current && <MyWeek week={current} onAdd={() => nav('/')} />}
+        {current && <Friends week={current} />}
+
+        {d && (
+          <section className={s.quest}>
+            <div className={s.questHead}>
+              <b>{duolingo.friendsQuest}</b>
+              <span>{duolingo.daysLeft(Math.max(1, Math.ceil((weekBounds(d.quest.weekKey).end - Date.now()) / 86_400_000)))}</span>
+            </div>
+            <p className={s.questGoal}>{spec.questGoal(3)}</p>
+            <div className={s.questBar}>
+              <span style={{ width: `${Math.min(100, (d.quest.progress / Math.max(1, d.quest.goal)) * 100)}%` }} />
+              <b>
+                {d.quest.progress} / {d.quest.goal}
+              </b>
+              <Icon name="gift" size={26} filled color="var(--duo-bee)" />
+            </div>
+          </section>
+        )}
+
+        {past.map((w) => (
+          <PastWeek key={w.weekKey} week={w} groupId={group.id} />
+        ))}
+        <div className={s.tabSpace} />
       </div>
-      <BottomNav active="journal" groupId={group.id} />
+      <AppTabs />
+
+      <Sheet open={picker} onClose={() => setPicker(false)} light>
+        <Section>
+          {groups.map((g) => (
+            <Row
+              key={g.id}
+              icon={<Mascot species={g.mascot.species} level={g.mascot.stage.level} outfit={g.mascot.outfit} size={36} />}
+              title={g.name}
+              sub={locket.friendsPill(g.memberCount)}
+              chevron={false}
+              accessory={g.id === group.id ? <Icon name="check" size={20} color="var(--sys-blue)" strokeWidth={2.6} /> : undefined}
+              onClick={() => { haptic('light'); setActive(g.id); setPicker(false); }}
+              sepInset={64}
+            />
+          ))}
+        </Section>
+        <Section>
+          <Row title={locket.createNew} link onClick={() => { setPicker(false); nav('/new-group'); }} chevron={false} />
+        </Section>
+      </Sheet>
     </div>
   );
 }
 
-function WeekRow({ w, groupId, mascot }: { w: JournalWeek; groupId: string; mascot: { species: string; level: number; outfit: string[] } }) {
+/** The first photo of each day, Monday first. */
+function byDay(posts: Post[]) {
+  const days = new Map<number, Post>();
+  for (const p of [...posts].sort((a, b) => a.takenAt - b.takenAt)) {
+    const k = (new Date(p.createdAt).getDay() + 6) % 7;
+    if (!days.has(k)) days.set(k, p);
+  }
+  return [...days.entries()].sort((a, b) => a[0] - b[0]);
+}
+
+/** [I] retro-01: your week, day tiles flush together, then the gray "+" tile. */
+function MyWeek({ week, onAdd }: { week: JournalWeek; onAdd: () => void }) {
   const nav = useNavigate();
-  const count = w.members.reduce((n, m) => n + m.posts.length, 0);
+  const mine = week.members.find((m) => m.posts[0]?.mine)?.posts ?? [];
   return (
-    <section className={s.week}>
-      <div className={s.weekHead}>
-        <div>
-          <div className={s.weekTitle}>{w.current ? 'This week' : weekRange(w.weekKey)}</div>
-          <div className={s.weekSub}>
-            {w.current ? `${weekRange(w.weekKey)} · developing` : `${count} moments · developed`}
-          </div>
-        </div>
-        {!w.current && (
-          <button className="chip" onClick={() => nav(`/g/${groupId}/week/${w.weekKey}`)}>
-            Open <Icon name="chevronRight" size={14} />
+    <div className={s.strip}>
+      <div className={s.tiles}>
+        {byDay(mine).map(([day, p]) => (
+          <button key={p.id} className={s.tile} onClick={() => nav(`/p/${p.id}`)}>
+            <img src={p.media.thumb ?? p.media.main} alt="" />
+            <span>{retro.days[day]}</span>
           </button>
-        )}
-      </div>
-      <div className={`${s.strip} scroll`}>
-        {w.wall && (
-          <button className={s.wallTile} onClick={() => nav(`/g/${groupId}/week/${w.weekKey}`)} aria-label="Open this week's wall">
-            <WallCanvas layout={w.wall.layout} mascot={mascot} />
-          </button>
-        )}
-        {w.members.length === 0 && (
-          <div className={s.emptyWeek}>
-            <Icon name="film" size={22} />
-            <span>{w.current ? 'Nothing in this week’s roll yet' : 'A quiet week'}</span>
-          </div>
-        )}
-        {w.members.map((m) => (
-          <FriendCard key={m.user.id} name={m.posts[0]?.mine ? 'You' : firstName(m.user.name)} user={m.user} posts={m.posts} blurred={w.blurred} />
         ))}
-        {w.thisWeekIn && (
-          <button className={s.thisWeekIn} onClick={() => nav('/rewind')}>
-            <img src={w.thisWeekIn.posts[0].media.thumb ?? w.thisWeekIn.posts[0].media.main} alt="" />
-            <span className={s.twiLabel}>
-              {COPY.thisWeekIn} <b>{new Date(w.thisWeekIn.posts[0].takenAt).getFullYear()}</b>
-            </span>
-          </button>
-        )}
-        {w.current && (
-          <button className={s.rewindTile} onClick={() => nav('/rewind')}>
-            <Icon name="rewind" size={28} />
-            <span>Rewind</span>
-          </button>
-        )}
       </div>
-      {w.blurred && (
-        <button className={s.lockBar} onClick={() => nav('/')}>
-          <Icon name="lock" size={16} /> Post to see this week
+      <button className={s.plus} onClick={onAdd} aria-label={ios.axShutter}>
+        <Icon name="plus" size={26} strokeWidth={2} />
+      </button>
+      {week.thisWeekIn && (
+        <button className={s.thisWeekIn} onClick={() => nav('/rewind')}>
+          <img src={week.thisWeekIn.posts[0].media.thumb ?? week.thisWeekIn.posts[0].media.main} alt="" />
+          <span>{spec.thisWeekYearsAgo(week.thisWeekIn.yearsAgo)}</span>
         </button>
       )}
-    </section>
+    </div>
   );
 }
 
-/** A friend's week as one film strip: photos flush, outer corners rounded. */
-function FriendCard({ name, user, posts, blurred }: { name: string; user: Post['user']; posts: Post[]; blurred: boolean }) {
+/** [I] retro-01: friends' weeks — avatar + name above a tall card, red "N new" pill. */
+function Friends({ week }: { week: JournalWeek }) {
   const nav = useNavigate();
+  const friends = week.members.filter((m) => !m.posts[0]?.mine && m.posts.length);
+  if (!friends.length) return null;
   return (
-    <button className={s.friend} onClick={() => nav(`/p/${posts[0].id}`)}>
-      <span className={s.film}>
-        {posts.slice(0, 4).map((p) => (
-          <img key={p.id} src={p.media.thumb ?? p.media.main} alt="" className={blurred && !p.mine ? s.blur : ''} />
+    <div className={s.carousel}>
+      {friends.map((m) => {
+        const latest = m.posts[m.posts.length - 1];
+        const fresh = m.posts.filter((p) => !p.seen).length;
+        return (
+          <button key={m.user.id} className={s.friend} onClick={() => nav(`/p/${latest.id}`)}>
+            <span className={s.friendName}>
+              <Avatar user={m.user} size={22} />
+              {firstName(m.user.name)}
+            </span>
+            <span className={s.card}>
+              <img src={latest.media.thumb ?? latest.media.main} alt="" className={week.blurred ? s.blur : ''} />
+              {fresh > 0 && !week.blurred && <span className={s.newPill}>{retro.nNew(fresh)}</span>}
+              {week.blurred && (
+                <span className={s.lock}>
+                  <Icon name="eyeOff" size={22} strokeWidth={2.2} />
+                  <b>{bereal.shareToView}</b>
+                </span>
+              )}
+            </span>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** [I] retro-02: "Week 26 Jun 26 - Jul 2" with "•••", then the day strip. */
+function PastWeek({ week, groupId }: { week: JournalWeek; groupId: string }) {
+  const nav = useNavigate();
+  const [more, setMore] = useState(false);
+  const { start, end } = weekBounds(week.weekKey);
+  const posts = week.members.flatMap((m) => m.posts);
+  const open = () => nav(`/g/${groupId}/week/${week.weekKey}`);
+  return (
+    <section className={s.past}>
+      <div className={s.pastHead}>
+        <button onClick={open}>
+          <b>{retro.week(isoWeek(start))}</b> <span>{retro.weekRange(start, end)}</span>
+        </button>
+        <button className={s.dots} onClick={() => setMore(true)} aria-label={ios.more}>
+          <Icon name="more" size={22} strokeWidth={3.2} />
+        </button>
+      </div>
+      <div className={s.tiles}>
+        {byDay(posts).map(([day, p]) => (
+          <button key={p.id} className={s.tile} onClick={open}>
+            <img src={p.media.thumb ?? p.media.main} alt="" />
+            <span>{retro.days[day]}</span>
+          </button>
         ))}
-      </span>
-      <span className={s.friendName}>
-        <Avatar user={user} size={18} /> {name}
-        {posts.length > 1 && <span className={s.friendN}>{posts.length}</span>}
-      </span>
-    </button>
+      </div>
+      <Menu
+        open={more}
+        onClose={() => setMore(false)}
+        actions={[
+          { label: retro.recaps, icon: 'film', onClick: open },
+          { label: retro.postcard, icon: 'pencil', onClick: () => nav(`/g/${groupId}/week/${week.weekKey}?postcard=1`) },
+        ]}
+      />
+    </section>
   );
 }

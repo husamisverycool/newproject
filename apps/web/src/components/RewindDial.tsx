@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
-import { ios, retro, spec } from '@app/shared';
+import { ios, retro } from '@app/shared';
 import { haptic, sfx } from '../lib/feedback';
+import { isoWeek } from '../lib/format';
 import { Icon } from './Icon';
 import { Menu } from './ios';
 import s from './rewind.module.css';
@@ -12,37 +13,47 @@ export interface DialItem {
   takenAt: number;
 }
 
+const TICKS = 40;
+
 /**
- * Retro's Rewind dial [V] (Fast Company / TechCrunch / App Store story): an "iPod-inspired dial" that
- * "clicks back into your past", "a subtle vibration as each new memory loads", "spin the dial to move
- * forward or backward in time, watching the photos … flip by"; "pause on specific moments, or jump to
- * random memories"; "share or send the photos to a friend, or hide those they'd rather not see".
- * Drawn as the iPod click wheel [B-high]: MENU top, ⏮ ⏭ sides, ⏯ bottom, centre button.
- * Press and hold the photo to see it uncropped (spec §A1).
+ * Retro's Rewind, laid out from research/inspo/store/retro-05-rewind [I]:
+ * - the photo fills the screen;
+ * - the big serif date "July 5, 2021" sits at the top left with "On this week" under it;
+ * - "•••" in a translucent circle at the top right;
+ * - at the bottom centre, a ring of radial tick marks with one longer, brighter tick (the position)
+ *   and ❙❙ in the middle.
+ * Behaviour [V] (Fast Company / TechCrunch): "spin the dial to move forward or backward in time,
+ * watching the photos … flip by", "a subtle vibration as each new memory loads", "pause on specific
+ * moments, or jump to random memories", "share or send the photos to a friend, or hide those they'd
+ * rather not see". Tap the photo to pick it (onboarding's starter wall, spec §A1); hold it to see it
+ * uncropped.
  */
-export function RewindDial({ items, picked, onSelect, onSend, onHide }: {
+export function RewindDial({ items, picked, onSelect, onSend, onHide, extraActions = [] }: {
   items: DialItem[];
-  /** Selected ids (e.g. photos chosen for the starter wall). */
   picked?: Set<string>;
-  /** Centre button. */
   onSelect?: (item: DialItem) => void;
   onSend?: (item: DialItem) => void;
   onHide?: (item: DialItem) => void;
+  extraActions?: { label: string; icon: string; onClick: () => void }[];
 }) {
   const [i, setI] = useState(0);
   const [dir, setDir] = useState(1);
-  const [playing, setPlaying] = useState(false);
+  const [playing, setPlaying] = useState(true);
   const [uncrop, setUncrop] = useState(false);
   const [menu, setMenu] = useState(false);
-  const wheel = useRef<HTMLDivElement>(null);
+  const [hand, setHand] = useState(0);
+  const ring = useRef<HTMLDivElement>(null);
   const last = useRef<number | null>(null);
   const acc = useRef(0);
+  const hold = useRef<number | null>(null);
+  const held = useRef(false);
   const item = items[Math.min(i, items.length - 1)];
 
   const step = (d: number) => {
     setDir(d);
+    setHand((h) => (h + d + TICKS) % TICKS);
     setI((x) => {
-      const n = Math.max(0, Math.min(items.length - 1, x + d));
+      const n = (x + d + items.length) % Math.max(1, items.length);
       if (n !== x) {
         sfx.click();
         haptic('light');
@@ -59,52 +70,80 @@ export function RewindDial({ items, picked, onSelect, onSend, onHide }: {
   };
 
   useEffect(() => {
-    if (!playing) return;
-    const t = setInterval(() => {
-      setDir(1);
-      setI((x) => (x + 1) % items.length);
-      sfx.click();
-      haptic('light');
-    }, 900);
+    if (!playing || items.length < 2) return;
+    const t = setInterval(() => step(1), 2200);
     return () => clearInterval(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [playing, items.length]);
 
   const angle = (e: React.PointerEvent) => {
-    const r = wheel.current!.getBoundingClientRect();
+    const r = ring.current!.getBoundingClientRect();
     return (Math.atan2(e.clientY - (r.top + r.height / 2), e.clientX - (r.left + r.width / 2)) * 180) / Math.PI;
   };
 
   if (!item) return null;
-  const years = new Date().getFullYear() - new Date(item.takenAt).getFullYear();
+  const sameWeek = isoWeek(item.takenAt) === isoWeek(Date.now()) && new Date(item.takenAt).getFullYear() < new Date().getFullYear();
 
   return (
-    <div className={s.dial}>
-      <div className={s.when}>{years >= 1 ? spec.thisWeekYearsAgo(years) : ios.longDate(item.takenAt)}</div>
-      <div className={s.photoArea} onPointerDown={() => setUncrop(true)} onPointerUp={() => setUncrop(false)} onPointerLeave={() => setUncrop(false)}>
-        <AnimatePresence initial={false} custom={dir}>
-          <motion.div
-            key={item.id}
-            className={s.photo}
-            initial={{ rotateX: dir > 0 ? -80 : 80, opacity: 0 }}
-            animate={{ rotateX: 0, opacity: 1 }}
-            exit={{ rotateX: dir > 0 ? 80 : -80, opacity: 0 }}
-            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
-          >
-            <img src={item.src} alt="" style={{ objectFit: uncrop ? 'contain' : 'cover' }} />
-            {picked?.has(item.id) && (
-              <span className={s.picked}>
-                <Icon name="check" size={16} strokeWidth={3} />
-              </span>
-            )}
-          </motion.div>
-        </AnimatePresence>
-      </div>
-      <div className={s.date}>{ios.longDate(item.takenAt)}</div>
+    <div className={s.root}>
       <div
-        ref={wheel}
-        className={s.wheel}
+        className={s.photoArea}
+        onPointerDown={() => {
+          held.current = false;
+          hold.current = window.setTimeout(() => {
+            held.current = true;
+            setUncrop(true);
+          }, 320);
+        }}
+        onPointerUp={() => {
+          if (hold.current) clearTimeout(hold.current);
+          setUncrop(false);
+          if (!held.current && onSelect) {
+            haptic('medium');
+            onSelect(item);
+          }
+        }}
+        onPointerLeave={() => {
+          if (hold.current) clearTimeout(hold.current);
+          setUncrop(false);
+        }}
+      >
+        <AnimatePresence initial={false} custom={dir}>
+          <motion.img
+            key={item.id}
+            src={item.src}
+            alt=""
+            className={s.photo}
+            style={{ objectFit: uncrop ? 'contain' : 'cover' }}
+            initial={{ opacity: 0, scale: 1.04 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+            draggable={false}
+          />
+        </AnimatePresence>
+        {picked?.has(item.id) && (
+          <span className={s.picked}>
+            <Icon name="check" size={18} strokeWidth={3} />
+          </span>
+        )}
+      </div>
+
+      <div className={s.head}>
+        <div>
+          <h1 className={s.date}>{retro.longDate(item.takenAt)}</h1>
+          {sameWeek && <p className={s.sub}>{retro.onThisWeek}</p>}
+        </div>
+        <button className={s.more} onClick={() => setMenu(true)} aria-label={ios.more}>
+          <Icon name="more" size={20} strokeWidth={3.2} />
+        </button>
+      </div>
+
+      <div
+        ref={ring}
+        className={s.dial}
         onPointerDown={(e) => {
-          (e.target as HTMLElement).setPointerCapture?.(e.pointerId);
+          (e.currentTarget as HTMLElement).setPointerCapture?.(e.pointerId);
           last.current = angle(e);
           acc.current = 0;
         }}
@@ -116,12 +155,15 @@ export function RewindDial({ items, picked, onSelect, onSend, onHide }: {
           if (d < -180) d += 360;
           last.current = a;
           acc.current += d;
-          while (acc.current > 24) {
-            acc.current -= 24;
+          const per = 360 / TICKS;
+          while (acc.current > per) {
+            acc.current -= per;
+            setPlaying(false);
             step(1);
           }
-          while (acc.current < -24) {
-            acc.current += 24;
+          while (acc.current < -per) {
+            acc.current += per;
+            setPlaying(false);
             step(-1);
           }
         }}
@@ -129,25 +171,45 @@ export function RewindDial({ items, picked, onSelect, onSend, onHide }: {
           last.current = null;
         }}
       >
-        <button className={`${s.label} ${s.top}`} onClick={() => setMenu(true)}>{ios.ipodMenu}</button>
-        <button className={`${s.label} ${s.left}`} onClick={() => step(-1)} aria-label={retro.rewind}>
-          <Icon name="skipBack" size={18} />
+        <svg viewBox="0 0 120 120" className={s.ticks} aria-hidden>
+          {Array.from({ length: TICKS }, (_, k) => {
+            const on = k === hand;
+            const a = (k / TICKS) * Math.PI * 2 - Math.PI / 2;
+            const r1 = on ? 38 : 46;
+            const r2 = 56;
+            return (
+              <line
+                key={k}
+                x1={60 + Math.cos(a) * r1}
+                y1={60 + Math.sin(a) * r1}
+                x2={60 + Math.cos(a) * r2}
+                y2={60 + Math.sin(a) * r2}
+                stroke="#fff"
+                strokeOpacity={on ? 1 : 0.7}
+                strokeWidth={on ? 3 : 1.6}
+                strokeLinecap="round"
+              />
+            );
+          })}
+        </svg>
+        <button
+          className={s.play}
+          onPointerDown={(e) => e.stopPropagation()}
+          onClick={() => { haptic('light'); setPlaying(!playing); }}
+          aria-label={retro.rewindPause}
+        >
+          <Icon name={playing ? 'pause' : 'play'} size={30} strokeWidth={4} filled={!playing} />
         </button>
-        <button className={`${s.label} ${s.right}`} onClick={() => step(1)} aria-label={retro.rewind}>
-          <Icon name="skipForward" size={18} />
-        </button>
-        <button className={`${s.label} ${s.bottom}`} onClick={() => setPlaying(!playing)} aria-label={retro.rewindPause}>
-          <Icon name="playPause" size={18} />
-        </button>
-        <button className={s.center} onClick={() => { haptic('medium'); onSelect?.(item); }} aria-label={ios.select} />
       </div>
+
       <Menu
         open={menu}
         onClose={() => setMenu(false)}
         actions={[
           { label: retro.rewindRandom, icon: 'shuffle', onClick: random },
-          ...(onSend ? [{ label: retro.rewindSend, icon: 'send', onClick: () => onSend(item) }] : []),
+          ...(onSend ? [{ label: retro.rewindSend, icon: 'paperplane', onClick: () => onSend(item) }] : []),
           ...(onHide ? [{ label: retro.rewindHide, icon: 'eyeOff', onClick: () => onHide(item) }] : []),
+          ...extraActions,
         ]}
       />
     </div>

@@ -13,6 +13,7 @@ const JoinPage = lazy(() => import('./screens/JoinPage'));
 const Journal = lazy(() => import('./screens/Journal'));
 const WeekView = lazy(() => import('./screens/WeekView'));
 const Rewind = lazy(() => import('./screens/Rewind'));
+const Calendar = lazy(() => import('./screens/Calendar'));
 const ChatList = lazy(() => import('./screens/ChatList'));
 const ChatThread = lazy(() => import('./screens/ChatThread'));
 const PlanPage = lazy(() => import('./screens/PlanPage'));
@@ -66,6 +67,7 @@ function AppRoutes() {
         <Route path="/" element={<CameraHome />} />
         <Route path="/roll" element={<RollComposer />} />
         <Route path="/journal" element={<Journal />} />
+        <Route path="/journal/calendar" element={<Calendar />} />
         <Route path="/g/:groupId/week/:weekKey" element={<WeekView />} />
         <Route path="/rewind" element={<Rewind />} />
         <Route path="/chats" element={<ChatList />} />

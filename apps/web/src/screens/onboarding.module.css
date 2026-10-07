@@ -190,7 +190,13 @@
 
 /* Rewind */
 .dialWrap {
+  position: relative;
   margin-top: 16px;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  max-height: 56vh;
+  border-radius: 24px;
+  overflow: hidden;
 }
 .rollPick {
   margin: 28px auto 0;

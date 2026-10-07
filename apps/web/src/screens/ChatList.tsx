@@ -7,6 +7,7 @@ import { firstName } from '../lib/format';
 import type { Message } from '../lib/types';
 import { Icon } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
+import { AppTabs } from '../components/AppTabs';
 import s from './chat.module.css';
 
 /**
@@ -52,6 +53,7 @@ export default function ChatList() {
           );
         })}
       </div>
+      <AppTabs />
     </div>
   );
 }

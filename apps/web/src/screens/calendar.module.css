@@ -1,0 +1,87 @@
+/* BeReal "My BeReals" [I] bereal-04-calendar: black; title semibold 20 centred; month label 13
+   uppercase centred; weekday row 13 semibold; cells ≈ 1:1.2, radius 4, white bold day number centred,
+   today outlined white 2 pt. */
+.root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #fff;
+  font-family: var(--font-sf);
+}
+.header {
+  flex: none;
+  display: grid;
+  grid-template-columns: 44px 1fr 44px;
+  align-items: center;
+  padding: calc(var(--safe-top) + 6px) 8px 8px;
+}
+.header h1 {
+  margin: 0;
+  text-align: center;
+  font: 600 20px/25px var(--font-sf);
+}
+.back {
+  width: 44px;
+  height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+}
+.scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 10px calc(var(--safe-bottom) + 24px);
+}
+.private {
+  margin: 0 0 6px;
+  text-align: center;
+  font: 400 13px/18px var(--font-sf);
+  color: rgba(255, 255, 255, 0.5);
+}
+.month h2 {
+  margin: 18px 0 10px;
+  text-align: center;
+  font: 500 13px/18px var(--font-sf);
+  letter-spacing: 0.02em;
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 3px;
+}
+.wd {
+  text-align: center;
+  font: 500 13px/24px var(--font-sf);
+  margin-bottom: 6px;
+}
+.cell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 5 / 6;
+  border-radius: 4px;
+  overflow: hidden;
+  color: #fff;
+}
+.cell:disabled {
+  opacity: 1;
+}
+.cell img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cell span {
+  position: relative;
+  font: 600 17px/1 var(--font-sf);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5);
+}
+.today {
+  box-shadow: inset 0 0 0 2px #fff;
+}
