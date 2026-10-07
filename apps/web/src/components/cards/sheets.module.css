@@ -1,0 +1,204 @@
+/* Telegram collectible / upgrade sheets [V-weak / B-med] and TCG flair sheet. */
+
+.tgHeader {
+  position: relative;
+  margin: -6px calc(var(--margin) * -1) 0;
+  height: 318px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end;
+  padding-bottom: 22px;
+  border-radius: 0 0 22px 22px;
+  background: radial-gradient(circle at 50% 40%, var(--bd-from), var(--bd-to) 78%);
+  transition: background 600ms ease;
+  color: #fff;
+}
+.rings {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+.rings span {
+  position: absolute;
+  translate: -50% -50%;
+  font-size: 15px;
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.32;
+}
+.model {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  width: 116px;
+  translate: -50% -50%;
+}
+.glitter {
+  position: absolute;
+  inset: -26px;
+  pointer-events: none;
+  color: #fff;
+}
+.glitter svg {
+  position: absolute;
+  animation: glint 2.2s ease-in-out infinite;
+}
+@keyframes glint {
+  0%, 100% { opacity: 0; transform: scale(0.3); }
+  50% { opacity: 1; transform: scale(1); }
+}
+.tgTitle {
+  position: relative;
+  font: 700 21px/1.2 var(--font-sf);
+  text-align: center;
+  padding: 0 24px;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.2);
+}
+.tgSub {
+  position: relative;
+  font: var(--t-subhead);
+  opacity: 0.82;
+  text-align: center;
+  padding: 4px 28px 0;
+}
+
+.table {
+  margin-top: 14px;
+  border-radius: 12px;
+  background: var(--sys-grouped2);
+  overflow: hidden;
+}
+.tr {
+  position: relative;
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  align-items: center;
+  min-height: 44px;
+  padding: 0 14px;
+  font: var(--t-subhead);
+}
+.tr + .tr::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 0.5px;
+  background: var(--sys-sep);
+}
+.tr > :first-child {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  color: var(--sys-label2);
+  border-right: 0.5px solid var(--sys-sep);
+  margin-right: 12px;
+}
+.td {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  color: var(--sys-label);
+  font-weight: 500;
+}
+.pill {
+  padding: 2px 7px;
+  border-radius: 999px;
+  font: 600 12px/16px var(--font-sf);
+  background: color-mix(in srgb, var(--bd-from) 18%, transparent);
+  color: color-mix(in srgb, var(--bd-from) 80%, #000);
+}
+
+.feature {
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  margin: 18px 6px 4px;
+}
+.featureIcon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: var(--sys-blue);
+}
+.featureTitle {
+  font: var(--t-headline);
+}
+.featureText {
+  font: var(--t-subhead);
+  color: var(--sys-label2);
+}
+
+.tgButton {
+  margin-top: 16px;
+  width: 100%;
+  height: 50px;
+  border-radius: 12px;
+  background: var(--sys-blue);
+  color: #fff;
+  font: var(--t-headline);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+}
+.tgButton:disabled {
+  opacity: 0.4;
+}
+.tgButton[data-gray] {
+  background: var(--sys-fill2);
+  color: var(--sys-label);
+}
+
+/* TCG Pocket teal pill [B-low] */
+.tcgButton {
+  height: 48px;
+  min-width: 160px;
+  padding: 0 26px;
+  border-radius: 999px;
+  background: var(--tcg-teal);
+  color: #fff;
+  font: 700 17px/1 var(--font-sf);
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--tcg-teal) 70%, #000), 0 8px 18px -8px color-mix(in srgb, var(--tcg-teal) 80%, transparent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.tcgButton:disabled {
+  opacity: 0.4;
+}
+.tcgButton[data-white] {
+  background: #fff;
+  color: #1c1c1e;
+  box-shadow: 0 3px 0 var(--tcg-frame), 0 8px 18px -10px rgba(0, 0, 0, 0.4);
+}
+
+.flairRow {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  padding: 14px;
+  margin-top: 6px;
+  border-radius: 16px;
+  background: var(--tcg-bg);
+  box-shadow: 0 0 0 2px var(--tcg-gold), 0 6px 16px -10px rgba(0, 0, 0, 0.4);
+}
+.flairName {
+  font: 700 16px/1.2 var(--font-sf);
+}
+.costs {
+  display: flex;
+  gap: 14px;
+  margin-top: 8px;
+  color: var(--sys-label2);
+}

@@ -1,0 +1,466 @@
+/*
+ * Friend Cards visuals. TCG Pocket card anatomy [B-med, research/13 §B]: illustration window under a name
+ * bar; "Illus. <name>" bottom-left with the rarity mark directly under it [V]; ☆ full art [B]; ☆☆☆ golden
+ * stars [V]. Card aspect 63:88 is the physical standard — Pocket's in-app ratio is UNKNOWN (research/05 §1.7).
+ * Colors: --tcg-* tokens; type: --font-card / --font-card-num on card faces.
+ */
+
+/* ───────────── Card ───────────── */
+.card {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 63 / 88;
+  container-type: inline-size;
+  border-radius: 4.8cqw;
+  transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transform-style: preserve-3d;
+  transition: transform 140ms ease-out;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+.card[data-tilting] {
+  transition: none;
+}
+.face {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  padding: 3.4cqw;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, color-mix(in srgb, var(--tcg-frame) 55%, #fff), var(--tcg-frame) 55%, color-mix(in srgb, var(--tcg-frame) 80%, #000));
+  box-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.18), 0 5cqw 12cqw -6cqw rgba(0, 0, 0, 0.45);
+}
+.numbered .face {
+  background: radial-gradient(circle at 50% 42%, var(--bd-from), var(--bd-to));
+}
+.inner {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  border-radius: 2.6cqw;
+  padding: 0 3.2cqw 2.6cqw;
+  background: linear-gradient(180deg, var(--tcg-bg), var(--tcg-panel));
+}
+.nameBar {
+  display: flex;
+  align-items: baseline;
+  gap: 2cqw;
+  padding: 3.6cqw 0.6cqw 2.6cqw;
+  color: #1c1c1e;
+}
+.name {
+  flex: 1;
+  min-width: 0;
+  font: 700 7.4cqw/1.05 var(--font-card);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.serial {
+  flex: none;
+  font: 600 5cqw/1 var(--font-card-num);
+  opacity: 0.75;
+}
+.window {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  border-radius: 1.2cqw;
+  overflow: hidden;
+  background: var(--tcg-panel);
+  box-shadow: 0 0 0 0.7cqw color-mix(in srgb, var(--tcg-frame) 70%, #fff), 0 0.6cqw 1.4cqw rgba(0, 0, 0, 0.25);
+}
+.window img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  pointer-events: none;
+}
+.foot {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2cqw;
+  padding: 3cqw 0.6cqw 0;
+  color: #3a3a3c;
+}
+.illusCol {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1.2cqw;
+}
+.illus {
+  font: 500 4.6cqw/1.1 var(--font-card);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.mark {
+  font: 600 6.2cqw/1 var(--font-sf);
+  letter-spacing: -0.2cqw;
+}
+.mark[data-gold] {
+  color: var(--tcg-gold);
+  text-shadow: 0 0 1.6cqw color-mix(in srgb, var(--tcg-gold) 70%, transparent), 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.45);
+}
+.num {
+  flex: none;
+  font: 500 4.2cqw/1 var(--font-card-num);
+  opacity: 0.72;
+  white-space: nowrap;
+}
+
+/* ☆ Art Rare / ☆☆☆ Immersive Rare: full art — the photo fills the card [B]; thin frame line [B-low-med]. */
+.full .face {
+  padding: 1.6cqw;
+}
+.full .inner {
+  padding: 0;
+  background: #000;
+  overflow: hidden;
+}
+.full .window {
+  position: absolute;
+  inset: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.full .inner::before,
+.full .inner::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+.full .inner::before {
+  top: 0;
+  height: 26%;
+  background: linear-gradient(rgba(0, 0, 0, 0.5), transparent);
+}
+.full .inner::after {
+  bottom: 0;
+  height: 30%;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+}
+.full .nameBar,
+.full .foot {
+  position: relative;
+  z-index: 2;
+  color: #fff;
+  text-shadow: 0 0.3cqw 1.2cqw rgba(0, 0, 0, 0.6);
+}
+.full .nameBar {
+  padding: 4.4cqw 4.4cqw 0;
+}
+.full .foot {
+  margin-top: auto;
+  padding: 0 4.4cqw 3.8cqw;
+}
+
+/* Tilt sheen: "tilt the device to view cards from different angles" [V]. Holographic for ☆ and up. */
+.sheen {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.5) calc(var(--mx, 0.5) * 100%), transparent 75%);
+  mix-blend-mode: soft-light;
+  opacity: 0.8;
+}
+.holo .sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: repeating-linear-gradient(
+    120deg,
+    hsl(0 100% 70%) 0%,
+    hsl(50 100% 65%) 6%,
+    hsl(140 90% 65%) 12%,
+    hsl(200 100% 70%) 18%,
+    hsl(280 90% 72%) 24%,
+    hsl(0 100% 70%) 30%
+  );
+  background-size: 300% 300%;
+  background-position: calc(var(--mx, 0.5) * 100%) calc(var(--my, 0.5) * 100%);
+  mix-blend-mode: color-dodge;
+  opacity: 0.32;
+}
+
+/* Telegram numbered variant: grey symbol pattern on the backdrop frame [V-weak]. */
+.symbols {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  overflow: hidden;
+  pointer-events: none;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  align-content: space-around;
+  font-size: 5cqw;
+  filter: grayscale(1);
+  opacity: 0.32;
+}
+.symbols span {
+  text-align: center;
+  line-height: 2.4;
+}
+
+/* "Sparkle Flair: Gold" — animated gold sparkles on the card. */
+.flair {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+}
+.flair svg {
+  position: absolute;
+  width: 11cqw;
+  height: 11cqw;
+  color: var(--tcg-gold);
+  filter: drop-shadow(0 0 1.4cqw color-mix(in srgb, var(--tcg-gold) 80%, transparent));
+  animation: twinkle 1.8s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%, 100% { transform: scale(0.2) rotate(0deg); opacity: 0; }
+  45% { transform: scale(1) rotate(45deg); opacity: 1; }
+  70% { transform: scale(0.5) rotate(70deg); opacity: 0.6; }
+}
+
+/* Card back. No source art is known for Pocket's default back; the only sourced identity is the brand. */
+.back {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  display: grid;
+  place-items: center;
+  background: #000;
+  box-shadow: inset 0 0 0 1.6cqw rgba(255, 255, 255, 0.08), 0 0.4cqw 1cqw rgba(0, 0, 0, 0.18), 0 5cqw 12cqw -6cqw rgba(0, 0, 0, 0.45);
+  color: #fff;
+  overflow: hidden;
+}
+.back[data-sleeve] {
+  background: radial-gradient(circle at 50% 42%, var(--bd-from), var(--bd-to));
+}
+.back :global(.wordmark) {
+  font-size: 19cqw;
+}
+
+/* Flip (Wonder Pick, pack reveal). */
+.flip {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 63 / 88;
+  transform-style: preserve-3d;
+  transition: transform 520ms cubic-bezier(0.3, 0.7, 0.2, 1);
+}
+.flip[data-down] {
+  transform: rotateY(180deg);
+}
+.flipSide {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+}
+.flipBack {
+  transform: rotateY(180deg);
+}
+
+/* Badges on cards */
+.newBadge {
+  position: absolute;
+  top: -1.8cqw;
+  left: 50%;
+  translate: -50% 0;
+  z-index: 6;
+  padding: 1.6cqw 4cqw;
+  border-radius: 999px;
+  background: var(--sys-red);
+  color: #fff;
+  font: 800 6.4cqw/1 var(--font-sf);
+  letter-spacing: 0.04em;
+  box-shadow: 0 1cqw 3cqw rgba(0, 0, 0, 0.3);
+}
+.copies {
+  position: absolute;
+  right: -2cqw;
+  bottom: -2cqw;
+  z-index: 6;
+  min-width: 15cqw;
+  height: 15cqw;
+  padding: 0 3cqw;
+  border-radius: 999px;
+  display: grid;
+  place-items: center;
+  background: #1c1c1e;
+  color: #fff;
+  font: 700 8cqw/1 var(--font-card-num);
+  box-shadow: 0 0 0 1.4cqw var(--tcg-bg);
+}
+.heart {
+  position: absolute;
+  top: 3cqw;
+  right: 3cqw;
+  z-index: 6;
+  width: 17cqw;
+  height: 17cqw;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: var(--sys-pink);
+  box-shadow: 0 1cqw 3cqw rgba(0, 0, 0, 0.25);
+}
+.heart[data-hi] {
+  background: var(--tcg-gold);
+  color: #fff;
+}
+
+/* Small cards: drop the text and keep the art + mark (My Cards zoomed out to 11 columns). */
+@container (max-width: 84px) {
+  .nameBar,
+  .illus,
+  .num {
+    display: none;
+  }
+  .inner {
+    padding-top: 3.2cqw;
+  }
+  .foot {
+    padding-top: 2cqw;
+  }
+  .full .foot {
+    padding-bottom: 4cqw;
+  }
+  .mark {
+    font-size: 9cqw;
+  }
+}
+
+/* ───────────── Card Dex slot: "all details except the card's appearance" [V] ───────────── */
+.slot {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 63 / 88;
+  container-type: inline-size;
+  border-radius: 4.8cqw;
+  background: color-mix(in srgb, var(--tcg-frame) 32%, var(--tcg-bg));
+  box-shadow: inset 0 0 0 0.8cqw color-mix(in srgb, var(--tcg-frame) 70%, transparent);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 6cqw 6cqw 5cqw;
+  color: #8e8e93;
+}
+.slotNum {
+  font: 600 6cqw/1 var(--font-card-num);
+}
+.slotName {
+  font: 700 7cqw/1.15 var(--font-card);
+  color: #636366;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.slotFoot {
+  display: flex;
+  flex-direction: column;
+  gap: 1.4cqw;
+}
+@container (max-width: 84px) {
+  .slotName,
+  .slotFoot .illus {
+    display: none;
+  }
+  .slotNum {
+    font-size: 12cqw;
+  }
+}
+
+/* ───────────── Pack (booster) ───────────── */
+.pack {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 100 / 178;
+  container-type: inline-size;
+  filter: drop-shadow(0 6cqw 8cqw rgba(0, 0, 0, 0.28));
+}
+.packLayer {
+  position: absolute;
+  inset: 0;
+}
+.packArt {
+  position: absolute;
+  left: 7%;
+  right: 7%;
+  top: 15%;
+  bottom: 13%;
+  border-radius: 4cqw;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6cqw 4cqw 5cqw;
+  background: radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--art) 30%, #fff) 0%, var(--art) 62%, color-mix(in srgb, var(--art) 70%, #000) 100%);
+  box-shadow: inset 0 0 0 1cqw rgba(255, 255, 255, 0.35);
+}
+.packArt :global(.wordmark) {
+  font-size: 15cqw;
+  color: #fff;
+  text-shadow: 0 1cqw 3cqw rgba(0, 0, 0, 0.3);
+}
+.packSet {
+  font: 700 6cqw/1 var(--font-card-num);
+  color: #fff;
+  letter-spacing: 0.04em;
+  text-shadow: 0 0.6cqw 2cqw rgba(0, 0, 0, 0.35);
+}
+.packShine {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 48%, transparent 60%);
+  background-size: 250% 100%;
+  animation: packShine 3.6s ease-in-out infinite;
+  mix-blend-mode: overlay;
+}
+@keyframes packShine {
+  0% { background-position: 120% 0; }
+  60%, 100% { background-position: -120% 0; }
+}
+
+/* ───────────── Currency & stamina ───────────── */
+.pips {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+}
+.pip {
+  width: 9px;
+  height: 14px;
+  border-radius: 3px;
+  background: color-mix(in srgb, var(--tcg-frame) 60%, transparent);
+}
+.pip[data-on] {
+  background: var(--pip, var(--tcg-teal));
+  box-shadow: inset 0 -2px 0 rgba(0, 0, 0, 0.12);
+}
+.amount {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 15px/1 var(--font-sf);
+  font-variant-numeric: tabular-nums;
+}

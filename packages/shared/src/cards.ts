@@ -1,4 +1,6 @@
 import type { Post, Rarity } from './types.ts';
+import { tcg } from './sources/tcg.ts';
+import { imessage } from './sources/messages.ts';
 
 /**
  * Friend Cards economy, adapted from Pokémon TCG Pocket (research/05 §1).
@@ -22,11 +24,12 @@ export const RARITY_MARK: Record<Rarity, string> = {
   immersive: '☆☆☆',
 };
 
+/** Displayed tier names come from the TCG Pocket deck (◇ Common, ◇◇ Uncommon, ☆ Art Rare, ☆☆☆ Immersive Rare). */
 export const RARITY_NAME: Record<Rarity, string> = {
-  common: 'Common',
-  rare: 'Rare',
-  holo: 'Holo',
-  immersive: 'Immersive',
+  common: tcg.rCommon,
+  rare: tcg.rUncommon,
+  holo: tcg.rArtRare,
+  immersive: tcg.rImmersive,
 };
 
 export function rarityRank(r: Rarity) {
@@ -182,13 +185,22 @@ export function openPack(pool: PoolMoment[], rng: Rng = Math.random): PackResult
   return { rarePack, cards, tell };
 }
 
-/** Expected odds table shown in-app before any paid pack (spec §J: odds shown). */
-export function oddsTable() {
+export interface OddsTable {
+  /** Pack positions (1-based) and the percent chance of each tier at those positions. */
+  slots: { positions: number[]; odds: Partial<Record<Rarity, number>> }[];
+  /** TCG Pocket "Rare Pack": percent chance per pack and its per-card tier odds. */
+  rarePack: { chance: number; odds: Partial<Record<Rarity, number>> };
+}
+
+/** Expected odds table shown in-app before any pack purchase (spec §J: odds shown). Data only, no labels. */
+export function oddsTable(): OddsTable {
   return {
-    'Cards 1–3': { common: 100 },
-    'Card 4': SLOT_ODDS.slot4,
-    'Card 5': SLOT_ODDS.slot5,
-    'Rare Pack': { chance: RARE_PACK_CHANCE * 100, ...RARE_PACK_ODDS },
+    slots: [
+      { positions: [1, 2, 3], odds: { common: 100 } },
+      { positions: [4], odds: SLOT_ODDS.slot4 },
+      { positions: [5], odds: SLOT_ODDS.slot5 },
+    ],
+    rarePack: { chance: RARE_PACK_CHANCE * 100, odds: RARE_PACK_ODDS },
   };
 }
 
@@ -236,58 +248,103 @@ export function checkTrade(opts: {
 
 /* ───────────────────────── Numbered upgrade traits (Telegram) ───────────────────────── */
 
+/**
+ * Telegram collectibles get "a random set of secondary traits, including a background color, icon and
+ * number" [V]. The % Telegram shows next to each trait is the share of the collection that has it [V];
+ * the server computes it from the cards actually issued in the group, so no weights are stored here.
+ */
 export interface Trait {
   id: string;
   name: string;
-  /** Percent shown next to the trait (Telegram shows each attribute's rarity). */
-  pct: number;
 }
 
-/** Backdrops are radial gradients built from the ledger palette. */
-export const BACKDROPS: (Trait & { from: string; to: string })[] = [
-  { id: 'onyx', name: 'Onyx', pct: 28, from: '#2C2C2E', to: '#000000' },
-  { id: 'bee', name: 'Bee', pct: 20, from: '#FFC800', to: '#FF9600' },
-  { id: 'macaw', name: 'Macaw', pct: 16, from: '#1CB0F6', to: '#2B70C9' },
-  { id: 'mask', name: 'Mask', pct: 13, from: '#89E219', to: '#58CC02' },
-  { id: 'beetle', name: 'Beetle', pct: 11, from: '#CE82FF', to: '#2B70C9' },
-  { id: 'cardinal', name: 'Cardinal', pct: 8, from: '#FF4B4B', to: '#FF0069' },
-  { id: 'mixtape', name: 'Mixtape', pct: 3.5, from: '#1ED760', to: '#000000' },
-  { id: 'gold', name: 'Gold Foil', pct: 0.5, from: '#FFC800', to: '#FFFFFF' },
-];
+/** Mixes a #RRGGBB hex toward black by `amount` (0–1): the dark edge of a radial backdrop. */
+export function darken(hex: string, amount: number) {
+  const n = parseInt(hex.slice(1), 16);
+  const ch = (shift: number) => Math.round(((n >> shift) & 255) * (1 - amount));
+  return `#${[16, 8, 0].map((sh) => ch(sh).toString(16).padStart(2, '0')).join('')}`.toUpperCase();
+}
 
-export const SYMBOLS: Trait[] = [
-  { id: 'heart', name: 'Heart', pct: 25 },
-  { id: 'star', name: 'Star', pct: 22 },
-  { id: 'bolt', name: 'Bolt', pct: 18 },
-  { id: 'film', name: 'Film', pct: 14 },
-  { id: 'flame', name: 'Flame', pct: 10 },
-  { id: 'moon', name: 'Moon', pct: 7 },
-  { id: 'crown', name: 'Crown', pct: 3.5 },
-  { id: 'mascot', name: 'Mascot', pct: 0.5 },
-];
+/**
+ * Backdrops: Apple's system colors by name with their light-mode hexes [HIG] (Telegram's own backdrop
+ * set is UNKNOWN). Drawn as a radial gradient from the hex at the centre to a darker mix at the edge
+ * ("radial gradient backdrop (centre colour → edge colour)" [B-med]).
+ */
+export const BACKDROPS: (Trait & { from: string; to: string })[] = (
+  [
+    ['red', 'Red', '#FF3B30'],
+    ['orange', 'Orange', '#FF9500'],
+    ['yellow', 'Yellow', '#FFCC00'],
+    ['green', 'Green', '#34C759'],
+    ['mint', 'Mint', '#00C7BE'],
+    ['teal', 'Teal', '#30B0C7'],
+    ['cyan', 'Cyan', '#32ADE6'],
+    ['blue', 'Blue', '#007AFF'],
+    ['indigo', 'Indigo', '#5856D6'],
+    ['purple', 'Purple', '#AF52DE'],
+    ['pink', 'Pink', '#FF2D55'],
+    ['brown', 'Brown', '#A2845E'],
+    ['gray', 'Gray', '#8E8E93'],
+  ] as const
+).map(([id, name, hex]) => ({ id, name, from: hex, to: darken(hex, 0.45) }));
 
+/** Symbols: the iMessage Tapback set [V], shown as the repeated grey icons on the backdrop. */
+export const SYMBOLS: Trait[] = imessage.tapbacks.map((e, i) => ({ id: `tapback${i}`, name: e }));
+
+export const backdropById = (id: string | undefined) => BACKDROPS.find((b) => b.id === id);
+export const symbolById = (id: string | undefined) => SYMBOLS.find((s) => s.id === id);
+
+/** Both traits are rolled uniformly — no invented weights. */
 export function rollTraits(rng: Rng = Math.random) {
-  const pick = <T extends Trait>(list: T[]) => {
-    let r = rng() * 100;
-    for (const t of list) {
-      r -= t.pct;
-      if (r < 0) return t;
-    }
-    return list[list.length - 1];
+  return { backdrop: choose(BACKDROPS, rng), symbol: choose(SYMBOLS, rng) };
+}
+
+/** Maps any stored trait ids (including retired ones) onto the current tables, deterministically per card. */
+export function normalizeTraits(raw: { backdrop?: string; symbol?: string } | null | undefined, seed: string) {
+  if (!raw) return null;
+  let h = 0;
+  for (const ch of seed) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return {
+    backdrop: backdropById(raw.backdrop)?.id ?? BACKDROPS[h % BACKDROPS.length].id,
+    symbol: symbolById(raw.symbol)?.id ?? SYMBOLS[(h >>> 8) % SYMBOLS.length].id,
   };
-  return { backdrop: pick(BACKDROPS), symbol: pick(SYMBOLS) };
 }
 
 /* ───────────────────────── Sparks (Discord Orbs analogue, no ads) ───────────────────────── */
 
+/**
+ * Discord Quest payouts [V-weak]: 200 for small actions, 700 for big ones. Ad-paying Quests are omitted
+ * (spec §J); Sparks come only from posting, playing and reacting.
+ */
 export const SPARKS_EARN = {
-  post: 10,
-  ritualPost: 25,
-  playGame: 15,
-  reactRecap: 2,
-  questComplete: 60,
+  post: 200,
+  reactRecap: 200,
+  missions: 200,
+  ritualPost: 700,
+  playGame: 700,
+  questComplete: 700,
 } as const;
 
+/**
+ * Discord Orb prices [V-weak] (PC Gamer, launch era): animated avatar decoration / profile background
+ * 3,500 Orbs, badge 70 Orbs, 3-day Nitro credit 1,400 Orbs. A pack costs the Nitro-credit price.
+ */
 export const SPARKS_PRICE = {
-  extraPack: 120,
+  extraPack: 1400,
+  decoration: 3500,
+  premium: 1400,
+  badge: 70,
 } as const;
+
+/* ───────────────────────── Missions (TCG Pocket Daily Missions) ───────────────────────── */
+
+/**
+ * TCG Pocket mission copy patterns "Wonder pick N times" and "Collect N Cards" [V-weak]. Goals are product
+ * parameters: Wonder Stamina refills 2 a day (+1 every 12 h), so 2 picks a day is the natural cap.
+ */
+export const MISSIONS = { wonder: 2, collect: 2 } as const;
+
+/* ───────────────────────── Albums (Monopoly GO) ───────────────────────── */
+
+/** Monopoly GO: completing a sticker set gives a reward [V]. Here a week's set rewards one pack. */
+export const SET_REWARD_PACKS = 1;

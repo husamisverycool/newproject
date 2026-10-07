@@ -1,6 +1,7 @@
 import { QueryClient, useQuery } from '@tanstack/react-query';
 import { api } from './api';
-import type { GroupDetail, JournalWeek, MeResponse, Message, PlanT, Post, RitualState, CardT, LikenessObject } from './types';
+import type { GroupDetail, JournalWeek, MeResponse, Message, PlanT, Post, RitualState, CardT, LikenessObject, CardNumber, Stamina, OddsTableT, Blitz, MissionsT, WonderOffer, TradeT, PublicUser, Collectible, ShowcaseT, ShopItemT } from './types';
+import type { Rarity } from '@app/shared';
 import { useUi } from './store';
 
 export const queryClient = new QueryClient({
@@ -45,24 +46,76 @@ export const usePlan = (planId: string | undefined) =>
 
 export interface BinderResponse {
   cards: CardT[];
-  dex: { postId: string; rarity: string; owned: boolean; post: Post }[];
+  dex: { postId: string; rarity: Rarity; owned: boolean; number: CardNumber | null; post: Post }[];
+  counter: { unique: number; total: number };
   completion: number;
-  wishlist: { postId: string; rarity: string; highlighted: boolean }[];
+  sets: { weekKey: string; owned: number; of: number; rewarded: boolean }[];
+  wishlist: { postId: string; rarity: Rarity; highlighted: boolean }[];
   packs: { id: string; weekKey: string; source: string; createdAt: number }[];
-  trade: { value: number; at: number; max: number; next: number | null };
-  wonder: { value: number; at: number; max: number; next: number | null };
+  trade: Stamina;
+  wonder: Stamina;
   shinedust: number;
   packPoints: number;
   sparks: number;
   binderSlots: number;
-  odds: Record<string, Record<string, number>>;
+  odds: OddsTableT;
   canBuyPaidPacks: boolean;
-  costs: { trade: Record<string, number>; wonder: Record<string, number>; exchange: Record<string, number>; upgrade: Record<string, number>; sparksPack: number; flair: { id: string; name: string; duplicates: number; dust: number } };
+  paidPackUsd: number;
+  costs: { trade: Record<Rarity, number>; wonder: Record<Rarity, number>; exchange: Record<Rarity, number>; upgrade: Record<Rarity, number>; sparksPack: number; flair: { id: string; name: string; duplicates: number; dust: number } };
+  limits: { wishlist: number; highlighted: number; binders: number; binderSlots: number };
   ritualOpen: boolean;
+  blitz: Blitz;
+  sleeve: string | null;
+  badge: string | null;
+  missions: MissionsT;
 }
 
 export const useBinder = (groupId: string | null | undefined) =>
   useQuery({ queryKey: ['binder', groupId], queryFn: () => api.get<BinderResponse>(`/groups/${groupId}/binder`), enabled: Boolean(groupId) });
+
+export const useWonder = (groupId: string | null | undefined) =>
+  useQuery({ queryKey: ['wonder', groupId], queryFn: () => api.get<{ offers: WonderOffer[]; binder: BinderResponse }>(`/groups/${groupId}/wonder`), enabled: Boolean(groupId) });
+
+export interface TradeHub {
+  trades: TradeT[];
+  friends: PublicUser[];
+  blitz: Blitz;
+  stamina: Stamina;
+  shinedust: number;
+  cost: Record<Rarity, number>;
+  ritualOnly: Rarity[];
+}
+
+export const useTrades = (groupId: string | null | undefined) =>
+  useQuery({ queryKey: ['trades', groupId], queryFn: () => api.get<TradeHub>(`/groups/${groupId}/trades`), enabled: Boolean(groupId) });
+
+export const useCollectible = (groupId: string | null | undefined, cardId: string | null | undefined) =>
+  useQuery({ queryKey: ['collectible', groupId, cardId], queryFn: () => api.get<Collectible>(`/groups/${groupId}/cards/${cardId}`), enabled: Boolean(groupId && cardId) });
+
+export interface SocialResponse {
+  friends: { user: PublicUser; me: boolean; unique: number; total: number; badge: CardT | null }[];
+  showcases: ShowcaseT[];
+}
+
+export const useSocial = (groupId: string | null | undefined) =>
+  useQuery({ queryKey: ['social', groupId], queryFn: () => api.get<SocialResponse>(`/groups/${groupId}/social`), enabled: Boolean(groupId) });
+
+export interface ShopResponse {
+  sparks: number;
+  plan: string;
+  items: ShopItemT[];
+  equipped: { sleeve: string | null; theme: string | null; icon: string | null };
+  odds: OddsTableT;
+}
+
+export const useShop = () => useQuery({ queryKey: ['shop'], queryFn: () => api.get<ShopResponse>('/shop') });
+
+/** Refreshes every Friend Cards query after a card changes hands. */
+export function invalidateCards(groupId: string) {
+  for (const k of ['binder', 'wonder', 'trades', 'social', 'collectible']) void queryClient.invalidateQueries({ queryKey: [k, groupId] });
+  void queryClient.invalidateQueries({ queryKey: ['shop'] });
+  void queryClient.invalidateQueries({ queryKey: ['me'] });
+}
 
 export const useObjects = (groupId: string | null | undefined, kind?: string) =>
   useQuery({ queryKey: ['objects', groupId, kind], queryFn: () => api.get<{ objects: LikenessObject[] }>(`/objects?${groupId ? `groupId=${groupId}` : ''}${kind ? `&kind=${kind}` : ''}`), enabled: groupId !== undefined });

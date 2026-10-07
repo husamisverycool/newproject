@@ -202,6 +202,12 @@ export interface GroupDetail {
   live: Post[];
 }
 
+export interface CardNumber {
+  set: string;
+  n: number;
+  of: number;
+}
+
 export interface CardT {
   id: string;
   groupId: string;
@@ -214,8 +220,112 @@ export interface CardT {
   source: string;
   obtainedAt: number;
   post: Post | null;
+  /** Collector number in its set (the week). */
+  number: CardNumber | null;
+  /** Copies of the same (moment, tier) the owner holds. */
+  copies?: number;
   duplicate?: boolean;
+  isNew?: boolean;
   dust?: number;
+}
+
+/** A card shown face-up without an owned copy (Wonder Pick, Card Dex). */
+export interface CardFaceT {
+  postId: string;
+  rarity: Rarity;
+  number: CardNumber | null;
+  post: Post | null;
+  serial?: number | null;
+  traits?: { backdrop: string; symbol: string } | null;
+  flair?: string | null;
+}
+
+export interface Stamina {
+  value: number;
+  at: number;
+  max: number;
+  next: number | null;
+}
+
+export interface OddsTableT {
+  slots: { positions: number[]; odds: Partial<Record<Rarity, number>> }[];
+  rarePack: { chance: number; odds: Partial<Record<Rarity, number>> };
+}
+
+export interface Blitz {
+  isOpen: boolean;
+  opensAt: number;
+  closesAt: number;
+  now: number;
+}
+
+export interface MissionsT {
+  list: { kind: 'wonder' | 'collect'; goal: number; progress: number }[];
+  reward: number;
+  done: boolean;
+  claimed: boolean;
+  resetsAt: number;
+}
+
+export interface WonderOffer {
+  id: string;
+  opener: PublicUser | null;
+  createdAt: number;
+  cost: number;
+  best: Rarity;
+  picked: boolean;
+  cards: CardFaceT[];
+}
+
+export interface TradeT {
+  id: string;
+  status: 'open' | 'accepted' | 'completed' | 'declined' | 'cancelled' | 'expired';
+  rarity: Rarity;
+  createdAt: number;
+  closedAt: number | null;
+  expiresAt: number;
+  incoming: boolean;
+  from: PublicUser;
+  to: PublicUser;
+  offer: CardT | null;
+  give: CardT | null;
+}
+
+export interface Collectible {
+  card: CardT;
+  owner: PublicUser | null;
+  mine: boolean;
+  worn: boolean;
+  traits: {
+    model: { rarity: Rarity; name: string; mark: string; pct: number };
+    backdrop: { id: string; name: string; from: string; to: string; pct: number };
+    symbol: { id: string; name: string; pct: number };
+  } | null;
+  quantity: { issued: number; of: number };
+  upgradeCost: number;
+  backdrops: { id: string; name: string; from: string; to: string }[];
+}
+
+export interface ShowcaseT {
+  id: string;
+  kind: 'binder' | 'display';
+  style: string | null;
+  visibility: 'private' | 'friends';
+  createdAt: number;
+  mine: boolean;
+  owner: PublicUser | null;
+  cards: CardT[];
+}
+
+export interface ShopItemT {
+  id: string;
+  kind: 'outfit' | 'theme' | 'icon' | 'sleeve' | 'cover' | 'backdrop' | 'pack';
+  name: string | null;
+  color?: { id: string; from: string; to: string };
+  sparks: number;
+  plusOnly?: boolean;
+  exclusive: boolean;
+  owned: boolean;
 }
 
 export interface Message {

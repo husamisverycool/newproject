@@ -1,10 +1,10 @@
 import fs from 'node:fs';
 import { zipSync, strToU8 } from 'fflate';
-import { PLANS, STORAGE, type Group, type Plan } from '@app/shared';
+import { BACKDROPS, PLANS, SPARKS_PRICE, STORAGE, oddsTable, pets, type Group, type Plan } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
 import { mediaPath } from '../media.ts';
-import { addCurrency, getUser, id, members, postsForGroup, publicUser, updateMascot, updateUser } from '../repo.ts';
-import { GameError, grantPack } from './cards.ts';
+import { addCurrency, getGroup, getUser, id, members, membership, postsForGroup, publicUser, updateMascot, updateUser } from '../repo.ts';
+import { GameError, buyPackWithSparks, grantPack } from './cards.ts';
 import { ritualWindow } from '@app/shared';
 
 /**
@@ -12,64 +12,95 @@ import { ritualWindow } from '@app/shared';
  * Gold / Retro Premium pricing), gifts (Telegram gifts, no resale), print orders with group chip-in
  * (Retro postcards, Partiful payment links), storage accounting and the full archive export
  * (Snapchat "Download My Data", in every tier).
+ *
+ * Shop categories come from the sources: Duolingo shop outfits for the mascot (pets.outfits), Locket Gold
+ * perks "Camera themes" and "Custom app icons" (included with roll+, as Gold includes them), and TCG Pocket
+ * Special Shop kinds "Card Sleeve", "Cover", "Backdrop". Prices are Discord Orb prices [V-weak]:
+ * decorations 3,500 · a premium item 1,400 (the 3-day Nitro credit) · badge 70. Card Sleeve (12 Special
+ * Shop Tickets) is priced at the top tier, Cover and Backdrop (7 tickets each) at the next.
  */
 
-export type ItemKind = 'outfit' | 'frame' | 'cover' | 'icon' | 'watermark';
+export type ItemKind = 'outfit' | 'theme' | 'icon' | 'sleeve' | 'cover' | 'backdrop' | 'pack';
 export interface ShopItem {
   id: string;
   kind: ItemKind;
-  name: string;
+  /** Deck wording or an Apple system color name [HIG]; null when the item has no sourced name. */
+  name: string | null;
+  /** Variant color (Apple system color): centre hex and darker edge. */
+  color?: { id: string; from: string; to: string };
   sparks: number;
+  /** Comes with roll+ (Locket Gold perks); not sold for Sparks. */
   plusOnly?: boolean;
-  /** Where the item's idea comes from (docs/INSPIRATION.md). */
-  source: string;
+  /** Listed under the "Sparks Exclusives" tab (Discord "Orbs Exclusives"). */
+  exclusive: boolean;
 }
 
+const colorItems = (kind: ItemKind, sparks: number, opts: { plusOnly?: boolean; exclusive: boolean }): ShopItem[] =>
+  BACKDROPS.map((b) => ({ id: `${kind}_${b.id}`, kind, name: b.name, color: { id: b.id, from: b.from, to: b.to }, sparks, ...opts }));
+
 export const SHOP: ShopItem[] = [
-  { id: 'outfit_party_hat', kind: 'outfit', name: 'Party hat', sparks: 80, source: 'QQ Show / Zepeto dress-up' },
-  { id: 'outfit_beanie', kind: 'outfit', name: 'Beanie', sparks: 120, source: 'QQ Show / Zepeto dress-up' },
-  { id: 'outfit_headphones', kind: 'outfit', name: 'Headphones', sparks: 160, source: 'QQ Show / Zepeto dress-up' },
-  { id: 'outfit_shades', kind: 'outfit', name: 'Shades', sparks: 140, source: 'QQ Show / Zepeto dress-up' },
-  { id: 'outfit_crown', kind: 'outfit', name: 'Crown', sparks: 400, source: 'QQ Show / Zepeto dress-up' },
-  { id: 'outfit_flower', kind: 'outfit', name: 'Flower', sparks: 60, source: 'QQ Show / Zepeto dress-up' },
-  { id: 'frame_film', kind: 'frame', name: 'Film strip', sparks: 100, source: 'Locket Gold camera themes; Lapse / Dispo film' },
-  { id: 'frame_datestamp', kind: 'frame', name: 'Date stamp', sparks: 90, source: 'Dispo / disposable-camera date imprint' },
-  { id: 'frame_hearts', kind: 'frame', name: 'Purikura hearts', sparks: 120, source: 'Purikura frames; SNOW / B612' },
-  { id: 'frame_instant', kind: 'frame', name: 'Instant film', sparks: 140, source: 'Polaroid trend (Nano Banana)' },
-  { id: 'cover_bee', kind: 'cover', name: 'Bee binder cover', sparks: 150, source: 'TCG Pocket binder covers' },
-  { id: 'cover_macaw', kind: 'cover', name: 'Macaw binder cover', sparks: 150, source: 'TCG Pocket binder covers' },
-  { id: 'cover_beetle', kind: 'cover', name: 'Beetle binder cover', sparks: 150, source: 'TCG Pocket binder covers' },
-  { id: 'icon_yellow', kind: 'icon', name: 'Yellow icon', sparks: 0, plusOnly: true, source: 'Locket Gold custom app icons' },
-  { id: 'icon_mascot', kind: 'icon', name: 'Mascot icon', sparks: 0, plusOnly: true, source: 'Locket Gold custom app icons' },
-  { id: 'wm_mascot', kind: 'watermark', name: 'Mascot-only watermark', sparks: 0, plusOnly: true, source: 'Spec §Q watermark styles' },
-  { id: 'wm_mono', kind: 'watermark', name: 'Mono watermark', sparks: 0, plusOnly: true, source: 'Spec §Q watermark styles' },
+  { id: 'pack', kind: 'pack', name: null, sparks: SPARKS_PRICE.extraPack, exclusive: true },
+  ...Object.entries(pets.outfitNames).map(([oid, name]) => ({ id: oid, kind: 'outfit' as const, name, sparks: SPARKS_PRICE.decoration, exclusive: true })),
+  ...colorItems('sleeve', SPARKS_PRICE.decoration, { exclusive: true }),
+  ...colorItems('cover', SPARKS_PRICE.premium, { exclusive: true }),
+  ...colorItems('backdrop', SPARKS_PRICE.premium, { exclusive: true }),
+  ...colorItems('theme', 0, { plusOnly: true, exclusive: false }),
+  ...colorItems('icon', 0, { plusOnly: true, exclusive: false }),
 ];
 
 export function owned(userId: string) {
   return new Set(all<{ item: string }>('SELECT item FROM purchases WHERE user_id = ?', userId).map((r) => r.item));
 }
 
-export function shop(userId: string) {
+/** Items a member can use: bought, gifted, or included with their plan. */
+export function usable(userId: string) {
   const u = getUser(userId)!;
   const mine = owned(userId);
+  for (const i of SHOP) if (i.plusOnly && u.plan !== 'free') mine.add(i.id);
+  return mine;
+}
+
+export function shop(userId: string) {
+  const u = getUser(userId)!;
+  const mine = usable(userId);
+  const settings = u.settings as Record<string, unknown>;
   return {
     sparks: u.sparks,
     plan: u.plan,
     plans: Object.values(PLANS),
-    items: SHOP.map((i) => ({ ...i, owned: mine.has(i.id) || (i.plusOnly && u.plan !== 'free') })),
+    items: SHOP.map((i) => ({ ...i, owned: i.kind !== 'pack' && mine.has(i.id) })),
+    equipped: { sleeve: (settings.sleeve as string) ?? null, theme: u.settings.frame ?? null, icon: u.settings.appIcon ?? null },
+    odds: oddsTable(),
   };
 }
 
 export function buy(userId: string, itemId: string, groupId: string | null) {
   const item = SHOP.find((i) => i.id === itemId);
   if (!item) throw new GameError('not_found');
+  if (item.kind === 'pack') {
+    const g = groupId ? getGroup(groupId) : null;
+    if (!g || !membership(g.id, userId)) throw new GameError('group_required');
+    return { ok: true, packId: buyPackWithSparks(g, userId) };
+  }
   const u = getUser(userId)!;
-  if (item.plusOnly && u.plan === 'free') throw new GameError('plan_required', `${item.name} comes with roll+`);
+  if (item.plusOnly) throw new GameError('plan_required');
   if (owned(userId).has(itemId)) throw new GameError('owned');
   if (u.sparks < item.sparks) throw new GameError('no_sparks');
   addCurrency(userId, { sparks: -item.sparks });
   run('INSERT INTO purchases (id, user_id, group_id, item, price_sparks, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('buy'), userId, groupId, itemId, item.sparks, now());
   return { ok: true };
+}
+
+/** Uses an owned sleeve, camera theme or app icon (null takes it off). */
+export function equip(userId: string, kind: 'sleeve' | 'theme' | 'icon', itemId: string | null) {
+  if (itemId) {
+    const item = SHOP.find((i) => i.id === itemId);
+    if (!item || item.kind !== kind || !usable(userId).has(itemId)) throw new GameError('not_owned');
+  }
+  const u = getUser(userId)!;
+  const key = kind === 'sleeve' ? 'sleeve' : kind === 'theme' ? 'frame' : 'appIcon';
+  run('UPDATE users SET settings = ? WHERE id = ?', json.str({ ...u.settings, [key]: itemId ?? undefined }), userId);
+  return shop(userId).equipped;
 }
 
 /** Mascot cosmetics are worn group-wide — whoever bought them can dress the group mascot. */
@@ -85,18 +116,40 @@ export function setPlan(userId: string, plan: Plan) {
   run('INSERT INTO purchases (id, user_id, item, price_usd, created_at) VALUES (?, ?, ?, ?, ?)', id('buy'), userId, `plan_${plan}`, PLANS[plan].monthly, now());
 }
 
-/** Gifts: a month of roll+ or a pack for a friend — never resellable (spec §U, Telegram gifts adapted). */
-export function gift(fromId: string, toId: string, kind: 'plus_month' | 'pack', groupId: string | null) {
+/**
+ * Gifts (Discord Shop "Gift"; Telegram gifts without resale): a month of roll+, a pack, or a shop item for
+ * a friend. Packs and items are paid in the sender's Sparks at the shop price.
+ */
+export function gift(fromId: string, toId: string, kind: 'plus_month' | 'pack' | 'item', groupId: string | null, itemId?: string) {
   const to = getUser(toId);
   if (!to) throw new GameError('not_found');
+  const from = fromId === 'system' ? null : getUser(fromId);
   if (kind === 'plus_month') {
     if (to.plan === 'free') updateUser(toId, { plan: 'plus' });
-  } else {
-    if (!groupId) throw new GameError('group_required');
+    run('INSERT INTO purchases (id, user_id, group_id, item, price_usd, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('buy'), fromId, groupId, `gift_${kind}_to_${toId}`, 3.99, now());
+    return;
+  }
+  if (!groupId || !membership(groupId, toId) || (from && !membership(groupId, from.id))) throw new GameError('group_required');
+  if (from && from.id === toId) throw new GameError('same_user');
+  if (kind === 'pack') {
+    if (from) {
+      if (from.sparks < SPARKS_PRICE.extraPack) throw new GameError('no_sparks');
+      addCurrency(from.id, { sparks: -SPARKS_PRICE.extraPack });
+    }
     const g = get<{ ritual_day: number; develop_hour: number; time_zone: string }>('SELECT ritual_day, develop_hour, time_zone FROM groups WHERE id = ?', groupId)!;
     grantPack(toId, groupId, ritualWindow(now(), { ritualDay: g.ritual_day, developHour: g.develop_hour, timeZone: g.time_zone }).weekKey, 'gift');
+    run('INSERT INTO purchases (id, user_id, group_id, item, price_sparks, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('buy'), fromId, groupId, `gift_pack_to_${toId}`, from ? SPARKS_PRICE.extraPack : 0, now());
+    return;
   }
-  run('INSERT INTO purchases (id, user_id, group_id, item, price_usd, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('buy'), fromId, groupId, `gift_${kind}_to_${toId}`, kind === 'plus_month' ? 3.99 : 0.99, now());
+  const item = SHOP.find((i) => i.id === itemId);
+  if (!item || item.kind === 'pack' || item.plusOnly) throw new GameError('not_found');
+  if (owned(toId).has(item.id)) throw new GameError('owned');
+  if (from) {
+    if (from.sparks < item.sparks) throw new GameError('no_sparks');
+    addCurrency(from.id, { sparks: -item.sparks });
+  }
+  run('INSERT INTO purchases (id, user_id, group_id, item, price_sparks, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('buy'), toId, groupId, item.id, 0, now());
+  run('INSERT INTO purchases (id, user_id, group_id, item, price_sparks, created_at) VALUES (?, ?, ?, ?, ?, ?)', id('buy'), fromId, groupId, `gift_${item.id}_to_${toId}`, from ? item.sparks : 0, now());
 }
 
 /* ───────────────────────── Print orders with group chip-in ───────────────────────── */

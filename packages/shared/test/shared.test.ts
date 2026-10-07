@@ -12,6 +12,14 @@ import {
   ritualWindow,
   seeded,
   SLOT_ODDS,
+  BACKDROPS,
+  SYMBOLS,
+  SPARKS_EARN,
+  SPARKS_PRICE,
+  imessage,
+  normalizeTraits,
+  oddsTable,
+  rollTraits,
   staminaNow,
   weekBlurred,
   weekKey,
@@ -152,6 +160,33 @@ describe('cards', () => {
     expect(checkTrade({ ...base, offer: 'holo', want: 'holo', ritualOpen: true })).toEqual({ ok: true, dust: 4000 });
     expect(checkTrade({ ...base, offer: 'rare', want: 'rare', dust: 100 })).toEqual({ ok: false, reason: 'no_dust' });
     expect(checkTrade({ ...base, offer: 'common', want: 'common', stamina: 0 })).toEqual({ ok: false, reason: 'no_stamina' });
+  });
+
+  it('rolls Telegram-style traits uniformly from Apple system colors and the Tapback set', () => {
+    expect(BACKDROPS.map((b) => b.name)).toEqual(['Red', 'Orange', 'Yellow', 'Green', 'Mint', 'Teal', 'Cyan', 'Blue', 'Indigo', 'Purple', 'Pink', 'Brown', 'Gray']);
+    expect(SYMBOLS.map((s) => s.name)).toEqual([...imessage.tapbacks]);
+    expect(BACKDROPS.every((b) => !('pct' in b))).toBe(true);
+    const rng = seeded('traits');
+    const counts = new Map<string, number>();
+    const N = 13_000;
+    for (let i = 0; i < N; i++) {
+      const t = rollTraits(rng);
+      counts.set(t.backdrop.id, (counts.get(t.backdrop.id) ?? 0) + 1);
+    }
+    for (const b of BACKDROPS) expect((counts.get(b.id) ?? 0) / N).toBeCloseTo(1 / BACKDROPS.length, 1);
+    expect(normalizeTraits({ backdrop: 'onyx', symbol: 'heart' }, 'c1')).toEqual(normalizeTraits({ backdrop: 'onyx', symbol: 'heart' }, 'c1'));
+    expect(BACKDROPS.some((b) => b.id === normalizeTraits({ backdrop: 'onyx', symbol: 'heart' }, 'c1')!.backdrop)).toBe(true);
+  });
+
+  it('pays Sparks at Discord quest rates and prices packs at the Nitro-credit price', () => {
+    expect(SPARKS_EARN.post).toBe(200);
+    expect(SPARKS_EARN.reactRecap).toBe(200);
+    expect(SPARKS_EARN.ritualPost).toBe(700);
+    expect(SPARKS_EARN.playGame).toBe(700);
+    expect(SPARKS_PRICE.extraPack).toBe(1400);
+    const o = oddsTable();
+    expect(o.slots.map((s) => s.positions)).toEqual([[1, 2, 3], [4], [5]]);
+    expect(o.rarePack.chance).toBeCloseTo(0.05);
   });
 
   it('regenerates stamina on schedule and caps it', () => {
