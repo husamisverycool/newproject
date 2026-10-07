@@ -42,51 +42,6 @@ export const PALETTE = {
   whatsapp: '#25D366',
 } as const;
 
-export const COPY = {
-  // Locket onboarding (research/01 §1.12)
-  setup: `Set up my ${'roll.'}`,
-  whatsYourName: "What's your name?",
-  continue: 'Continue',
-  shareContacts: 'Share All Contacts',
-  notNow: 'Not now',
-  skipContacts: 'Skip contacts?',
-  gateProgress: (n: number, of: number) => `${n} of ${of} friends joined`,
-  // BeReal (research/03)
-  ritualPush: '⚠️ Time to roll. ⚠️',
-  btsOn: 'BTS On',
-  btsOff: 'BTS Off',
-  send: 'SEND',
-  viewAllMemories: 'View all my memories',
-  // Retro (research/02)
-  thisWeekIn: 'this week in',
-  // Spotify Wrapped Party (research/04 §1.6)
-  joinParty: 'Join Party',
-  // Partiful (research/04 §3)
-  going: 'Going',
-  maybe: 'Maybe',
-  cantGo: "Can't Go",
-  findATime: 'Find a Time',
-  pollYourGuests: 'Poll your guests',
-  setADate: 'Set a Date',
-  pickThis: 'Pick this',
-  uploadPhotos: 'Upload Photos',
-  newBlast: 'New Blast',
-  // Google Photos (research/06 §1)
-  yourTools: 'Your tools',
-  aiInfo: 'AI info',
-  aiCredit: 'Made with roll. AI',
-  aiEdited: 'Edited with roll. AI',
-  selfieHint: 'Pick a selfie that is well-lit, focused, and front-facing',
-  // Sora Cameos (research/06 §3.2)
-  onlyMe: 'Only Me',
-  peopleIApprove: 'People I Approve',
-  myGroups: 'My Groups',
-  // TCG Pocket (research/05)
-  openPack: 'Open Pack',
-  swipeToCut: 'Swipe across the top to open',
-  swipeUpToAdd: 'Swipe up to add to your binder',
-  sparkleFlair: 'Sparkle Flair: Gold',
-} as const;
 
 export interface MascotSpeciesDef {
   id: string;

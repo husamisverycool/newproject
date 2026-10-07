@@ -1,10 +1,10 @@
-import { COPY, PLANS, ritualWindow, weekKeyOffset, type Group } from '@app/shared';
+import { PLANS, bereal, duolingo, locket, ritualWindow, weekKeyOffset, type Group } from '@app/shared';
 import { all, now } from './db.ts';
 import { allGroups, insertMessage, jobDone, markJob, members, updateMascot } from './repo.ts';
 import { toGroup } from './realtime.ts';
 import { push } from './services/notify.ts';
 import { ritualState } from './services/posts.ts';
-import { generateRecap, generateWall } from './services/walls.ts';
+import { generateRecap, generateWall, weekTitle } from './services/walls.ts';
 import { closeGame, currentGame, startWeeklyGame } from './services/games.ts';
 import { grantPack } from './services/cards.ts';
 import { planTick } from './services/plans.ts';
@@ -35,9 +35,9 @@ export async function tickGroup(group: Group) {
     const key = `ritual_open:${group.id}:${w.weekKey}`;
     if (!jobDone(key)) {
       markJob(key);
-      insertMessage({ groupId: group.id, userId: null, kind: 'system', body: COPY.ritualPush, meta: { ritual: w.weekKey } });
+      insertMessage({ groupId: group.id, userId: null, kind: 'system', body: bereal.ritualPush, meta: { ritual: w.weekKey } });
       toGroup(group.id, { type: 'ritual', groupId: group.id, posted: 0, of: ms.length });
-      for (const m of ms) push({ userId: m.userId, groupId: group.id, kind: 'ritual_open', title: `${group.emoji} ${group.name}`, body: COPY.ritualPush, refIds: [`ritual:${w.weekKey}`], url: '/' });
+      for (const m of ms) push({ userId: m.userId, groupId: group.id, kind: 'ritual_open', title: group.name, body: bereal.ritualPush, refIds: [`ritual:${w.weekKey}`], url: '/' });
     }
     const warnKey = `streak_warn:${group.id}:${w.weekKey}`;
     if (!jobDone(warnKey) && w.developsAt - t < 3 * 3_600_000) {
@@ -46,7 +46,7 @@ export async function tickGroup(group: Group) {
       if (s.streak.atRisk) {
         for (const m of ms) {
           if (s.posters.some((p) => p.id === m.userId)) continue;
-          push({ userId: m.userId, groupId: group.id, kind: 'streak_warning', title: `${group.mascot.name} · ${group.name}`, body: `The ${s.streak.weeks}-week streak needs ${Math.max(0, s.streak.need - s.streak.current)} more before the roll develops`, refIds: [`streak:${w.weekKey}`], url: '/' });
+          push({ userId: m.userId, groupId: group.id, kind: 'streak_warning', title: group.name, body: duolingo.dontLetDown(group.mascot.name), refIds: [`streak:${w.weekKey}`], url: '/' });
         }
       }
     }
@@ -70,13 +70,13 @@ export async function developWeek(group: Group, weekKey: string, at = now()) {
   const game = all<{ id: string }>('SELECT id FROM games WHERE group_id = ? AND week_key = ? AND closed_at IS NULL', group.id, weekKey)[0];
   if (game) {
     const res = closeGame(group, game.id);
-    if (res?.results.length) insertMessage({ groupId: group.id, userId: null, kind: 'gm', body: `The roll developed. ${res.results.length} awards are in.`, refId: game.id, meta: { results: true }, createdAt: at + 1000 });
+    if (res?.results.length) insertMessage({ groupId: group.id, userId: null, kind: 'gm', body: locket.rollcallStep4, refId: game.id, meta: { results: true }, createdAt: at + 1000 });
   }
   updateMascot(group.id, (m) => ({ ...m, xp: m.xp + anyPosters.size * 3 }));
   if (wall) {
-    insertMessage({ groupId: group.id, userId: null, kind: 'system', body: 'This week developed', refId: weekKey, meta: { developed: weekKey }, createdAt: at });
+    insertMessage({ groupId: group.id, userId: null, kind: 'system', body: weekTitle(weekKey), refId: weekKey, meta: { developed: weekKey }, createdAt: at });
     toGroup(group.id, { type: 'developed', groupId: group.id, weekKey });
-    for (const m of ms) push({ userId: m.userId, groupId: group.id, kind: 'roll_developed', title: `${group.emoji} ${group.name}`, body: 'Your week just developed 🎞️', refIds: [`wall:${weekKey}`], url: `/g/${group.id}/week/${weekKey}` });
+    for (const m of ms) push({ userId: m.userId, groupId: group.id, kind: 'roll_developed', title: group.name, body: locket.rollcallTagline, refIds: [`wall:${weekKey}`], url: `/g/${group.id}/week/${weekKey}` });
   }
 }
 

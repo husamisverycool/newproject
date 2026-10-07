@@ -1,3 +1,4 @@
+import { bereal, locket } from './sources/index.ts';
 import type { NotificationKind } from './types.ts';
 
 /**
@@ -86,9 +87,9 @@ export function decidePush(c: PushCandidate, ctx: PushContext): PushDecision {
 }
 
 /** Batch copy for new-post pushes ("Maya, Theo + 2 posted"). Names only, never counts of reactions. */
+/** New-photo push body: Locket's "<Name> sent a new Locket" [B-low] for one poster, BeReal's
+ * "Claire ✨ and 24 others posted a BeReal" [I] (bereal-03) for several (decks: locket, bereal). */
 export function newPostsCopy(names: string[]) {
   const unique = [...new Set(names)];
-  if (unique.length === 1) return `${unique[0]} posted`;
-  if (unique.length === 2) return `${unique[0]} and ${unique[1]} posted`;
-  return `${unique[0]}, ${unique[1]} + ${unique.length - 2} posted`;
+  return unique.length === 1 ? locket.pushNew(unique[0]) : bereal.andOthersPosted(unique[0], unique.length - 1);
 }

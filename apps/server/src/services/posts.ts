@@ -14,6 +14,7 @@ import {
   weekKey,
   weekKeyOffset,
   weekStartKey,
+  spec,
 } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
 import {
@@ -131,7 +132,7 @@ export function createPost(group: Group, input: NewPostInput, opts: { silent?: b
   const poster = ms.find((m) => m.userId === input.userId)?.user;
   for (const m of ms) {
     if (m.userId === input.userId) continue;
-    push({ userId: m.userId, groupId: group.id, kind: 'new_posts', title: `${group.emoji} ${group.name}`, body: newPostsCopy([poster?.name ?? 'Someone']), refIds: [post.id], url: `/g/${group.id}` });
+    push({ userId: m.userId, groupId: group.id, kind: 'new_posts', title: group.name, body: newPostsCopy([poster?.name.split(' ')[0] ?? group.name]), refIds: [post.id], url: `/g/${group.id}` });
   }
   checkQuest(group);
   return post;
@@ -314,7 +315,7 @@ export function ritualState(group: Group, viewerId?: string) {
 
 /* ───────────────────────── Quests (Duolingo Friends Quests) ───────────────────────── */
 
-export const QUEST = { kind: 'everyone_3', perMember: 3, label: 'Everyone posts 3 times this week', reward: 'a bonus pack for everyone' };
+export const QUEST = { kind: 'everyone_3', perMember: 3, label: spec.questGoal(3), reward: spec.questReward };
 
 export function questState(group: Group) {
   const wk = ritualWindow(now(), group).weekKey;
