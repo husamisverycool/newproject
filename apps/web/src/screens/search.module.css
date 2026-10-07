@@ -1,0 +1,81 @@
+/*
+ * Search (spec §L): the stock UISearchController [HIG] — a rounded gray field with the magnifier and a
+ * clear button, "Cancel" beside it; results in the Photos grid (3 columns, 2 pt gaps); "No Results"
+ * centred in the body when nothing matches.
+ */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: calc(var(--safe-top) + 8px) 16px 10px;
+  flex: none;
+}
+.bar > button {
+  flex: none;
+}
+.field {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--sys-fill3);
+  color: var(--sys-label2);
+}
+.field input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: none;
+  background: transparent;
+  color: var(--sys-label);
+  font: var(--t-body);
+}
+.field input::placeholder {
+  color: var(--sys-label2);
+}
+.clear {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--sys-label3);
+  color: var(--sys-bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  padding-bottom: calc(var(--safe-bottom) + 24px);
+}
+.center {
+  display: flex;
+  justify-content: center;
+  padding: 120px 16px;
+}
+.none {
+  font: var(--t-title2);
+  font-weight: 700;
+  color: var(--sys-label);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+.grid button {
+  aspect-ratio: 1;
+  display: block;
+  overflow: hidden;
+}
+.grid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}

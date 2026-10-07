@@ -211,8 +211,8 @@ export function Menu({ open, onClose, actions, anchor = 'bottom' }: { open: bool
       {open && (
         <motion.div className="ios-alert-scrim" style={{ alignItems: anchor === 'top' ? 'flex-start' : 'flex-end', padding: '80px 16px calc(var(--safe-bottom) + 90px)', justifyContent: 'flex-end', background: 'rgba(0,0,0,0.12)' }} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
           <motion.div className="ios-menu" initial={{ scale: 0.9, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.9, opacity: 0 }} transition={{ type: 'spring', stiffness: 500, damping: 34 }} onClick={(e) => e.stopPropagation()}>
-            {actions.map((a) => (
-              <button key={a.label} className={a.destructive ? 'destructive' : ''} onClick={() => { onClose(); a.onClick(); }}>
+            {actions.map((a, i) => (
+              <button key={`${i}-${a.label}`} className={a.destructive ? 'destructive' : ''} onClick={() => { onClose(); a.onClick(); }}>
                 <span>{a.label}</span>
                 {a.icon && <Icon name={a.icon} size={19} />}
               </button>

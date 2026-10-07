@@ -396,3 +396,7 @@
   align-items: center;
   justify-content: space-between;
 }
+.laProgress {
+  color: rgba(255, 255, 255, 0.6);
+  font-variant-numeric: tabular-nums;
+}

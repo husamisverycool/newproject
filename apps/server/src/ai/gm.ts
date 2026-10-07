@@ -3,6 +3,7 @@ import { betaZodOutputFormat } from '@anthropic-ai/sdk/helpers/beta/zod';
 import { z } from 'zod/v4';
 import { characterai, duolingo, gartic, gas, instagram, seeded, tbh, wrapped } from '@app/shared';
 import { env } from '../env.ts';
+import { platform } from '../platform.ts';
 
 /**
  * The game master: the group mascot speaking in Duolingo's voice (Duo as a brand character, spec §M).
@@ -75,6 +76,19 @@ ${characterai.facts} (recorded automatically: last game's results as "award: win
 ${list(ctx.facts, '(empty)')}`;
 
 async function ask<T>(ctx: GmContext, user: string, schema: z.ZodType<T>): Promise<T | null> {
+  if (platform.askJson) {
+    // In the in-Claude build the viewer's own Claude answers, and only for something a member did
+    // (never from the job timer). The brief is the same; the reply format rides in the prompt.
+    if (platform.jobDepth > 0) return null;
+    try {
+      const shape = JSON.stringify(z.toJSONSchema(schema));
+      const out = await platform.askJson(`${SYSTEM(ctx)}\n\n${user}\n\nReply with only one JSON object matching this JSON Schema:\n${shape}`);
+      const parsed = schema.safeParse(out);
+      return parsed.success ? parsed.data : null;
+    } catch {
+      return null;
+    }
+  }
   const c = client();
   if (!c) return null;
   try {

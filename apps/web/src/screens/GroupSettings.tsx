@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
-import { GROUP_MAX, characterai, imessage, ios, locket, partiful, pets, spec, whatsapp, wrapped, yope } from '@app/shared';
+import { GROUP_MAX, characterai, imessage, ios, locket, partiful, pets, spec, whatsapp, wrapped, yope, gphotos } from '@app/shared';
 import { Avatar, Button, Menu, Row, Screen, Section, Sheet, Spinner, Switch } from '../components/ios';
 import { Icon } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
 import { QR, shareInvite } from '../components/QR';
+import { OrdersSection, PrintSheet } from '../components/PrintSheet';
 import { api } from '../lib/api';
 import { haptic } from '../lib/feedback';
 import { invalidateGroup, queryClient, useFeed, useGroup } from '../lib/queries';
@@ -17,7 +18,10 @@ import s from './groupsettings.module.css';
  * (frame yope-1on1-feed [I]) — cover photo, rising dark sheet, the group's mascot as its picture (spec §M),
  * the name and the lime "🔥N" streak pill. Below: stock iOS grouped rows [HIG], each named by its source:
  * - Ritual day (spec §A4: the admin picks it, default Sunday) with Apple's weekday names [HIG];
- * - Weekly games (§K), Memory (Character.ai [V-weak]), Wrapped (Spotify [V]), Friend Cards (§J);
+ * - Weekly games (§K), Memory (Character.ai [V-weak]), Wrapped (Spotify [V]), Friend Cards (§J), and
+ *   Google Photos' "Create" [V] with its paintbrush glyph [V-weak] → the group's Create tools (§G/§H),
+ *   and the "Printed yearbook" [S] (§V) — ordered on Retro's postcard sheet [I] (components/PrintSheet);
+ * - the group's print orders, which every member chips in for (§U), when there are any;
  * - Plan (§P) rows plus Partiful's "Create" [V] → /g/:groupId/new-plan;
  * - members under Locket's "N out of 20 friends allowed" counter [B-med] (20 → 30, spec §C), WhatsApp's
  *   "Group admin" tag [B-high], and Partiful's "Invite" [V] → QR + link (Yope adds friends "by sharing an
@@ -49,6 +53,7 @@ export default function GroupSettings() {
   const [invite, setInvite] = useState(false);
   const [dayMenu, setDayMenu] = useState(false);
   const [leaveMenu, setLeaveMenu] = useState(false);
+  const [yearbook, setYearbook] = useState(false);
 
   const d = q.data;
   const g = d?.group;
@@ -133,7 +138,12 @@ export default function GroupSettings() {
                 <Row icon={<Icon name="notebook" size={18} strokeWidth={2.2} />} iconBg="var(--sys-gray)" sepInset={57} title={characterai.memory} onClick={() => nav(`/g/${groupId}/memory`)} />
                 <Row icon={<Icon name="sparkles" size={18} strokeWidth={2.2} />} iconBg="var(--spotify-green)" sepInset={57} title={wrapped.feedName} onClick={() => nav(`/g/${groupId}/wrapped`)} />
                 <Row icon={<Icon name="cardStack" size={18} strokeWidth={2.2} />} iconBg="var(--tcg-teal)" sepInset={57} title={spec.friendCards} onClick={() => nav(`/g/${groupId}/cards`)} />
+                <Row icon={<Icon name="paintbrush" size={18} strokeWidth={2.2} />} iconBg="var(--google-blue)" sepInset={57} title={gphotos.create} onClick={() => nav(`/create?group=${groupId}`)} />
+                <Row icon={<Icon name="book" size={18} strokeWidth={2.2} />} iconBg="var(--sys-gray)" sepInset={57} title={spec.yearbook} onClick={() => setYearbook(true)} />
               </Section>
+
+              {/* Print orders the group chips in for (spec §U) */}
+              <OrdersSection groupId={groupId} memberCount={d.members.length} />
 
               {/* spec §P plans (Partiful) */}
               <Section header={spec.plan}>
@@ -200,6 +210,7 @@ export default function GroupSettings() {
         </Sheet>
       )}
 
+      <PrintSheet open={yearbook} onClose={() => setYearbook(false)} groupId={groupId} kind="yearbook" items={[String(new Date().getFullYear())]} preview={cover ? cover.media.main : null} />
       <Menu open={dayMenu} onClose={() => setDayMenu(false)} actions={ios.weekdays.map((w, i) => ({ label: w, icon: g?.ritualDay === i ? 'check' : undefined, onClick: () => void setDay(i) }))} />
       <Menu
         open={leaveMenu}

@@ -170,7 +170,7 @@ export async function renderWall(_group: Group, layout: WallLayout) {
   for (const it of [...layout.items].sort((a, b) => a.z - b.z)) {
     let src: Buffer;
     try {
-      src = readMedia(it.src);
+      src = await readMedia(it.src);
     } catch {
       continue;
     }
@@ -234,10 +234,10 @@ export async function generateRecap(group: Group, weekKey: string, requestedBy: 
   let model = 'roll-local-renderer';
   let cost = 0;
   for (const p of pick) {
-    const res = await img.remix(style, readMedia(p.media.main), { caption: p.caption });
+    const res = await img.remix(style, await readMedia(p.media.main), { caption: p.caption });
     model = res.model;
     cost += res.costUsd;
-    panels.push(writeMedia(res.image, 'jpg').url);
+    panels.push((await writeMedia(res.image, 'jpg')).url);
   }
   if (requestedBy) img.recordUsage(requestedBy, cost);
   const obj = insertObject({

@@ -5,6 +5,12 @@
  */
 export const STATIC = import.meta.env.VITE_STATIC === '1';
 
+/**
+ * In-Claude mode (VITE_LIVE=1): the whole server runs inside the page and friends share state
+ * through the artifact's storage (src/live). Everything works; nothing is a snapshot.
+ */
+export const LIVE = import.meta.env.VITE_LIVE === '1';
+
 let snap: Record<string, unknown> | null = null;
 function snapshot() {
   if (snap) return snap;

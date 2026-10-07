@@ -336,6 +336,50 @@ CREATE TABLE IF NOT EXISTS clock (
   offset_ms INTEGER NOT NULL DEFAULT 0
 );
 INSERT OR IGNORE INTO clock (id, offset_ms) VALUES (1, 0);
+CREATE TABLE IF NOT EXISTS plan_posters (
+  plan_id TEXT PRIMARY KEY REFERENCES plans(id) ON DELETE CASCADE,
+  media TEXT NOT NULL,
+  created_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS plan_guests (
+  plan_id TEXT NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  plus_ones INTEGER NOT NULL DEFAULT 0,
+  note TEXT,
+  updated_at INTEGER NOT NULL,
+  PRIMARY KEY (plan_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS plan_comments (
+  id TEXT PRIMARY KEY,
+  plan_id TEXT NOT NULL REFERENCES plans(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  body TEXT,
+  media TEXT,
+  mentions TEXT NOT NULL DEFAULT '[]',
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS plan_comments_plan ON plan_comments(plan_id, created_at);
+CREATE TABLE IF NOT EXISTS wrapped_parties (
+  group_id TEXT PRIMARY KEY REFERENCES groups(id) ON DELETE CASCADE,
+  state TEXT NOT NULL,
+  updated_at INTEGER NOT NULL
+);
+CREATE TABLE IF NOT EXISTS post_tags (
+  post_id TEXT NOT NULL REFERENCES posts(id) ON DELETE CASCADE,
+  user_id TEXT NOT NULL,
+  created_at INTEGER NOT NULL,
+  PRIMARY KEY (post_id, user_id)
+);
+CREATE TABLE IF NOT EXISTS direct_photos (
+  id TEXT PRIMARY KEY,
+  group_id TEXT NOT NULL REFERENCES groups(id) ON DELETE CASCADE,
+  from_user TEXT NOT NULL,
+  to_user TEXT NOT NULL,
+  media TEXT NOT NULL,
+  caption TEXT,
+  created_at INTEGER NOT NULL
+);
+CREATE INDEX IF NOT EXISTS direct_photos_pair ON direct_photos(to_user, from_user, created_at);
 `;
 
 db.exec(SCHEMA);

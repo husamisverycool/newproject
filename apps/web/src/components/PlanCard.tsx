@@ -91,17 +91,23 @@ export function PlanBackdrop({ theme, effect }: { theme: string; effect: string 
 const SIZE = { page: s.sizePage, card: s.sizeCard, swatch: s.sizeSwatch };
 
 /**
- * The poster [V]. There is no poster upload yet, so the poster is a typographic one (Partiful ships
- * typographic posters such as invite-chrome-purple [V-weak]) in the theme's colors with the title.
+ * The poster [V]: the host's own photo ("upload your own photo" [V]) filling it, or a typographic poster
+ * (Partiful ships typographic posters such as invite-chrome-purple [V-weak]) in the theme's colors with
+ * the title. On the event page a photo poster stands alone, since the title follows it; on the chat card
+ * and the swatches the title sits over the photo on a dark scrim [HIG legibility].
  */
-export function PlanPoster({ plan, size, withEffect }: { plan: Pick<PlanT, 'title' | 'theme' | 'effect' | 'titleFont'>; size: 'page' | 'card' | 'swatch'; withEffect?: boolean }) {
+export function PlanPoster({ plan, size, withEffect }: { plan: Pick<PlanT, 'title' | 'theme' | 'effect' | 'titleFont' | 'poster'>; size: 'page' | 'card' | 'swatch'; withEffect?: boolean }) {
+  const photo = plan.poster;
   return (
-    <div className={`${s.poster} ${SIZE[size]} ${themeOf(plan.theme).poster}`}>
-      {plan.theme === 'rainbowGlitter' && <Confetti n={size === 'swatch' ? 8 : 14} still />}
+    <div className={`${s.poster} ${SIZE[size]} ${photo ? s.posterPhoto : themeOf(plan.theme).poster}`}>
+      {photo && <img className={s.posterImg} src={photo} alt="" draggable={false} />}
+      {!photo && plan.theme === 'rainbowGlitter' && <Confetti n={size === 'swatch' ? 8 : 14} still />}
       {withEffect && <PlanEffect effect={plan.effect} />}
-      <span className={s.posterTitle} style={titleFont(plan.titleFont)}>
-        {plan.title}
-      </span>
+      {!(photo && size === 'page') && (
+        <span className={s.posterTitle} style={titleFont(plan.titleFont)}>
+          {plan.title}
+        </span>
+      )}
     </div>
   );
 }

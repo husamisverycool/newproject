@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router';
-import { bereal, ios, locket, spec } from '@app/shared';
+import { BACKDROPS, bereal, ios, locket, snapchat, spec } from '@app/shared';
+import { useQuery } from '@tanstack/react-query';
+import { LensOverlay, applyLens, useMascotLens } from '../components/MascotLens';
+import type { PublicUser } from '../lib/types';
 import { useCamera, fileToSquareJpeg, photoTakenAt } from '../lib/camera';
 import { api } from '../lib/api';
 import { invalidateGroup, useActiveGroup, useFeed, useRitual } from '../lib/queries';
@@ -13,6 +16,7 @@ import { Mascot } from '../components/Mascot';
 import { HistoryPost } from '../components/HistoryPost';
 import { LocketReview, BeRealPreview, type Shot } from './CaptureReview';
 import s from './camera.module.css';
+import { allows } from '../lib/device';
 
 type Mode = 'photo' | 'dual';
 
@@ -42,10 +46,18 @@ export function CameraHome() {
   const [grid, setGrid] = useState(false);
   const [filter, setFilter] = useState<string | null>(null);
   const [filterSheet, setFilterSheet] = useState(false);
+  const [lens, setLens] = useState(false);
   const atTop = page === 0;
   const cam = useCamera(atTop && !shot && !friendsSheet && !grid, { bts: true });
+  // spec §D group-mascot lens (Snapchat Lenses [V]); spec §C bestie lane (Locket Best Friend widget [V]).
+  const lensBox = useMascotLens(cam.videoRef, lens && atTop && !shot && cam.ready, cam.facing === 'user');
+  const viewfinder = useRef<HTMLDivElement>(null);
+  const bestie = useQuery({ queryKey: ['widgets', 'bestie'], queryFn: () => api.get<{ bestie: { groupId: string; user: PublicUser } | null }>('/widgets/bestie') }).data?.bestie ?? null;
+  // Locket Gold "Camera themes" [V]: the equipped theme colors the shutter ring (theme visuals UNKNOWN).
+  const themeColor = BACKDROPS.find((b) => `theme_${b.id}` === me.data?.user.settings.frame)?.from;
   const camAmbient = useVideoAmbient(cam.videoRef, atTop && !shot && cam.ready);
   const fileInput = useRef<HTMLInputElement>(null);
+  const captureInput = useRef<HTMLInputElement | null>(null);
   const holdTimer = useRef<number | null>(null);
   const recordFrames = useRef<Blob[]>([]);
   const recordTimer = useRef<number | null>(null);
@@ -91,7 +103,8 @@ export function CameraHome() {
       await new Promise((r) => setTimeout(r, 260));
     } else if (flash) await cam.setTorch(true);
     sfx.shutter();
-    const main = await cam.capture();
+    const raw = await cam.capture();
+    const main = lens ? await applyLens(raw, lensBox, viewfinder.current).catch(() => raw) : raw;
     const live = cam.takeLive(); // BeReal BTS: the seconds before the shot [V]
     if (flash) {
       setFrontFlash(false);
@@ -100,10 +113,16 @@ export function CameraHome() {
     let inset: Blob | null = null;
     if (mode === 'dual') inset = await cam.captureOther(); // BeReal: rear first, then front [V-weak]
     setShot({ main, mainUrl: URL.createObjectURL(main), inset, insetUrl: inset ? URL.createObjectURL(inset) : null, live, fromRoll: false, takenAt: Date.now() });
-  }, [cam, flash, mode]);
+  }, [cam, flash, mode, lens, lensBox]);
 
   // Locket: hold the shutter to record; the viewfinder outline turns yellow [V].
   const onShutterDown = () => {
+    // No live viewfinder (the page may not use the camera, e.g. inside Claude): the shutter opens
+    // the system camera instead, the stock iOS capture sheet [HIG].
+    if (!cam.ready && cam.error) {
+      captureInput.current?.click();
+      return;
+    }
     holdTimer.current = window.setTimeout(() => {
       setRecording(true);
       haptic('heavy');
@@ -119,6 +138,7 @@ export function CameraHome() {
     }, 320);
   };
   const onShutterUp = async () => {
+    if (!cam.ready) return;
     if (holdTimer.current) clearTimeout(holdTimer.current);
     holdTimer.current = null;
     if (recordTimer.current) {
@@ -132,6 +152,12 @@ export function CameraHome() {
       return;
     }
     if (!recording) void takePhoto();
+  };
+
+  const onCaptureFile = async (f: File | undefined) => {
+    if (!f) return;
+    const main = await fileToSquareJpeg(f);
+    setShot({ main, mainUrl: URL.createObjectURL(main), inset: null, insetUrl: null, live: [], fromRoll: false, takenAt: Date.now() });
   };
 
   const onPickFile = async (f: File | undefined) => {
@@ -163,7 +189,7 @@ export function CameraHome() {
   };
 
   return (
-    <div className={s.root} data-dark style={ambient ? ({ '--amb': ambient } as CSSProperties) : undefined}>
+    <div className={s.root} data-dark style={{ ...(ambient ? { '--amb': ambient } : null), ...(themeColor ? { '--camera-theme': themeColor } : null) } as CSSProperties}>
       <div ref={scroller} className={s.pager}>
         {/* ───────────── Camera ───────────── */}
         <section className={s.page}>
@@ -173,12 +199,13 @@ export function CameraHome() {
               {hms(left)}
             </button>
           )}
-          <div className={`${s.viewfinder} ${recording ? s.recording : ''}`}>
+          <div ref={viewfinder} className={`${s.viewfinder} ${recording ? s.recording : ''}`}>
             {shot ? (
               <img src={shot.mainUrl} className={s.media} alt="" />
             ) : (
               <>
                 <video ref={cam.videoRef} className={`${s.media} ${cam.facing === 'user' ? s.mirror : ''}`} playsInline muted autoPlay />
+                {lens && cam.ready && group && <LensOverlay box={lensBox} species={group.mascot.species} level={group.mascot.stage.level} outfit={group.mascot.outfit} />}
                 {!cam.ready && (
                   <div className={s.fallback}>
                     <Icon name="camera" size={40} strokeWidth={1.6} />
@@ -188,13 +215,13 @@ export function CameraHome() {
               </>
             )}
             {shot?.insetUrl && <img src={shot.insetUrl} className={s.inset} alt="" />}
-            {shot && !shot.inset && <LocketReview shot={shot} groups={groups} activeGroup={group} ritualOpen={Boolean(r?.isOpen)} onCancel={() => setShot(null)} onSent={onSent} />}
+            {shot && !shot.inset && <LocketReview shot={shot} groups={groups} activeGroup={group} ritualOpen={Boolean(r?.isOpen)} onCancel={() => setShot(null)} onSent={onSent} bestie={bestie} />}
           </div>
           {shot?.inset && <BeRealPreview shot={shot} groups={groups} activeGroup={group} ritualOpen={Boolean(r?.isOpen)} onCancel={() => setShot(null)} onSent={onSent} />}
 
           {!shot && (
             <>
-              <div className={s.modes}>
+              <div className={s.modes} hidden={!cam.ready && Boolean(cam.error) && !allows('camera')}>
                 {(['photo', 'dual'] as Mode[]).map((m) => (
                   <button key={m} className={mode === m ? s.modeOn : ''} onClick={() => { haptic('light'); setMode(m); }}>
                     {m === 'photo' ? ios.modePhoto : spec.modeDual}
@@ -205,7 +232,7 @@ export function CameraHome() {
                 <button className={s.side} onClick={() => setFlash(!flash)} aria-label={ios.axFlash} aria-pressed={flash}>
                   <Icon name="bolt" size={28} filled={flash} color={flash ? 'var(--locket-yellow)' : '#fff'} />
                 </button>
-                <button className={s.shutter} aria-label={ios.axShutter} onPointerDown={onShutterDown} onPointerUp={onShutterUp} onPointerLeave={() => recording && onShutterUp()} disabled={!cam.ready} />
+                <button className={s.shutter} aria-label={ios.axShutter} onPointerDown={onShutterDown} onPointerUp={onShutterUp} onPointerLeave={() => recording && onShutterUp()} disabled={!cam.ready && !cam.error} />
                 <button className={s.side} onClick={() => { haptic('light'); void cam.flip(); }} aria-label={ios.axFlip}>
                   <Icon name="flip" size={32} />
                 </button>
@@ -221,11 +248,15 @@ export function CameraHome() {
                   </span>
                   <Icon name="chevronDown" size={20} strokeWidth={2.6} />
                 </button>
-                <span className={s.library} />
+                {/* Snapchat's Lens button is the smiley beside the shutter [B-high]; here it fills Locket's empty right slot [I] */}
+                <button className={`${s.library} ${lens ? s.lensOn : ''}`} onClick={() => { haptic('light'); setLens(!lens); }} aria-label={snapchat.lenses} aria-pressed={lens} disabled={!cam.ready}>
+                  <Icon name="smile" size={24} />
+                </button>
               </div>
             </>
           )}
           <input ref={fileInput} type="file" accept="image/*" hidden onChange={(e) => onPickFile(e.target.files?.[0])} />
+          <input ref={captureInput} type="file" accept="image/*" capture="environment" hidden onChange={(e) => onCaptureFile(e.target.files?.[0])} />
           {frontFlash && <div className={s.frontFlash} />}
         </section>
 
@@ -284,6 +315,11 @@ export function CameraHome() {
             />
           ))}
         </Section>
+        {bestie && (
+          <Section header={locket.bestFriendWidget}>
+            <Row icon={<Avatar user={bestie.user} size={36} />} title={bestie.user.name} onClick={() => { setFriendsSheet(false); nav(`/bestie/${bestie.user.id}`); }} sepInset={64} />
+          </Section>
+        )}
         <button className={s.createNew} onClick={() => { setFriendsSheet(false); nav('/new-group'); }}>{locket.createNew}</button>
       </Sheet>
 

@@ -67,4 +67,12 @@ export const spec = {
   figurines: 'Figurine renders',
   /** [S] §K heading "Weekly games and the AI game master" */
   weeklyGames: 'Weekly games',
+  /** [S] §L "search by caption and self-tags"; §S "Self-tagging only" — you can tag only yourself in a photo */
+  selfTag: 'Self-tag',
+  /** [S] §L "opt-in group search by caption and self-tags only" (the search switch's footer) */
+  searchFooter: 'opt-in group search by caption and self-tags only',
+  /** [S] §I "Physical upsell — adapt as printed figurine cards" */
+  figurineCards: 'printed figurine cards',
+  /** [S] §D "a group-mascot lens only" */
+  mascotLens: 'group-mascot lens',
 } as const;

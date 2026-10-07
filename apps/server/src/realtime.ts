@@ -2,6 +2,7 @@ import type { IncomingMessage, Server } from 'node:http';
 import { WebSocketServer, type WebSocket } from 'ws';
 import { userFromCookieHeader } from './auth.ts';
 import { groupsForUser } from './repo.ts';
+import { platform } from './platform.ts';
 
 /**
  * One WebSocket per open client. Events fan out to every member of a group (new posts, chat, the
@@ -66,6 +67,7 @@ export function refreshMembership(userId: string) {
 }
 
 export function toGroup(groupId: string, event: RealtimeEvent, exceptUserId?: string) {
+  platform.emit?.({ groupId, exceptUserId }, event);
   const payload = JSON.stringify(event);
   for (const c of conns) {
     if (c.groups.has(groupId) && c.userId !== exceptUserId && c.ws.readyState === c.ws.OPEN) c.ws.send(payload);
@@ -73,6 +75,7 @@ export function toGroup(groupId: string, event: RealtimeEvent, exceptUserId?: st
 }
 
 export function toUser(userId: string, event: RealtimeEvent) {
+  platform.emit?.({ userId }, event);
   const payload = JSON.stringify(event);
   for (const c of conns) if (c.userId === userId && c.ws.readyState === c.ws.OPEN) c.ws.send(payload);
 }

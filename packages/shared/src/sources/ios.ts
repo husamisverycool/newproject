@@ -27,6 +27,8 @@ export const ios = {
     { name: 'Messages', bg: '#34c759' },
     { name: 'Music', bg: '#fc3c44' },
   ] as const,
+  /** [B-high] iCloud collaboration's permission for someone who can look but not edit ("Can make changes" / "View only"); shown when the shared app refuses this viewer's changes */
+  viewOnly: 'View only',
   /** [HIG] standard alert / sheet buttons */
   ok: 'OK',
   /** [HIG] */
@@ -147,4 +149,10 @@ export const ios = {
   playbackSpeed: 'Playback Speed',
   /** [HIG] Settings › General › iPhone Storage usage line, e.g. "64.2 GB of 128 GB Used" */
   ofUsed: (n: number | string, of: number | string) => `${n} of ${of} Used`,
+  /** [HIG] UISearchController empty state (Photos, Mail, Settings search) */
+  noResults: 'No Results',
+  /** [HIG] share-sheet action "Print" */
+  print: 'Print',
+  /** [HIG] NumberFormatter .currency (en_US), e.g. "$6.00" — App Store buttons show the price */
+  usd: (n: number) => n.toLocaleString('en-US', { style: 'currency', currency: 'USD' }),
 } as const;

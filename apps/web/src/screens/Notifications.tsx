@@ -59,6 +59,8 @@ function target(n: Item) {
     case 'likeness_used':
       return '/me/likeness';
     case 'new_posts':
+      // A photo sent "to just that person" (the bestie lane) opens the lane with its sender.
+      if (ref.startsWith('dp_') && n.refIds[1]) return `/bestie/${n.refIds[1]}`;
       return ref ? `/p/${ref}` : '/journal';
     case 'reaction':
       return '/journal';

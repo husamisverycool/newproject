@@ -49,6 +49,10 @@ export interface UserSettings {
   frame?: string;
   pushEnabled?: boolean;
   liveActivities?: boolean;
+  /** spec §L: opt-in caption + self-tag search */
+  searchOptIn?: boolean;
+  /** spec §C: the Best Friend or Crush widget's person (Locket) */
+  bestie?: { groupId: string; userId: string } | null;
 }
 
 export function toUser(r: UserRow): UserFull {
@@ -89,8 +93,8 @@ export function publicUser(u: Pick<User, 'id' | 'name' | 'avatar' | 'color' | 'p
   return { id: u.id, name: u.name, avatar: u.avatar, color: u.color, plus: u.plan !== 'free' };
 }
 
-export function createUser(input: { name: string; birthYear: number; color: string; avatar?: string | null; isAdult?: boolean; timeZone?: string }) {
-  const uid = id('u');
+export function createUser(input: { id?: string; name: string; birthYear: number; color: string; avatar?: string | null; isAdult?: boolean; timeZone?: string }) {
+  const uid = input.id ?? id('u');
   const t = now();
   run(
     `INSERT INTO users (id, name, avatar, color, birth_year, is_adult, created_at, trade_stamina_at, wonder_stamina_at, settings)

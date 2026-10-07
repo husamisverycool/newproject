@@ -40,6 +40,14 @@ export const invites = {
   notResponded: 'Not Responded',
   /** [V] create an event: "Add Description" */
   addDescription: 'Add Description',
+  /** [V] create an event: tap "Add Background", then "Photos" or "Camera" (research/21 §3) */
+  addBackground: 'Add Background',
+  /** [V] */
+  photos: 'Photos',
+  /** [V] */
+  camera: 'Camera',
+  /** [V] RSVP: "optionally add a note that will be visible to the host and other guests" (capitalized as a field label) */
+  addNote: 'Add a note',
 } as const;
 
 export const whatsapp = {
@@ -78,4 +86,30 @@ export const photos27 = {
   expiresIn: (n: number) => `Expires in ${n} ${n === 1 ? 'day' : 'days'}`,
   /** [V] support.apple.com 127875: "Temporary shared albums expire after 30 days, and any photos or videos not saved to your library will be deleted." */
   expirySentence: 'Temporary shared albums expire after 30 days, and any photos or videos not saved to your library will be deleted.',
+  /** [B-high] shared-album photo: the comment field under the photo */
+  addComment: 'Add a comment',
+  /** [B-high] shared-album comment: the send button */
+  post: 'Post',
+
+  /* ── iOS 27 slideshow maker (research/22 §2c) ── */
+  /** [V-weak] "Start Slideshow" from the three-dot menu */
+  startSlideshow: 'Start Slideshow',
+  /** [V-weak] tap the screen and a large "Customize" button appears below the slideshow */
+  customize: 'Customize',
+  /** [V-weak] Customize holds "transition style · duration per photo · music" (capitalized as section labels) */
+  transition: 'Transition',
+  /** [V-weak] */
+  duration: 'Duration',
+  /** [V-weak] music picker: "Choose Song" → soundtracks; "Off" for no music */
+  chooseSong: 'Choose Song',
+  /** [V-weak] */
+  off: 'Off',
+  /** [B-high] transition styles: iOS 27's names are NOT FOUND, so these are Apple's own Photos/Keynote slideshow names */
+  transitions: { kenBurns: 'Ken Burns', dissolve: 'Dissolve', push: 'Push' } as Record<string, string>,
+  /** [V-weak] per-photo duration choices: 1 Second Everyday's "1-, 2- or 3-second clips" (research/22 §1) */
+  durations: [1, 2, 3] as const,
+  /** [HIG] DateComponentsFormatter .abbreviated, e.g. "2s" */
+  seconds: (n: number) => `${n}s`,
+  /** [HIG] share-sheet action for a video ("Save the slideshow as a video to the Photos library" [V-weak]) */
+  saveVideo: 'Save Video',
 } as const;

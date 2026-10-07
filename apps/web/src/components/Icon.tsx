@@ -5,6 +5,16 @@ import type { CSSProperties } from 'react';
  * "lightning bolt" flash and "arrow" flip, BeReal's three dots). 24×24, 2px rounded strokes.
  */
 const P: Record<string, string> = {
+  /** Google Photos Create tab: "uses a paintbrush icon" [V-weak] (research/06 §1.1) */
+  paintbrush: 'M20.5 3.5c-3.5 1.4-7.4 5.2-9.8 8.4l1.4 1.4c3.2-2.4 7-6.3 8.4-9.8ZM9.6 13.2c-2 0-3.6 1.6-3.6 3.6 0 1.4-.8 2.5-2.5 2.9 1 .9 2.4 1.3 3.9 1.3 2.6 0 4.6-2 4.6-4.6l-2.4-3.2Z',
+  /** UIStepper "−" half [HIG] (Partiful +1s stepper on the RSVP screen) */
+  minus: 'M5 12h14',
+  /** Google Photos Create › Photo to video: tile icon UNKNOWN, SF Symbol play.rectangle [HIG] */
+  playRect: 'M5 5h14a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2ZM10 9.5v5l4.5-2.5L10 9.5Z',
+  /** Google Photos Create › Cinematic photos ("A 3D effect"): tile icon UNKNOWN, SF Symbol cube [HIG] */
+  cube: 'M12 3 20 7.5v9L12 21l-8-4.5v-9L12 3ZM4 7.5l8 4.5 8-4.5M12 12v9',
+  /** Google Photos Create › Animations: tile icon UNKNOWN, SF Symbol square.stack [HIG] */
+  stack: 'M7.5 3.5h11a2 2 0 0 1 2 2v11M5.5 7h11a2 2 0 0 1 2 2v9.5a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2Z',
   /** Kahoot! answer-tile shapes [V-weak] (research/24 §2): triangle (red), diamond (blue), circle (yellow), square (green); drawn filled */
   kahootTriangle: 'M12 4 21 19.5H3L12 4Z',
   kahootDiamond: 'M12 2.5 21.5 12 12 21.5 2.5 12 12 2.5Z',

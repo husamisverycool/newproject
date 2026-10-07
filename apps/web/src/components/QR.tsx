@@ -4,7 +4,8 @@ import QRCode from 'qrcode';
 export function QR({ value, size = 180, dark = '#000000', light = '#FFFFFF' }: { value: string; size?: number; dark?: string; light?: string }) {
   const [svg, setSvg] = useState('');
   useEffect(() => {
-    void QRCode.toString(value, { type: 'svg', margin: 2, color: { dark, light }, errorCorrectionLevel: 'M' }).then(setSvg);
+    if (!value) return setSvg('');
+    QRCode.toString(value, { type: 'svg', margin: 2, color: { dark, light }, errorCorrectionLevel: 'M' }).then(setSvg, () => setSvg(''));
   }, [value, dark, light]);
   return <div style={{ width: size, height: size }} dangerouslySetInnerHTML={{ __html: svg }} />;
 }

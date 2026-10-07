@@ -1,3 +1,4 @@
+import { LIVE } from './static';
 import type { FaceDetector, ImageSegmenter } from '@mediapipe/tasks-vision';
 
 /**
@@ -5,12 +6,15 @@ import type { FaceDetector, ImageSegmenter } from '@mediapipe/tasks-vision';
  * into cut-out stickers") and face detection for Me Meme framing. Nothing leaves the device for this.
  */
 
+/** The in-Claude build ships the runtime and models next to the page, so paths are page-relative. */
+const at = (p: string) => (LIVE ? new URL(p.slice(1), document.baseURI).href : p);
+
 let segmenter: Promise<ImageSegmenter> | null = null;
 let faces: Promise<FaceDetector> | null = null;
 
 async function vision() {
   const mp = await import('@mediapipe/tasks-vision');
-  const files = await mp.FilesetResolver.forVisionTasks('/wasm');
+  const files = await mp.FilesetResolver.forVisionTasks(at('/wasm'));
   return { mp, files };
 }
 
@@ -19,7 +23,7 @@ function getSegmenter() {
     const { mp, files } = await vision();
     const make = (delegate: 'GPU' | 'CPU') =>
       mp.ImageSegmenter.createFromOptions(files, {
-        baseOptions: { modelAssetPath: '/models/selfie_segmenter.tflite', delegate },
+        baseOptions: { modelAssetPath: at('/models/selfie_segmenter.tflite'), delegate },
         runningMode: 'IMAGE',
         outputConfidenceMasks: true,
         outputCategoryMask: false,
@@ -33,7 +37,7 @@ function getFaces() {
   faces ??= (async () => {
     const { mp, files } = await vision();
     const make = (delegate: 'GPU' | 'CPU') =>
-      mp.FaceDetector.createFromOptions(files, { baseOptions: { modelAssetPath: '/models/blaze_face_short_range.tflite', delegate }, runningMode: 'IMAGE', minDetectionConfidence: 0.5 });
+      mp.FaceDetector.createFromOptions(files, { baseOptions: { modelAssetPath: at('/models/blaze_face_short_range.tflite'), delegate }, runningMode: 'IMAGE', minDetectionConfidence: 0.5 });
     return make('GPU').catch(() => make('CPU'));
   })();
   return faces;
@@ -140,4 +144,36 @@ export async function faceCrop(src: Blob | string): Promise<Blob | null> {
   c.height = Math.round(h);
   c.getContext('2d')!.drawImage(img, x, y, w, h, 0, 0, c.width, c.height);
   return new Promise((res) => c.toBlob((b) => res(b), 'image/png'));
+}
+
+/**
+ * The person mask over the whole frame (for the Create tools' 3D/parallax effects): confidence 0–1 per
+ * mask pixel, at the segmenter's output size. Null when no one covers enough of the frame.
+ */
+export async function personMask(src: Blob | string | HTMLImageElement): Promise<{ data: Float32Array; width: number; height: number; coverage: number } | null> {
+  const img = src instanceof HTMLImageElement ? src : await loadImage(src);
+  const seg = await getSegmenter();
+  const result = seg.segment(img);
+  const mask = result.confidenceMasks?.[0];
+  if (!mask) {
+    result.close();
+    return null;
+  }
+  const data = new Float32Array(mask.getAsFloat32Array());
+  const width = mask.width;
+  const height = mask.height;
+  result.close();
+  let on = 0;
+  for (let i = 0; i < data.length; i++) if (data[i] > 0.5) on++;
+  const coverage = on / data.length;
+  return coverage < 0.03 ? null : { data, width, height, coverage };
+}
+
+/** The largest face in the current video frame, in video pixels (the camera's mascot lens). */
+export async function faceInVideo(video: HTMLVideoElement): Promise<FaceBox | null> {
+  if (!video.videoWidth) return null;
+  const det = await getFaces();
+  const r = det.detect(video);
+  const d = r.detections.sort((a, b) => (b.boundingBox?.width ?? 0) - (a.boundingBox?.width ?? 0))[0];
+  return d?.boundingBox ? { x: d.boundingBox.originX, y: d.boundingBox.originY, w: d.boundingBox.width, h: d.boundingBox.height } : null;
 }

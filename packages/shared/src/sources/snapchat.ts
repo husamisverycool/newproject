@@ -50,4 +50,6 @@ export const snapchat = {
   gb: (n: number) => `${n}GB`,
   /** [V] Snap spokesperson: free users get "a limited number of image generations per day" · "a limited number of" → the plan's monthly count (spec §U "show users how much allowance is left") */
   imageGenerations: (n: number) => `${n} image generations`,
+  /** [V] product noun "Lenses" (Lens+, "Imagine Lens", "Gen AI Lenses"); the Lens button is the smiley face beside the shutter [B-high] */
+  lenses: 'Lenses',
 } as const;

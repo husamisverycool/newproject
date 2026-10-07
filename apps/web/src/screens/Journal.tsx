@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
 import { bereal, duolingo, ios, locket, retro, spec } from '@app/shared';
 import { useActiveGroup, useGroup, useJournal } from '../lib/queries';
@@ -20,6 +20,9 @@ import s from './journal.module.css';
  * "Week 26 Jun 26 - Jul 2" with "•••" and their day strip. Retro's "this week in" card [V] ends the
  * current strip. The current week is blurred until you post (BeReal's "Share to view" [I], spec §E,
  * never past weeks). The Duolingo Friends Quest module [V] carries the group quest (spec §K).
+ * Search (spec §L) is the stock search field that sits above the large title and stays hidden until
+ * you pull the list down (UISearchController, hidesSearchBarWhenScrolling) [HIG], so Retro's header
+ * is unchanged at rest.
  */
 export default function Journal() {
   const nav = useNavigate();
@@ -28,6 +31,13 @@ export default function Journal() {
   const j = useJournal(group?.id);
   const detail = useGroup(group?.id);
   const [picker, setPicker] = useState(false);
+  const scroller = useRef<HTMLDivElement>(null);
+  const searchRow = useRef<HTMLButtonElement>(null);
+  // Start scrolled past the search field (hidden until pulled down) [HIG], once the weeks are in.
+  const loaded = Boolean(j.data);
+  useLayoutEffect(() => {
+    if (loaded && scroller.current && searchRow.current) scroller.current.scrollTop = searchRow.current.offsetHeight + 10;
+  }, [group?.id, loaded]);
   if (!group) return null;
   const weeks = j.data?.weeks ?? [];
   const current = weeks.find((w) => w.current);
@@ -37,7 +47,11 @@ export default function Journal() {
 
   return (
     <div className={s.root} data-light>
-      <div className={s.scroll}>
+      <div className={s.scroll} ref={scroller}>
+        <button ref={searchRow} className={s.search} onClick={() => nav('/journal/search')}>
+          <Icon name="searchGlass" size={17} strokeWidth={2.4} />
+          {ios.search}
+        </button>
         <header className={s.header}>
           <div className={s.titles}>
             <h1 className={s.title}>{retro.week(isoWeek(start))}</h1>

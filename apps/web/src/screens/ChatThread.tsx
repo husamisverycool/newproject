@@ -13,6 +13,7 @@ import { Avatar, Sheet } from '../components/ios';
 import { Mascot } from '../components/Mascot';
 import { PlanCard } from '../components/PlanCard';
 import s from './chat.module.css';
+import { allows } from '../lib/device';
 
 /**
  * The group chat, laid out from the INSPO images [I]:
@@ -164,7 +165,7 @@ export default function ChatThread() {
             <button className={s.roundBtn} onClick={() => setStickers(true)} aria-label={imessage.stickers}>
               <Icon name="peel" size={22} filled />
             </button>
-            <VoiceNote groupId={groupId} />
+            {allows('microphone') && <VoiceNote groupId={groupId} />}
           </>
         )}
       </div>

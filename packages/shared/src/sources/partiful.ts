@@ -112,4 +112,20 @@ export const partiful = {
   showGuestList: 'Show Guest List',
   /** [V] Settings > Display + Privacy (aka "# Going") */
   showGuestCount: 'Show Guest Count',
+
+  /* ── Edit, poster, +1s, Activity Feed comments (research/15 §2, research/21 §1) ── */
+  /** [V] "Event page, then "Edit", then "Settings"" (Auto-Reminders article); "Save Draft … you can edit later" */
+  edit: 'Edit',
+  /** [V] "Edit button in the bottom-right corner of the poster opens the poster picker"; App Store "event posters" */
+  poster: 'Poster',
+  /** [V] Settings > RSVPs: "number of +1s (default one +1 per guest)" */
+  plusOnes: '+1s',
+  /** [V] default "one +1 per guest" */
+  defaultPlusOnes: 1,
+  /** [V] a guest's +1 count, written as in "+1s" */
+  plusN: (n: number) => `+${n}`,
+  /** [V] Display + Privacy: "hide Activity Feed timestamps" (capitalized as a switch label) */
+  hideTimestamps: 'Hide Activity Feed timestamps',
+  /** [V] comments: "Type "@" and the name pops up" */
+  mention: (name: string) => `@${name}`,
 } as const;

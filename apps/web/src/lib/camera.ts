@@ -198,3 +198,23 @@ export async function fileToSquareJpeg(file: Blob, size = 1440): Promise<Blob> {
   drawSquare(c.getContext('2d')!, bmp, c.width, false);
   return new Promise((res, rej) => c.toBlob((b) => (b ? res(b) : rej(new Error('encode'))), 'image/jpeg', 0.92));
 }
+
+/**
+ * No live viewfinder (the page may not use the camera, e.g. inside Claude): take the photo with the
+ * system camera instead, the stock iOS capture sheet [HIG]. Call from a tap. Resolves a square JPEG,
+ * or null when nothing was taken.
+ */
+export function systemCameraShot(facing: Facing, size = 1440): Promise<Blob | null> {
+  return new Promise((resolve) => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.setAttribute('capture', facing);
+    input.onchange = () => {
+      const f = input.files?.[0];
+      resolve(f ? fileToSquareJpeg(f, size) : null);
+    };
+    input.addEventListener('cancel', () => resolve(null));
+    input.click();
+  });
+}

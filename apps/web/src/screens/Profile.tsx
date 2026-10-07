@@ -10,6 +10,7 @@ import { Icon } from '../components/Icon';
 import { Avatar } from '../components/ios';
 import { AppTabs } from '../components/AppTabs';
 import s from './profile.module.css';
+import { appUrl, shareLink } from '../lib/share';
 
 type Day = { id: string; thumb: string; createdAt: number };
 
@@ -48,12 +49,12 @@ export default function Profile() {
   const setAvatar = async (f: File | undefined) => {
     if (!f) return;
     const fd = new FormData();
-    fd.set('avatar', await fileToSquareJpeg(f), 'avatar.jpg');
+    fd.set('file', await fileToSquareJpeg(f), 'avatar.jpg');
     await api.post('/me/avatar', fd).catch(() => undefined);
     void queryClient.invalidateQueries({ queryKey: ['me'] });
   };
   const shareProfile = () => {
-    if (typeof navigator.share === 'function') void navigator.share({ url: location.origin }).catch(() => undefined);
+    void shareLink(appUrl());
   };
 
   return (

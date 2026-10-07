@@ -2,7 +2,7 @@ import { useEffect } from 'react';
 import { queryClient, invalidateGroup } from './queries';
 import { useUi } from './store';
 import { sfx, haptic } from './feedback';
-import { STATIC } from './static';
+import { LIVE, STATIC } from './static';
 
 type Evt =
   | { type: 'hello' }
@@ -31,6 +31,13 @@ export function onRealtime(fn: (e: Evt) => void) {
 }
 
 export function sendRealtime(msg: unknown) {
+  if (LIVE) {
+    // In Claude, typing travels through the artifact's room (live/engine.ts listens for it).
+    const m = msg as { type?: string; groupId?: string };
+    if (m.type === 'typing' && m.groupId)
+      void import('../live/engine').then(({ engine }) => engine()).then((e) => e.room?.emit('typing', { groupId: m.groupId }).catch(() => undefined));
+    return;
+  }
   if (socket?.readyState === WebSocket.OPEN) socket.send(JSON.stringify(msg));
 }
 
@@ -80,6 +87,24 @@ function handle(e: Evt) {
 export function useRealtime(enabled: boolean) {
   useEffect(() => {
     if (!enabled) return;
+    if (LIVE) {
+      // Events come from this page's own server and from friends' ops; any change friends made
+      // refreshes what is on screen.
+      let off: (() => void)[] = [];
+      let dead = false;
+      void import('../live/engine').then(async ({ engine }) => {
+        const e = await engine();
+        if (dead) return;
+        off = [
+          e.onEvent((ev) => handle(ev as Evt)),
+          e.onChange(() => void queryClient.invalidateQueries()),
+        ];
+      });
+      return () => {
+        dead = true;
+        off.forEach((f) => f());
+      };
+    }
     let stop = false;
     let retry = 500;
     const connect = () => {

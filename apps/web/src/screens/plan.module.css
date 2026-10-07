@@ -325,3 +325,222 @@
   background: color-mix(in srgb, var(--sys-bg2) 82%, transparent);
   color: var(--partiful-ink);
 }
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding-top: calc(var(--safe-top) + 120px);
+}
+
+/* Your reply under the RSVP tiles: +1s and the note (Apple Invites: visible to everyone [V]) */
+.myReply {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 14px;
+  border-radius: 14px;
+  background: var(--sys-bg2);
+  color: inherit;
+  text-align: left;
+  font: 400 15px/20px var(--font-partiful);
+}
+.myReply b {
+  font-weight: 600;
+}
+.myReply span {
+  overflow-wrap: anywhere;
+}
+.rsvpSheet {
+  margin: 8px 16px 0;
+}
+/* UIStepper [HIG]: two halves split by a hairline in a rounded gray capsule */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--sys-fill);
+  margin-left: 12px;
+}
+.stepper button {
+  width: 47px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sys-label);
+}
+.stepper button:disabled {
+  color: var(--sys-label3);
+}
+.stepper i {
+  width: 1px;
+  height: 18px;
+  background: var(--sys-separator);
+}
+
+/* Host bar: count · Edit · Text Blast (bar "with editing, inviting guests and viewing the number of attendees" [V-weak]) */
+.barEdit {
+  height: 50px;
+  padding: 0 18px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px var(--partiful-ink);
+  font: 600 16px/1 var(--font-partiful);
+  color: var(--partiful-ink);
+}
+
+/* Comment composer: iOS shared-album comment field [B-high] in the page's ink */
+.composer {
+  position: relative;
+  margin-top: 18px;
+}
+.composerRow {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+}
+.composerInput {
+  flex: 1;
+  min-height: 36px;
+  max-height: 120px;
+  resize: none;
+  border: 0;
+  outline: none;
+  border-radius: 18px;
+  padding: 8px 14px;
+  background: var(--sys-bg2);
+  color: var(--sys-label);
+  font: 400 16px/20px var(--font-partiful);
+  field-sizing: content;
+}
+.composerInput::placeholder {
+  color: var(--sys-label3);
+}
+.composerIcon {
+  height: 36px;
+  width: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--partiful-ink);
+}
+.composerPost {
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--partiful-ink);
+  color: #ffffff;
+  font: 600 15px/1 var(--font-partiful);
+}
+.composerPost:disabled {
+  opacity: 0.35;
+}
+.composerPhoto {
+  position: relative;
+  width: 88px;
+  height: 88px;
+  margin: 0 0 10px 42px;
+}
+.composerPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+.composerPhoto button {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--partiful-ink);
+  color: #ffffff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* "@" pops up the names [V]: a stock suggestion list [HIG] above the field */
+.mentions {
+  position: absolute;
+  z-index: 3;
+  left: 42px;
+  right: 0;
+  bottom: calc(100% + 6px);
+  border-radius: 14px;
+  background: var(--sys-bg);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
+}
+.mentions button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 12px;
+  color: var(--sys-label);
+  font: 400 16px/20px var(--font-partiful);
+  text-align: left;
+}
+.mentions button + button {
+  border-top: 0.5px solid var(--sys-separator);
+}
+
+/* Feed items: a Text Blast or RSVP line carries a small label after the name */
+.tag {
+  font-style: normal;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--sys-label2);
+}
+.itemMore {
+  margin-left: auto;
+  color: var(--sys-label2);
+  display: flex;
+}
+.itemPhoto {
+  display: block;
+  margin-top: 8px;
+  width: 200px;
+  max-width: 100%;
+}
+.itemPhoto img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+}
+.lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: #000000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.lightbox img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.blastThumb {
+  width: 34px;
+  height: 34px;
+  border-radius: 6px;
+  object-fit: cover;
+}
+.rowX {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--sys-fill);
+  color: var(--sys-label2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}

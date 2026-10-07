@@ -6,23 +6,44 @@ import { nanoid } from 'nanoid';
 import { BRAND, PALETTE, type Plan, type Provenance, STORAGE, storageTierFor } from '@app/shared';
 import { paths } from './env.ts';
 
-fs.mkdirSync(paths.media, { recursive: true });
+/**
+ * Where media bytes live. The Node server keeps them on disk under .data/media; the in-Claude build
+ * swaps in a store backed by the artifact's assets and shared documents (apps/web/src/live).
+ */
+export interface MediaStore {
+  read(url: string): Promise<Buffer>;
+  write(buf: Buffer, ext: string): Promise<{ url: string; bytes: number }>;
+}
 
 export function mediaPath(url: string) {
   // urls look like /media/<file>
   const file = url.replace(/^\/media\//, '');
-  const resolved = path.join(paths.media, path.basename(file));
-  return resolved;
+  return path.join(paths.media, path.basename(file));
+}
+
+const diskStore: MediaStore = {
+  async read(url) {
+    return fs.promises.readFile(mediaPath(url));
+  },
+  async write(buf, ext) {
+    fs.mkdirSync(paths.media, { recursive: true });
+    const name = `${nanoid(16)}.${ext}`;
+    await fs.promises.writeFile(path.join(paths.media, name), buf);
+    return { url: `/media/${name}`, bytes: buf.length };
+  },
+};
+
+let store = diskStore;
+export function setMediaStore(s: MediaStore) {
+  store = s;
 }
 
 export function readMedia(url: string) {
-  return fs.readFileSync(mediaPath(url));
+  return store.read(url);
 }
 
 export function writeMedia(buf: Buffer, ext: string) {
-  const name = `${nanoid(16)}.${ext}`;
-  fs.writeFileSync(path.join(paths.media, name), buf);
-  return { url: `/media/${name}`, bytes: buf.length };
+  return store.write(buf, ext);
 }
 
 export interface StoredImage {
@@ -51,12 +72,12 @@ export async function storeImage(input: Buffer, plan: Plan): Promise<StoredImage
     .resize({ width: STORAGE.thumbLongEdge, height: STORAGE.thumbLongEdge, fit: 'inside', withoutEnlargement: true })
     .jpeg({ quality: 72, mozjpeg: true })
     .toBuffer();
-  const m = writeMedia(main.data, 'jpg');
-  const t = writeMedia(thumb, 'jpg');
+  const m = await writeMedia(main.data, 'jpg');
+  const t = await writeMedia(thumb, 'jpg');
   let original: string | null = null;
   let bytes = m.bytes + t.bytes;
   if (plan !== 'free') {
-    const o = writeMedia(await base.clone().jpeg({ quality: 95 }).toBuffer(), 'jpg');
+    const o = await writeMedia(await base.clone().jpeg({ quality: 95 }).toBuffer(), 'jpg');
     original = o.url;
     bytes += o.bytes;
   }
@@ -66,11 +87,11 @@ export async function storeImage(input: Buffer, plan: Plan): Promise<StoredImage
 /** Store a transparent PNG as-is (stickers, cut-outs). */
 export async function storePng(input: Buffer) {
   const out = await sharp(input).png().toBuffer({ resolveWithObject: true });
-  const w = writeMedia(out.data, 'png');
+  const w = await writeMedia(out.data, 'png');
   return { ...w, width: out.info.width, height: out.info.height };
 }
 
-export function storeBlob(input: Buffer, ext: string) {
+export async function storeBlob(input: Buffer, ext: string) {
   return writeMedia(input, ext);
 }
 

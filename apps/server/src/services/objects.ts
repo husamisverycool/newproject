@@ -1,8 +1,8 @@
 import sharp from 'sharp';
 import { zipSync, strToU8 } from 'fflate';
-import { BRAND, MASCOT_SPECIES, PLANS, PLAN_NAMES, aiRemaining, canUseLikeness, ios, sora, spec, yope, type Group } from '@app/shared';
+import { BRAND, MASCOT_SPECIES, PLANS, PLAN_NAMES, aiRemaining, canUseLikeness, ios, sora, spec, yope, type CreationKind, type Group } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
-import { exportAnimated, exportImage, readMedia, storePng, writeMedia, escapeXml } from '../media.ts';
+import { exportAnimated, exportImage, framesToLive, readMedia, storeBlob, storeImage, storePng, writeMedia, escapeXml } from '../media.ts';
 import { getGroup, getObject, getPost, getUser, groupsForUser, insertObject, objectsFor, publicUser, type UserFull } from '../repo.ts';
 import * as img from '../ai/image.ts';
 import { GameError } from './cards.ts';
@@ -76,10 +76,10 @@ export async function makeRemix(actor: UserFull, input: { postId: string; style:
   if (!post || post.groupId !== input.groupId) throw new GameError('bad_post');
   consent(actor, input.subjects, input.groupId);
   meter(actor);
-  const res = await img.remix(input.style, readMedia(post.media.main), { caption: post.caption, cutout: input.cutout ?? null });
+  const res = await img.remix(input.style, await readMedia(post.media.main), { caption: post.caption, cutout: input.cutout ?? null });
   img.recordUsage(actor.id, res.costUsd);
   const ext = input.style === '8bit' || input.style === 'sticker' || input.style === 'enamel_pin' ? 'png' : 'jpg';
-  const media = writeMedia(res.image, ext).url;
+  const media = (await writeMedia(res.image, ext)).url;
   const o = insertObject({
     groupId: input.groupId, kind: 'comic', createdBy: actor.id, subjects: input.subjects, media, style: input.style,
     provenance: provenance('roll. remix', res.model, input.subjects), createdAt: now(), meta: { sourcePostId: post.id, generator: res.generator },
@@ -97,7 +97,7 @@ export async function makeFigurine(actor: UserFull, input: { cutout: Buffer; ori
   const res = await img.figurine(input.cutout, input.original, { name: subject.name, groupName: group.name });
   img.recordUsage(actor.id, res.costUsd);
   const o = insertObject({
-    groupId: input.groupId, kind: 'figurine', createdBy: actor.id, subjects: [input.subjectId], media: writeMedia(res.image, 'jpg').url, style: 'figurine',
+    groupId: input.groupId, kind: 'figurine', createdBy: actor.id, subjects: [input.subjectId], media: (await writeMedia(res.image, 'jpg')).url, style: 'figurine',
     provenance: provenance('roll. figurines', res.model, [input.subjectId]), createdAt: now(), meta: { generator: res.generator },
   });
   notifySubjects(actor, [input.subjectId], o.id, 'figurine', input.groupId);
@@ -110,7 +110,7 @@ export async function makeMeme(actor: UserFull, input: { template: Buffer; face:
   const res = await img.meme(input.template, input.face, input.box, { top: input.top, bottom: input.bottom });
   img.recordUsage(actor.id, res.costUsd);
   const o = insertObject({
-    groupId: input.groupId, kind: 'meme', createdBy: actor.id, subjects: [input.subjectId], media: writeMedia(res.image, 'jpg').url, style: 'me-meme',
+    groupId: input.groupId, kind: 'meme', createdBy: actor.id, subjects: [input.subjectId], media: (await writeMedia(res.image, 'jpg')).url, style: 'me-meme',
     provenance: provenance('roll. me meme', res.model, [input.subjectId]), createdAt: now(), meta: { templatePostId: input.templatePostId ?? null, generator: res.generator },
   });
   notifySubjects(actor, [input.subjectId], o.id, 'meme', input.groupId);
@@ -136,7 +136,7 @@ export async function makeZine(actor: UserFull, group: Group, weekKey: string, p
     <text x="74" y="${ph - 90}" font-family="Inter" font-weight="900" font-size="90" fill="#000">${escapeXml(BRAND.bare)}<tspan fill="#fff">.</tspan></text></svg>`);
   pages.push(await sharp(cover).png().toBuffer());
   for (const p of posts) {
-    const photo = await sharp(readMedia(p.media.main)).rotate().resize(Math.round(pw - 120), Math.round(ph - 360), { fit: 'cover' }).png().toBuffer();
+    const photo = await sharp(await readMedia(p.media.main)).rotate().resize(Math.round(pw - 120), Math.round(ph - 360), { fit: 'cover' }).png().toBuffer();
     const user = getUser(p.userId);
     const cap = Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="${pw}" height="${ph}"><rect width="100%" height="100%" fill="#fff"/>
       <text x="60" y="${ph - 170}" font-family="Inter" font-weight="900" font-size="58" fill="#000">${escapeXml((p.caption ?? '').slice(0, 26))}</text>
@@ -160,9 +160,49 @@ export async function makeZine(actor: UserFull, group: Group, weekKey: string, p
   const sheet = await sharp({ create: { width: W, height: H, channels: 3, background: '#fff' } }).composite(comps).jpeg({ quality: 90 }).toBuffer();
   const subjects = [...new Set(posts.map((p) => p.userId))];
   return insertObject({
-    groupId: group.id, kind: 'zine', createdBy: actor.id, subjects, media: writeMedia(sheet, 'jpg').url, style: 'one-sheet',
+    groupId: group.id, kind: 'zine', createdBy: actor.id, subjects, media: (await writeMedia(sheet, 'jpg')).url, style: 'one-sheet',
     provenance: { generator: 'roll. zine', model: null, createdAt: now(), subjects, consentChecked: true, watermark: 'visible' }, createdAt: now(),
     meta: { weekKey, postIds: posts.map((p) => p.id), print: { size: 'US Letter', dpi: 300 } },
+  });
+}
+
+/* ───────────────────────── Create tools made on the device ───────────────────────── */
+
+export const CREATION_KINDS: CreationKind[] = ['photo_to_video', 'cinematic', 'animation', 'highlight', 'slideshow'];
+
+/**
+ * Google Photos Create tools (research/06 §1.2, 16 §1) rendered in the browser: Photo to video,
+ * Cinematic photos and Animations arrive as frames and become an animated WebP (the Live-clip format);
+ * Highlight videos and the recap slideshow (iOS 27) arrive as a recorded video. They are not likeness
+ * generations (no person is generated), so there is no consent check or AI metering; every source photo
+ * must be one the maker can see in that group. Exports keep the visible watermark (spec §Q).
+ */
+export async function saveCreation(actor: UserFull, input: {
+  groupId: string; kind: CreationKind; frames: Buffer[]; delay: number; video: Buffer | null; videoType: string; poster: Buffer | null;
+  sourcePostIds: string[]; style: string | null; meta: Record<string, unknown>;
+}) {
+  if (!CREATION_KINDS.includes(input.kind)) throw new GameError('bad_kind');
+  const group = getGroup(input.groupId);
+  if (!group || !groupsForUser(actor.id).some((g) => g.id === group.id)) throw new GameError('not_found');
+  const sources = input.sourcePostIds.map((p) => getPost(p)).filter((p): p is NonNullable<typeof p> => Boolean(p && p.groupId === group.id)).map((p) => p.id);
+  let media: string;
+  let bytes = 0;
+  if (input.frames.length >= 2) {
+    // An animated WebP is one tall image of at most 16383 px, so 34 frames of 480 px.
+    const live = await framesToLive(input.frames.slice(0, Math.floor(16383 / 480)), 480, Math.max(40, Math.min(3000, Math.round(input.delay) || 100)));
+    media = live.url;
+    bytes += live.bytes;
+  } else if (input.video) {
+    const v = await storeBlob(input.video, input.videoType.includes('mp4') ? 'mp4' : 'webm');
+    media = v.url;
+    bytes += v.bytes;
+  } else throw new GameError('media_required');
+  const poster = input.poster ? await storeImage(input.poster, 'free') : null;
+  if (poster) bytes += poster.bytes;
+  return insertObject({
+    groupId: group.id, kind: input.kind, createdBy: actor.id, subjects: [], media, style: input.style,
+    provenance: { generator: `${BRAND.name} create`, model: null, createdAt: now(), subjects: [], consentChecked: false, watermark: 'visible' }, createdAt: now(),
+    meta: { ...input.meta, sourcePostIds: sources, poster: poster?.url ?? null, thumb: poster?.thumb ?? null, bytes },
   });
 }
 
@@ -173,8 +213,10 @@ export async function exportObject(actor: UserFull, objectId: string) {
   if (!o || o.revoked) throw new GameError('not_found');
   const group = o.groupId ? getGroup(o.groupId) : null;
   const species = MASCOT_SPECIES.find((s) => s.id === group?.mascot.species) ?? MASCOT_SPECIES[0];
-  const buf = readMedia(o.media);
+  const buf = await readMedia(o.media);
   const handle = actor.name.toLowerCase().replace(/\s+/g, '');
+  // Videos made on the device carry their moving watermark in the frames already (saveCreation).
+  if (/\.(webm|mp4)$/.test(o.media)) return { buf, type: o.media.endsWith('.mp4') ? 'video/mp4' : 'video/webm' };
   if (o.media.endsWith('.webp')) return { buf: await exportAnimated(buf, o.provenance, { mascotColor: species.body, handle }), type: 'image/webp' };
   const isPng = o.media.endsWith('.png');
   return { buf: await exportImage(buf, o.provenance, { mascotColor: species.body, handle, format: isPng ? 'png' : 'jpeg' }), type: isPng ? 'image/png' : 'image/jpeg' };
@@ -192,7 +234,7 @@ export async function stickerPack(actor: UserFull, groupId: string | null) {
   const files: Record<string, Uint8Array> = {};
   const contents: { image_file: string; emojis: string[] }[] = [];
   for (const [i, s] of stickers.entries()) {
-    const base = await sharp(readMedia(s.media)).resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+    const base = await sharp(await readMedia(s.media)).resize(512, 512, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
     const marked = await sharp(base)
       .composite([{ input: Buffer.from(`<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512"><g transform="translate(436 452)"><circle cx="24" cy="24" r="24" fill="${species.body}"/><text x="24" y="31" text-anchor="middle" font-family="Inter" font-weight="900" font-size="18" fill="#000">r.</text></g></svg>`) }])
       .png()
@@ -201,7 +243,7 @@ export async function stickerPack(actor: UserFull, groupId: string | null) {
     files[`imessage/${i + 1}.png`] = marked;
     contents.push({ image_file: `${i + 1}.webp`, emojis: ['😀'] });
   }
-  files['whatsapp/tray.png'] = await sharp(readMedia(stickers[0].media)).resize(96, 96, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
+  files['whatsapp/tray.png'] = await sharp(await readMedia(stickers[0].media)).resize(96, 96, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
   files['whatsapp/contents.json'] = strToU8(JSON.stringify({ identifier: `${BRAND.bare}-${groupId ?? actor.id}`, name: group?.name ?? actor.name, publisher: BRAND.name, tray_image_file: 'tray.png', stickers: contents }, null, 2));
   return Buffer.from(zipSync(files, { level: 6 }));
 }

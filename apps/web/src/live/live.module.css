@@ -1,0 +1,16 @@
+/* "View only" notice: the iOS system pill (Dynamic Island-style capsule, footnote weight) [HIG]. */
+.pill {
+  position: fixed;
+  top: calc(env(safe-area-inset-top, 0px) + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(30, 30, 30, 0.86);
+  color: #fff;
+  font: 600 13px/18px var(--font-sf);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  pointer-events: none;
+}

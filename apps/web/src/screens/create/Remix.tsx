@@ -7,6 +7,7 @@ import { invalidateGroup, queryClient, useConfig, useFeed } from '../../lib/quer
 import { cutout } from '../../lib/vision';
 import type { LikenessObject, Post } from '../../lib/types';
 import { AiInfo, BottomAction, CheckRow, PhotoGrid, ResultActions, pickable, useCreateGroup, useErrorAlert, usePost } from './common';
+import { PrintButton } from '../../components/PrintSheet';
 import s from './create.module.css';
 
 /** Styles that take the person cut out of the photo rather than the whole frame (server: ai/local.ts). */
@@ -44,8 +45,11 @@ export default function Remix() {
       fd.set('postId', post.id);
       fd.set('groupId', group.id);
       if (NEEDS_CUTOUT.has(style)) {
-        const cut = await cutout(post.media.main);
+        // On-device segmentation can be unavailable (e.g. inside Claude's frame): the server then
+        // uses the whole photo (a rounded die-cut for stickers and pins).
+        const cut = await cutout(post.media.main).catch(() => null);
         if (cut) fd.set('cutout', cut.png, 'cutout.png');
+        else if (style === 'figurine') fd.set('cutout', await (await fetch(post.media.main)).blob(), 'photo.jpg');
       }
       if (style === 'figurine') {
         fd.set('subjectId', post.user.id);
@@ -81,6 +85,11 @@ export default function Remix() {
         {result && (
           <>
             <ResultActions object={result} onRegenerate={() => void generate()} busy={busy} />
+            {result.kind === 'figurine' && group && (
+              <div className={s.printRow}>
+                <PrintButton className={s.printBtn} groupId={group.id} kind="figurine_card" objectId={result.id} preview={result.media} />
+              </div>
+            )}
             <AiInfo edited={style !== 'figurine'} />
           </>
         )}

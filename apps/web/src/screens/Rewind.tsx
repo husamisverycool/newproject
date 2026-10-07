@@ -10,6 +10,7 @@ import { AppTabs } from '../components/AppTabs';
 import { Icon } from '../components/Icon';
 import { Spinner } from '../components/ios';
 import s from './rewindtab.module.css';
+import { canShare, sharePost } from '../lib/share';
 
 const HIDDEN = 'rewind.hidden';
 
@@ -58,8 +59,8 @@ export default function Rewind() {
       await api.post('/posts', fd);
       setLocal((l) => l.filter((x) => x.id !== it.id));
       void q.refetch();
-    } else if (typeof navigator.share === 'function') {
-      await navigator.share({ url: `${location.origin}/api/posts/${it.id}/export` }).catch(() => undefined);
+    } else if (canShare()) {
+      await sharePost(it.id).catch(() => undefined);
     }
   };
   const addFromLibrary = async (files: FileList | null) => {

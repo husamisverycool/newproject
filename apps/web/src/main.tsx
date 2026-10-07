@@ -11,6 +11,6 @@ createRoot(document.getElementById('root')!).render(
   </StrictMode>,
 );
 
-if ('serviceWorker' in navigator && import.meta.env.PROD && import.meta.env.VITE_STATIC !== '1') {
+if ('serviceWorker' in navigator && import.meta.env.PROD && import.meta.env.VITE_STATIC !== '1' && import.meta.env.VITE_LIVE !== '1') {
   void navigator.serviceWorker.register('/sw.js');
 }

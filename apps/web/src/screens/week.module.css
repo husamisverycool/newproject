@@ -627,3 +627,40 @@
 .whiteBlock:disabled {
   opacity: 0.5;
 }
+
+/* iOS 27 slideshow maker [V-weak]: "Customize" below the slideshow, and Save Video [HIG]; Retro's glass [I] */
+.slideshowBar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--safe-bottom) + 212px);
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  z-index: 2;
+}
+.glassPill {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  background: var(--locket-glass);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  color: #fff;
+  font: 600 15px/36px var(--font-sf);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.pct {
+  width: 60px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.25);
+  overflow: hidden;
+}
+.pct i {
+  display: block;
+  height: 100%;
+  background: #fff;
+}

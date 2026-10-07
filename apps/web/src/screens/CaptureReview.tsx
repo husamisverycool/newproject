@@ -1,13 +1,16 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { bereal, characterai, ios, locket, yope } from '@app/shared';
-import { api } from '../lib/api';
+import { api, downloadBlob } from '../lib/api';
 import { haptic } from '../lib/feedback';
-import type { GroupSummary } from '../lib/types';
+import type { GroupSummary, PublicUser } from '../lib/types';
+import { Avatar } from '../components/ios';
 import { Icon } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
 import { Wordmark } from '../components/Brand';
 import { Spinner } from '../components/ios';
 import s from './camera.module.css';
+import { allows } from '../lib/device';
+import { LIVE } from '../lib/static';
 
 export interface Shot {
   main: Blob;
@@ -21,12 +24,35 @@ export interface Shot {
 
 type Voice = { blob: Blob; duration: number; url: string };
 
+/** The Best Friend widget's person (spec §C bestie lane): a photo can go to "just that person" [V]. */
+export interface BestieTarget {
+  user: PublicUser;
+  groupId: string;
+}
+const BESTIE = 'bestie:';
+
 function useSend(shot: Shot, ritualOpen: boolean) {
   const [sending, setSending] = useState(false);
   const old = shot.fromRoll && Date.now() - shot.takenAt > 14 * 86_400_000;
   const send = async (opts: { targets: string[]; caption: string; voice: Voice | null; remember: boolean; bts: boolean }) => {
     if (!opts.targets.length || sending) return false;
     setSending(true);
+    // Locket: "you can send images to just that person" [V] — the lane, never the group's wall.
+    const one = opts.targets[0].startsWith(BESTIE) ? opts.targets[0].slice(BESTIE.length).split('|') : null;
+    if (one) {
+      const fd = new FormData();
+      fd.set('main', shot.main, 'photo.jpg');
+      fd.set('groupId', one[1]);
+      fd.set('caption', opts.caption);
+      try {
+        await api.post(`/bestie/${one[0]}/photos`, fd);
+        haptic('success');
+        return true;
+      } catch {
+        setSending(false);
+        return false;
+      }
+    }
     const fd = new FormData();
     fd.set('groupIds', opts.targets.join(','));
     fd.set('main', shot.main, 'photo.jpg');
@@ -55,9 +81,14 @@ function useSend(shot: Shot, ritualOpen: boolean) {
   return { send, sending, old };
 }
 
-/** Recipient row (Locket [B-med]): "All" first and selected by default — "a snap goes to the entire friends list by default" [V] — then each group, shown by its mascot. */
-function Recipients({ groups, targets, setTargets }: { groups: GroupSummary[]; targets: string[]; setTargets: (t: string[]) => void }) {
-  const all = targets.length === groups.length;
+/**
+ * Recipient row (Locket [B-med]): "All" first and selected by default — "a snap goes to the entire friends
+ * list by default" [V] — then each group, shown by its mascot, then the Best Friend widget's person by
+ * their face (Locket: "send images to just that person" [V]).
+ */
+function Recipients({ groups, targets, setTargets, bestie }: { groups: GroupSummary[]; targets: string[]; setTargets: (t: string[]) => void; bestie?: BestieTarget | null }) {
+  const all = targets.length === groups.length && !targets[0]?.startsWith(BESTIE);
+  const bestieKey = bestie ? `${BESTIE}${bestie.user.id}|${bestie.groupId}` : null;
   return (
     <div className={s.recipients}>
       <button className={s.recipient} onClick={() => { haptic('light'); setTargets(groups.map((g) => g.id)); }}>
@@ -77,6 +108,14 @@ function Recipients({ groups, targets, setTargets }: { groups: GroupSummary[]; t
           </button>
         );
       })}
+      {bestie && bestieKey && (
+        <button className={s.recipient} onClick={() => { haptic('light'); setTargets([bestieKey]); }}>
+          <span className={`${s.recipientAvatar} ${targets[0] === bestieKey ? s.recipientOn : ''}`}>
+            <Avatar user={bestie.user} size={44} />
+          </span>
+          <span>{bestie.user.name.split(' ')[0]}</span>
+        </button>
+      )}
     </div>
   );
 }
@@ -88,7 +127,7 @@ function Recipients({ groups, targets, setTargets }: { groups: GroupSummary[]; t
  * caption pill on the photo [B-med]; caption types (Text, Time [V-weak]) plus Yope's voice [V] and
  * Character.ai's Pin [V-weak]; the recipient row below [B-med].
  */
-export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, onSent }: { shot: Shot; groups: GroupSummary[]; activeGroup: GroupSummary | null; ritualOpen: boolean; onCancel: () => void; onSent: () => void }) {
+export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, onSent, bestie }: { shot: Shot; groups: GroupSummary[]; activeGroup: GroupSummary | null; ritualOpen: boolean; onCancel: () => void; onSent: () => void; bestie?: BestieTarget | null }) {
   const [caption, setCaption] = useState('');
   const [time, setTime] = useState(false);
   const [targets, setTargets] = useState<string[]>(groups.map((g) => g.id));
@@ -98,7 +137,8 @@ export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, 
   const [sent, setSent] = useState(false);
   void activeGroup;
   const all = targets.length === groups.length && groups.length > 1;
-  const sendToName = all ? locket.all : groups.filter((g) => targets.includes(g.id)).map((g) => g.name).join(', ');
+  const toBestie = Boolean(bestie && targets[0]?.startsWith(BESTIE));
+  const sendToName = toBestie && bestie ? bestie.user.name.split(' ')[0] : all ? locket.all : groups.filter((g) => targets.includes(g.id)).map((g) => g.name).join(', ');
   const timeText = new Date(shot.takenAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   return (
     <>
@@ -118,7 +158,7 @@ export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, 
         <div className={s.captionTypes}>
           <button className={!time ? s.typeOn : ''} onClick={() => setTime(false)}>{locket.captionText}</button>
           <button className={time ? s.typeOn : ''} onClick={() => setTime(true)}>{locket.captionTime}</button>
-          <VoiceButton value={voice} onChange={setVoice} />
+          {allows('microphone') && <VoiceButton value={voice} onChange={setVoice} />}
           <button className={remember ? s.typeOn : ''} onClick={() => setRemember(!remember)} disabled={!caption}>
             <Icon name="pin" size={14} /> {characterai.pin}
           </button>
@@ -135,11 +175,15 @@ export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, 
           }}>
             {sent ? <Icon name="check" size={30} strokeWidth={2.6} /> : sending ? <Spinner size={26} /> : <Icon name="paperplane" size={28} strokeWidth={2.2} />}
           </button>
-          <a className={s.side} href={shot.mainUrl} download="photo.jpg" aria-label={ios.save}>
+          <a className={s.side} href={shot.mainUrl} download="photo.jpg" aria-label={ios.save} onClick={(e) => {
+            if (!LIVE) return;
+            e.preventDefault();
+            void downloadBlob(shot.main, 'photo.jpg');
+          }}>
             <Icon name="download" size={30} strokeWidth={2.2} />
           </a>
         </div>
-        <Recipients groups={groups} targets={targets} setTargets={setTargets} />
+        <Recipients groups={groups} targets={targets} setTargets={setTargets} bestie={bestie} />
       </div>
     </>
   );

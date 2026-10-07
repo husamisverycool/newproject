@@ -267,9 +267,9 @@ export async function telephone(group: Group, userId: string, gameId: string, in
     chain.steps.push({ kind: input.kind, userId, text, at: now() });
     const seedStep = chain.steps.find((st) => st.kind === 'photo');
     const seed = seedStep?.postId ? getPost(seedStep.postId) : null;
-    const res = await img.telephoneRender(text, seed ? readMedia(seed.media.main) : null);
+    const res = await img.telephoneRender(text, seed ? await readMedia(seed.media.main) : null);
     img.recordUsage(userId, res.costUsd);
-    chain.steps.push({ kind: 'render', userId: null, media: writeMedia(res.image, 'jpg').url, text: res.generator, at: now() });
+    chain.steps.push({ kind: 'render', userId: null, media: (await writeMedia(res.image, 'jpg')).url, text: res.generator, at: now() });
   }
   saveState(gameId, s);
   rewardPlay(group, userId);

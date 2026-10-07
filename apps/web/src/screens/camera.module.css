@@ -126,7 +126,7 @@
   transition: box-shadow 160ms;
 }
 .recording {
-  box-shadow: 0 0 0 4px var(--locket-yellow); /* [V] yellow outline while recording */
+  box-shadow: 0 0 0 4px var(--camera-theme, var(--locket-yellow)); /* [V] yellow outline while recording */
 }
 .media {
   width: 100%;
@@ -215,9 +215,9 @@
   width: 76px;
   height: 76px;
   padding: 3px;
-  border: 4px solid var(--locket-yellow);
+  border: 4px solid var(--camera-theme, var(--locket-yellow));
   border-radius: 50%;
-  background: #fff content-box; /* [I] white, a see-through 3 pt gap, 4 pt yellow ring = 76 pt */
+  background: #fff content-box; /* [I] white, a see-through 3 pt gap, 4 pt yellow ring = 76 pt; Gold "Camera themes" [V] recolor the ring */
   transition: transform 120ms;
 }
 .shutter:active {
@@ -617,6 +617,14 @@
   color: rgba(255, 255, 255, 0.5);
   font-weight: 500;
 }
+/* Self-tags (spec §S): BeReal's tag glyph [I] (bereal-02 person-plus chip) with the tagged faces */
+.bylineTags {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: 4px;
+  color: rgba(255, 255, 255, 0.5);
+}
 .replyRow {
   width: 100%;
   padding: 0 16px;
@@ -830,4 +838,9 @@
 }
 .single > div {
   height: 100%;
+}
+
+/* Mascot lens toggle (Snapchat Lens button [B-high]) in Locket's empty right slot: lit when on */
+.lensOn {
+  color: var(--camera-theme, var(--locket-yellow));
 }

@@ -25,6 +25,14 @@ export const gphotos = {
     remix: "Transform your photos into different styles like 'Anime'",
     /** "Combine multiple photos in one stylish layout" */
     collage: 'Combine multiple photos in one stylish layout',
+    /** "Animate your photo and turn static moments into dynamic six-second video clips" (may be the blog's wording, not the tile's) */
+    photoToVideo: 'Animate your photo and turn static moments into dynamic six-second video clips',
+    /** "A 3D effect added to photos" */
+    cinematic: 'A 3D effect added to photos',
+    /** "A quick-moving GIF of selected photos and videos" */
+    animation: 'A quick-moving GIF of selected photos and videos',
+    /** "A video with music that uses photos and videos" */
+    highlight: 'A video with music that uses photos and videos',
   },
   /**
    * [V-weak] Remix style names, keyed by the server's style ids (apps/server/src/ai/local.ts).
@@ -81,4 +89,8 @@ export const gphotos = {
   aiInfo: 'AI info',
   /** [B-low-med] Memories card title "N years ago" */
   yearsAgo: (n: number) => `${n} ${n === 1 ? 'year' : 'years'} ago`,
+  /** [V-weak] Photo to video output: "six-second video clips" (research/06 §1.2) */
+  photoToVideoSeconds: 6,
+  /** [B-med] Library › "Creations": where Google Photos keeps the movies, animations, collages and cinematic photos you made */
+  creations: 'Creations',
 } as const;

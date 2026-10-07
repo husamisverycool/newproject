@@ -1,9 +1,8 @@
-import fs from 'node:fs';
 import { zipSync, strToU8 } from 'fflate';
 import { BACKDROPS, PLANS, SPARKS_PRICE, STORAGE, oddsTable, pets, spec, type Group, type Plan } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
-import { mediaPath } from '../media.ts';
-import { addCurrency, getGroup, getUser, id, members, membership, postsForGroup, publicUser, updateMascot, updateUser } from '../repo.ts';
+import { readMedia } from '../media.ts';
+import { addCurrency, getGroup, getObject, getPost, getUser, id, members, membership, postsForGroup, publicUser, updateMascot, updateUser } from '../repo.ts';
 import { GameError, buyPackWithSparks, grantPack } from './cards.ts';
 import { ritualWindow } from '@app/shared';
 
@@ -174,12 +173,23 @@ export function createOrder(group: Group, userId: string, kind: keyof typeof PRI
 }
 
 export function chipIn(orderId: string, userId: string, usd: number) {
-  const o = get<{ id: string; total_usd: number; chips: string; status: string }>('SELECT * FROM orders WHERE id = ?', orderId);
-  if (!o || o.status !== 'collecting') throw new GameError('not_found');
+  const o = get<{ id: string; group_id: string; total_usd: number; chips: string; status: string }>('SELECT * FROM orders WHERE id = ?', orderId);
+  if (!o || o.status !== 'collecting' || !membership(o.group_id, userId)) throw new GameError('not_found');
   const chips = json.parse<Record<string, number>>(o.chips, {});
-  chips[userId] = Math.round(((chips[userId] ?? 0) + Math.max(0, usd)) * 100) / 100;
+  // Each member chips in toward the group order; no one can pay past the total.
+  const left = Math.max(0, o.total_usd - Object.values(chips).reduce((a, b) => a + b, 0));
+  chips[userId] = Math.round(((chips[userId] ?? 0) + Math.min(left, Math.max(0, Number(usd) || 0))) * 100) / 100;
   const paid = Object.values(chips).reduce((a, b) => a + b, 0);
   run('UPDATE orders SET chips = ?, status = ? WHERE id = ?', json.str(chips), paid >= o.total_usd ? 'paid' : 'collecting', orderId);
+}
+
+/** The first item's picture: a post's thumbnail (postcard) or a made object's media (zine, figurine card). */
+function orderPreview(item: string | undefined) {
+  if (!item) return null;
+  const post = getPost(item);
+  if (post) return post.media.thumb ?? post.media.main;
+  const o = getObject(item);
+  return o && !o.revoked ? o.media : null;
 }
 
 export function ordersFor(groupId: string) {
@@ -190,6 +200,7 @@ export function ordersFor(groupId: string) {
     const chips = json.parse<Record<string, number>>(o.chips, {});
     return {
       id: o.id, kind: o.kind, name: PRINT[o.kind]?.name ?? o.kind, items: json.parse<string[]>(o.items, []), total: o.total_usd, status: o.status, createdAt: o.created_at,
+      preview: orderPreview(json.parse<string[]>(o.items, [])[0]),
       createdBy: users.get(o.created_by) ?? null, paid: Object.values(chips).reduce((a, b) => a + b, 0),
       chips: Object.entries(chips).map(([u, v]) => ({ user: users.get(u) ?? null, usd: v })),
     };
@@ -212,14 +223,14 @@ export function storage(group: Group) {
 }
 
 /** Full archive export in every tier: every photo the member can see plus a JSON index. */
-export function exportArchive(group: Group, userId: string) {
+export async function exportArchive(group: Group, userId: string) {
   const posts = postsForGroup(group.id);
   const files: Record<string, Uint8Array> = {};
   const index = posts.map((p) => ({ id: p.id, by: getUser(p.userId)?.name, caption: p.caption, takenAt: new Date(p.takenAt).toISOString(), createdAt: new Date(p.createdAt).toISOString(), week: p.weekKey, kind: p.kind }));
   for (const p of posts) {
     const src = p.media.original ?? p.media.main;
     try {
-      files[`photos/${p.weekKey}/${p.id}.jpg`] = fs.readFileSync(mediaPath(src));
+      files[`photos/${p.weekKey}/${p.id}.jpg`] = await readMedia(src);
     } catch {
       /* missing file */
     }

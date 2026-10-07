@@ -1,15 +1,15 @@
 import { useState, type ReactNode } from 'react';
 import { useNavigate } from 'react-router';
 import { useQueries } from '@tanstack/react-query';
-import { PLANS, PLAN_NAMES, QUIET_HOURS, ios, snapchat, sora, spec, type LikenessScope } from '@app/shared';
-import { Alert, Button, NavBar, Row, Screen, Section, Sheet, Spinner, Switch } from '../components/ios';
+import { PLANS, PLAN_NAMES, QUIET_HOURS, ios, locket, snapchat, sora, spec, type LikenessScope } from '@app/shared';
+import { Alert, Avatar, BarButton, Button, NavBar, Row, Screen, Section, Sheet, Spinner, Switch } from '../components/ios';
 import { Icon } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
 import { api, downloadBlob } from '../lib/api';
 import { bytes } from '../lib/format';
 import { haptic } from '../lib/feedback';
 import { queryClient, useConfig, useMe } from '../lib/queries';
-import type { GroupSummary, Me, MeResponse } from '../lib/types';
+import type { GroupDetail, GroupSummary, Me, MeResponse } from '../lib/types';
 import s from './settings.module.css';
 
 /**
@@ -22,6 +22,9 @@ import s from './settings.module.css';
  * - likeness consent: spec §S, with Sora's cameo options as the value [V];
  * - storage: iPhone Storage rows [HIG] per group (spec §T) and Snapchat's "Memories Storage Plans" [V];
  * - export: Snapchat's Settings › "My Data" flow [V-weak] (spec §Q full export in every tier);
+ * - Locket's "Best Friend or Crush widget" [V-weak] (spec §C bestie lane): pick one friend per widget,
+ *   chosen from a group you share, in a stock checkmark list [HIG];
+ * - spec §L search: the opt-in switch "Search captions" [S];
  * - Sign Out [HIG] and Delete Account (App Review 5.1.1(v)) [HIG].
  */
 
@@ -69,6 +72,7 @@ export default function Settings() {
   const user = me.data?.user;
   const groups = me.data?.groups ?? [];
   const [myData, setMyData] = useState(false);
+  const [bestie, setBestie] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [busy, setBusy] = useState(false);
 
@@ -153,6 +157,18 @@ export default function Settings() {
               <Row icon={<Icon name="sparkles" size={18} strokeWidth={2.2} />} iconBg="var(--sys-purple)" sepInset={57} title={spec.autoCreations} accessory={<Switch on={user.autoAiCreations} onChange={(v) => void patch({ autoAiCreations: v })} label={spec.autoCreations} />} />
             </Section>
 
+            {/* Locket Best Friend widget (spec §C) and opt-in caption search (spec §L) */}
+            <Section footer={spec.searchFooter}>
+              <Row
+                icon={<Icon name="heart" size={18} strokeWidth={2.2} filled />}
+                iconBg="var(--locket-yellow)" sepInset={57}
+                title={locket.bestFriendWidget}
+                value={bestieName(groups, settings.bestie) ?? ios.none}
+                onClick={() => setBestie(true)}
+              />
+              <Row icon={<Icon name="searchGlass" size={18} strokeWidth={2.4} />} iconBg="var(--sys-gray)" sepInset={57} title={spec.searchCaptions} accessory={<Switch on={Boolean(settings.searchOptIn)} onChange={(v) => void patch({ settings: { searchOptIn: v } })} label={spec.searchCaptions} />} />
+            </Section>
+
             {/* iPhone Storage rows per group (spec §T budgets storage per group) + Snapchat's plans [V] */}
             {groups.length > 0 && (
               <Section header={ios.storage}>
@@ -183,6 +199,7 @@ export default function Settings() {
       </div>
 
       <MyDataSheet open={myData} onClose={() => setMyData(false)} groups={groups} />
+      <BestieSheet open={bestie} onClose={() => setBestie(false)} groups={groups} myId={user?.id} value={settings.bestie ?? null} onPick={(v) => void patch({ settings: { bestie: v } })} onOpen={(id) => nav(`/bestie/${id}`)} />
 
       {/* HIG: an irreversible action gets an alert with Cancel and a destructive button */}
       <Alert
@@ -195,6 +212,43 @@ export default function Settings() {
         ]}
       />
     </Screen>
+  );
+}
+
+function bestieName(groups: GroupSummary[], b: { groupId: string; userId: string } | null | undefined) {
+  const u = b ? groups.find((g) => g.id === b.groupId)?.members.find((m) => m.id === b.userId) : null;
+  return u ? u.name.split(' ')[0] : null;
+}
+
+/** One friend for the widget, grouped by the group you share (Locket "Best Friend or Crush widget" [V-weak]). */
+function BestieSheet({ open, onClose, groups, myId, value, onPick, onOpen }: {
+  open: boolean; onClose: () => void; groups: GroupSummary[]; myId: string | undefined; value: { groupId: string; userId: string } | null;
+  onPick: (v: { groupId: string; userId: string } | null) => void; onOpen: (userId: string) => void;
+}) {
+  const check = <Icon name="check" size={20} strokeWidth={2.4} className={s.check} />;
+  // Full member lists (the summary on /me carries only the first eight).
+  const details = useQueries({ queries: groups.map((g) => ({ queryKey: ['group', g.id], queryFn: () => api.get<GroupDetail>(`/groups/${g.id}`), enabled: open })) });
+  const membersOf = (g: GroupSummary, i: number) => details[i]?.data?.members.map((m) => m.user) ?? g.members;
+  return (
+    <Sheet open={open} onClose={onClose} title={locket.bestFriendWidget} trailing={<BarButton bold onClick={onClose}>{ios.done}</BarButton>} height="80%">
+      <div className={s.sheetPad}>
+        {value && (
+          <Section>
+            <Row icon={<Avatar user={groups.find((g) => g.id === value.groupId)?.members.find((m) => m.id === value.userId)} size={32} />} sepInset={60} title={bestieName(groups, value) ?? ''} onClick={() => { onClose(); onOpen(value.userId); }} />
+          </Section>
+        )}
+        <Section>
+          <Row title={ios.none} chevron={false} accessory={!value ? check : undefined} onClick={() => onPick(null)} />
+        </Section>
+        {groups.map((g, i) => (
+          <Section key={g.id} header={g.name}>
+            {membersOf(g, i).filter((m) => m.id !== myId).map((m) => (
+              <Row key={m.id} icon={<Avatar user={m} size={32} />} sepInset={60} title={m.name} chevron={false} accessory={value?.groupId === g.id && value.userId === m.id ? check : undefined} onClick={() => { onPick({ groupId: g.id, userId: m.id }); haptic('light'); }} />
+            ))}
+          </Section>
+        ))}
+      </div>
+    </Sheet>
   );
 }
 

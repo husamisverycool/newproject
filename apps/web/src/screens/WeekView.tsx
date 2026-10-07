@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState, type CSSProperties } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'motion/react';
-import { bereal, gphotos, imessage, ios, locket, retro, yope } from '@app/shared';
+import { MASCOT_SPECIES, bereal, gphotos, imessage, ios, locket, photos27, retro, yope } from '@app/shared';
 import { api, downloadBlob } from '../lib/api';
 import { queryClient, useGroup, useJournal } from '../lib/queries';
 import { useAmbient } from '../lib/ambient';
@@ -14,6 +14,9 @@ import { Avatar, AvatarStack, Menu, Sheet, Spinner } from '../components/ios';
 import { WallCanvas } from '../components/WallCanvas';
 import { EmojiRain } from '../components/EmojiRain';
 import s from './week.module.css';
+import { canShare, sharePost } from '../lib/share';
+import { CustomizeSheet, voiceOptions } from './create/Creations';
+import { saveCreation, slideshow, type SlideshowOptions } from './create/motion';
 
 interface WallResp {
   wall: { version: number; layout: WallLayout; style: string; generator: string; created_by: string | null; created_at: number } | null;
@@ -86,7 +89,7 @@ export default function WeekView() {
         ))}
       </div>
 
-      <AnimatePresence>{player && <RetroPlayer posts={posts} onClose={() => setPlayer(false)} />}</AnimatePresence>
+      <AnimatePresence>{player && <RetroPlayer posts={posts} groupId={groupId} weekKey={weekKey} species={g.data?.group.mascot.species} onClose={() => setPlayer(false)} />}</AnimatePresence>
       <PostcardSheet groupId={groupId} post={postcard} onClose={() => setPostcard(null)} />
     </div>
   );
@@ -368,15 +371,39 @@ function Recap({ groupId, weekKey, range, wall, refetch, posts, awards, users, m
 
 /* ───────────── Retro recap player [I] retro-04 ───────────── */
 
-function RetroPlayer({ posts, onClose }: { posts: Post[]; onClose: () => void }) {
+/**
+ * The player also carries iOS 27's slideshow maker (research/22 §2c) [V-weak]: "Customize" below the
+ * slideshow (transition style, duration per photo, "Choose Song" / "Off"), and the slideshow saved as a
+ * video ("Save Video" [HIG]) — recorded on the device, kept in the group's Creations, and downloaded.
+ */
+function RetroPlayer({ posts, groupId, weekKey, species, onClose }: { posts: Post[]; groupId: string; weekKey: string; species?: string; onClose: () => void }) {
   const [i, setI] = useState(0);
+  const [opts, setOpts] = useState<SlideshowOptions>({ transition: 'dissolve', seconds: 3, music: [] });
+  const [customize, setCustomize] = useState(false);
+  const [saving, setSaving] = useState<number | null>(null);
   useEffect(() => {
-    const t = setTimeout(() => setI((x) => (x < posts.length - 1 ? x + 1 : x)), 3000);
+    if (customize || saving !== null) return;
+    const t = setTimeout(() => setI((x) => (x < posts.length - 1 ? x + 1 : x)), opts.seconds * 1000);
     return () => clearTimeout(t);
-  }, [i, posts.length]);
+  }, [i, posts.length, opts.seconds, customize, saving]);
+  const saveVideo = async () => {
+    if (saving !== null || !posts.length) return;
+    setSaving(0);
+    try {
+      const color = (MASCOT_SPECIES.find((m) => m.id === species) ?? MASCOT_SPECIES[0]).body;
+      const v = await slideshow(posts.map((x) => x.media.main), opts, color, setSaving);
+      if (!v) return;
+      await saveCreation({ groupId, kind: 'slideshow', sourcePostIds: posts.map((x) => x.id), style: opts.transition, video: v, poster: v.poster, meta: { weekKey, transition: opts.transition, seconds: opts.seconds, music: opts.music.length ? 'voice' : 'off' } });
+      void queryClient.invalidateQueries({ queryKey: ['objects', groupId] });
+      await downloadBlob(v.blob, `${weekKey}.${v.type.includes('mp4') ? 'mp4' : 'webm'}`);
+      haptic('success');
+    } finally {
+      setSaving(null);
+    }
+  };
   const p = posts[i];
   if (!p) return null;
-  const shareIt = () => typeof navigator.share === 'function' && void navigator.share({ url: `${location.origin}/api/posts/${p.id}/export` }).catch(() => undefined);
+  const shareIt = () => canShare() && void sharePost(p.id).catch(() => undefined);
   return (
     <motion.div className={s.player} initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
       <img src={p.media.main} alt="" className={s.playerBg} />
@@ -421,6 +448,24 @@ function RetroPlayer({ posts, onClose }: { posts: Post[]; onClose: () => void })
           {retro.share}
         </button>
       </div>
+      <div className={s.slideshowBar}>
+        <button className={s.glassPill} onClick={() => setCustomize(true)}>
+          {photos27.customize}
+        </button>
+        <button className={s.glassPill} onClick={() => void saveVideo()} disabled={saving !== null}>
+          {saving !== null ? (
+            <>
+              <Spinner size={16} />
+              <span className={s.pct}>
+                <i style={{ width: `${Math.round(saving * 100)}%` }} />
+              </span>
+            </>
+          ) : (
+            photos27.saveVideo
+          )}
+        </button>
+      </div>
+      <CustomizeSheet open={customize} onClose={() => setCustomize(false)} value={opts} onChange={setOpts} voices={voiceOptions(posts)} />
     </motion.div>
   );
 }

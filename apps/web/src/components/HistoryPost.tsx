@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router';
-import { bereal, characterai, gphotos, imessage, ios, jackbox, locket, whatsapp } from '@app/shared';
+import { bereal, characterai, gphotos, imessage, ios, jackbox, locket, whatsapp, spec } from '@app/shared';
 import { api } from '../lib/api';
 import { haptic } from '../lib/feedback';
 import { firstName } from '../lib/format';
@@ -8,9 +8,11 @@ import { queryClient, useMe } from '../lib/queries';
 import { useUi } from '../lib/store';
 import type { Post } from '../lib/types';
 import { Icon } from './Icon';
-import { Alert, Avatar, Menu, Section, Row, Sheet } from './ios';
+import { Alert, Avatar, Menu, Section, Row, Sheet, AvatarStack } from './ios';
 import { EmojiRain } from './EmojiRain';
+import { LiveClip } from './cards/ImmersiveView';
 import s from '../screens/camera.module.css';
+import { canShare, savePost, sharePost } from '../lib/share';
 
 /**
  * One page of Locket's History, laid out from research/inspo/store/locket-07-history [I]: the photo
@@ -79,7 +81,12 @@ export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: 
         onPointerLeave={() => setPlaying(false)}
         onClick={() => post.blurred && onCamera()}
       >
-        <img src={playing && post.media.live ? post.media.live : main} className={`${s.media} ${post.blurred ? s.blurred : ''}`} alt="" draggable={false} />
+        {playing && post.media.live ? (
+          // Live clips are animated images or frame strips (LiveClip plays both).
+          <LiveClip src={post.media.live} poster={main} />
+        ) : (
+          <img src={main} className={`${s.media} ${post.blurred ? s.blurred : ''}`} alt="" draggable={false} />
+        )}
         {inset && !post.blurred && <button className={s.inset} onClick={(e) => { e.stopPropagation(); setSwap(!swap); }} style={{ backgroundImage: `url(${inset})` }} aria-label={ios.select} />}
         {old && !post.blurred && <span className={s.when}>{ios.longDate(post.takenAt)}</span>}
         {post.caption && !post.blurred && <div className={s.captionPill}>{post.caption}</div>}
@@ -112,6 +119,12 @@ export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: 
         <Avatar user={post.user} size={24} />
         <span className={s.bylineName}>{firstName(post.user.name)}</span>
         <span className={s.bylineTime}>{locket.ago(Date.now() - post.createdAt)}</span>
+        {!post.blurred && (post.tags?.length ?? 0) > 0 && (
+          <span className={s.bylineTags} aria-label={spec.selfTag}>
+            <Icon name="personPlus" size={14} strokeWidth={2.4} />
+            <AvatarStack users={post.tags ?? []} size={20} max={4} edge="transparent" />
+          </span>
+        )}
       </div>
 
       <div className={s.replyRow}>
@@ -203,10 +216,12 @@ export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: 
         open={more}
         onClose={() => setMore(false)}
         actions={[
-          ...(typeof navigator.share === 'function' ? [{ label: ios.share, icon: 'share', onClick: () => void navigator.share({ url: `${location.origin}/api/posts/${post.id}/export` }).catch(() => undefined) }] : []),
-          { label: ios.save, icon: 'download', onClick: () => window.open(`/api/posts/${post.id}/export`, '_blank') },
+          ...(canShare() ? [{ label: ios.share, icon: 'share', onClick: () => void sharePost(post.id).catch(() => undefined) }] : []),
+          { label: ios.save, icon: 'download', onClick: () => void savePost(post.id).catch(() => undefined) },
           { label: gphotos.tools.remix, icon: 'sparkles', onClick: () => nav(`/create/remix?post=${post.id}&group=${post.groupId}`) },
           { label: whatsapp.createSticker, icon: 'sticker', onClick: () => nav(`/create/sticker?post=${post.id}&group=${post.groupId}`) },
+          // Self-tagging only (spec §S): you can tag yourself in any photo you can see, never anyone else.
+          ...(post.blurred ? [] : [{ label: spec.selfTag, icon: post.tags?.some((u) => u.id === me.data?.user.id) ? 'check' : 'personPlus', onClick: async () => { await api.post(`/posts/${post.id}/tag`, { on: !post.tags?.some((u) => u.id === me.data?.user.id) }); void refresh(); void queryClient.invalidateQueries({ queryKey: ['post', post.id] }); } }]),
           ...(post.mine && post.caption ? [{ label: characterai.pin, icon: 'pin', onClick: async () => { await api.post(`/posts/${post.id}/remember`, { remember: !post.remember }); void refresh(); } }] : []),
           ...(post.mine
             ? [{ label: ios.delete, icon: 'trash', destructive: true, onClick: async () => { await api.del(`/posts/${post.id}`); void refresh(); } }]

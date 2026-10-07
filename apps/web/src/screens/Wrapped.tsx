@@ -1,3 +1,4 @@
+import { LIVE } from '../lib/static';
 import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router';
 import { useQuery } from '@tanstack/react-query';
@@ -10,6 +11,8 @@ import { haptic } from '../lib/feedback';
 import { queryClient, useMe } from '../lib/queries';
 import type { MascotState, Post, PublicUser } from '../lib/types';
 import s from './wrapped.module.css';
+import { appUrl, shareLink } from '../lib/share';
+import { fileToSquareJpeg } from '../lib/camera';
 
 /* ───────────────────────── Data ───────────────────────── */
 
@@ -29,6 +32,8 @@ interface PartyState {
   id: string;
   code: string;
   hostId: string;
+  /** "rename your party" (null = the feature name) */
+  name?: string | null;
   slide: number;
   players: PublicUser[];
   audience: PublicUser[];
@@ -541,8 +546,10 @@ function ShareSheet({ kind, data, meName, onClose }: { kind: ShareKind | null; d
  * friends" ("a unique party link or code") → "Start the party"; guests tap "Join Party" and wait in the
  * "Waiting room" until the host starts. Awards are revealed one by one and "no two parties are ever
  * the same" (the server reseeds them per party). Past ten players, people join as the Jackbox
- * "Audience" [V], with Jackbox's "Room Code" label [V]. "Make it your own" and "hand off hosting" are
- * not supported here and are left out.
+ * "Audience" [V], with Jackbox's "Room Code" label [V]. "Make it your own" [V-weak] renames the party and
+ * sets the host's party name and photo; guests "confirm name and photo" after "Join Party" [V-weak]; the
+ * host can "hand off hosting duties" [V-weak] to anyone in the room. Spotify's host badge is UNKNOWN (research/15 gaps), so the host row carries
+ * the SF Symbol crown [HIG].
  */
 function PartyRoom({ data, party, onClose }: { data: WrappedData; party: PartyState | null; onClose: () => void }) {
   const me = useMe();
@@ -559,8 +566,11 @@ function PartyRoom({ data, party, onClose }: { data: WrappedData; party: PartySt
       setBusy(false);
     }
   };
+  const [profile, setProfile] = useState(false);
+  const [handOff, setHandOff] = useState(false);
   const host = party?.hostId === myId;
   const joined = Boolean(party && [...party.players, ...party.audience].some((u) => u.id === myId));
+  const meInParty = party ? [...party.players, ...party.audience].find((u) => u.id === myId) ?? null : null;
   const awards = [
     ...(party?.awards ?? []).filter((a) => AWARD_NAME[a.id]),
     ...data.groupAwards.filter((a) => AWARD_NAME[a.id]).map((a) => ({ id: a.id, winners: party?.players ?? [] })),
@@ -568,9 +578,9 @@ function PartyRoom({ data, party, onClose }: { data: WrappedData; party: PartySt
   const slide = party?.slide ?? 0;
   const award = slide >= 1 ? awards[slide - 1] : undefined;
   const invite = async () => {
-    const url = `${location.origin}/g/${gid}/wrapped?party=1`;
-    if (navigator.share) await navigator.share({ url, text: party?.code }).catch(() => undefined);
-    else await navigator.clipboard?.writeText(url).catch(() => undefined);
+    // In Claude the party is joined from the group's Wrapped screen with the code; the link opens the app.
+    const url = LIVE ? appUrl() : `${location.origin}/g/${gid}/wrapped?party=1`;
+    await shareLink(url, party?.code);
   };
 
   const green = Boolean(award);
@@ -587,7 +597,7 @@ function PartyRoom({ data, party, onClose }: { data: WrappedData; party: PartySt
           <Mascot species={data.group.mascot.species} outfit={data.group.mascot.outfit} size={120} mood="party" />
           <h1 className={s.large}>{wrapped.party}</h1>
           <ol className={s.steps}>
-            {[wrapped.createTheParty, wrapped.inviteYourFriends, wrapped.startTheParty].map((t, i) => (
+            {[wrapped.createTheParty, wrapped.makeItYourOwn, wrapped.inviteYourFriends, wrapped.startTheParty].map((t, i) => (
               <li key={t}>
                 <span>{i + 1}</span>
                 {t}
@@ -595,7 +605,17 @@ function PartyRoom({ data, party, onClose }: { data: WrappedData; party: PartySt
             ))}
           </ol>
           <div className={s.spacer} />
-          <button className={s.cta} disabled={busy} onClick={() => void act(() => api.post<{ party: PartyState }>(`/groups/${gid}/party`))}>
+          <button
+            className={s.cta}
+            disabled={busy}
+            onClick={() =>
+              void act(async () => {
+                const r = await api.post<{ party: PartyState }>(`/groups/${gid}/party`);
+                setProfile(true);
+                return r;
+              })
+            }
+          >
             {busy ? <Spinner size={18} /> : wrapped.createTheParty}
           </button>
         </div>
@@ -603,17 +623,21 @@ function PartyRoom({ data, party, onClose }: { data: WrappedData; party: PartySt
 
       {party && slide === 0 && (
         <div className={s.party}>
-          <h1 className={s.large}>{wrapped.waitingRoom}</h1>
+          <div>
+            <p className={s.sub}>{wrapped.waitingRoom}</p>
+            <h1 className={s.large}>{party.name || wrapped.party}</h1>
+          </div>
           <div>
             <p className={s.sub}>{jackbox.roomCode}</p>
             <p className={s.code}>{party.code}</p>
           </div>
           <div className={s.list}>
             {party.players.map((u) => (
-              <div key={u.id} className={s.item}>
+              <button key={u.id} className={s.item} disabled={u.id !== myId} onClick={() => setProfile(true)}>
                 <Avatar user={u} size={40} />
                 <span className={s.headline}>{u.name}</span>
-              </div>
+                {u.id === party.hostId && <Icon name="crown" size={18} strokeWidth={2.2} className={s.hostMark} />}
+              </button>
             ))}
           </div>
           {party.audience.length > 0 && (
@@ -625,15 +649,34 @@ function PartyRoom({ data, party, onClose }: { data: WrappedData; party: PartySt
           <div className={s.spacer} />
           <div className={s.buttons}>
             {!joined && (
-              <button className={s.cta} disabled={busy} onClick={() => void act(() => api.post<{ party: PartyState }>(`/groups/${gid}/party/join`))}>
+              <button
+                className={s.cta}
+                disabled={busy}
+                onClick={() =>
+                  void act(async () => {
+                    const r = await api.post<{ party: PartyState }>(`/groups/${gid}/party/join`);
+                    // Guests "confirm name and photo" before the waiting room [V-weak].
+                    setProfile(true);
+                    return r;
+                  })
+                }
+              >
                 {wrapped.joinParty}
               </button>
             )}
             {host && (
               <>
+                <button className={s.ghost} onClick={() => setProfile(true)}>
+                  {wrapped.makeItYourOwn}
+                </button>
                 <button className={s.ghost} onClick={() => void invite()}>
                   {wrapped.inviteYourFriends}
                 </button>
+                {[...party.players, ...party.audience].some((u) => u.id !== myId) && (
+                  <button className={s.ghost} onClick={() => setHandOff(true)}>
+                    {wrapped.handOff}
+                  </button>
+                )}
                 <button className={s.cta} disabled={busy || !awards.length} onClick={() => void act(() => api.post<{ party: PartyState }>(`/groups/${gid}/party/slide`, { slide: 1 }))}>
                   {wrapped.startTheParty}
                 </button>
@@ -686,6 +729,100 @@ function PartyRoom({ data, party, onClose }: { data: WrappedData; party: PartySt
           )}
         </div>
       )}
+
+      {party && (
+        <PartyProfileSheet
+          open={profile && Boolean(meInParty)}
+          onClose={() => setProfile(false)}
+          groupId={gid}
+          party={party}
+          host={host}
+          me={meInParty}
+          accountName={me.data?.user.name ?? ''}
+          onSaved={set}
+        />
+      )}
+      <Menu
+        open={handOff}
+        onClose={() => setHandOff(false)}
+        actions={[...(party?.players ?? []), ...(party?.audience ?? [])]
+          .filter((u) => u.id !== myId)
+          .map((u) => ({ label: u.name, icon: 'crown', onClick: () => void act(() => api.post<{ party: PartyState }>(`/groups/${gid}/party/host`, { userId: u.id })) }))}
+      />
     </div>
+  );
+}
+
+/**
+ * "Make it your own" [V-weak]: "update profile image and name, rename your party" (host); guests
+ * "confirm name and photo" after "Join Party" (research/15 §1e). The name and photo belong to this party
+ * only. Layout: Contacts-style photo with "Edit" and stock text fields in an inset group [HIG].
+ */
+function PartyProfileSheet({ open, onClose, groupId, party, host, me, accountName, onSaved }: {
+  open: boolean; onClose: () => void; groupId: string; party: PartyState; host: boolean; me: PublicUser | null; accountName: string; onSaved: (p: PartyState | null) => void;
+}) {
+  const [name, setName] = useState('');
+  const [partyName, setPartyName] = useState('');
+  const [photo, setPhoto] = useState<{ blob: Blob; url: string } | null>(null);
+  const [busy, setBusy] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    setName(me?.name ?? accountName);
+    setPartyName(party.name ?? '');
+    setPhoto(null);
+  }, [open, me, accountName, party.name]);
+  const save = async () => {
+    setBusy(true);
+    try {
+      const fd = new FormData();
+      fd.set('name', name.trim());
+      if (photo) fd.set('file', photo.blob, 'photo.jpg');
+      let r = await api.post<{ party: PartyState }>(`/groups/${groupId}/party/profile`, fd);
+      if (host && (partyName.trim() || null) !== (party.name ?? null)) r = await api.patch<{ party: PartyState }>(`/groups/${groupId}/party`, { name: partyName });
+      onSaved(r.party);
+      haptic('success');
+      onClose();
+    } finally {
+      setBusy(false);
+    }
+  };
+  return (
+    <Sheet
+      open={open}
+      onClose={onClose}
+      dark
+      title={host ? wrapped.makeItYourOwn : wrapped.joinParty}
+      leading={<button className="ios-bar-btn" onClick={onClose}>{ios.cancel}</button>}
+      trailing={
+        <button className="ios-bar-btn bold" disabled={busy || !name.trim()} onClick={() => void save()}>
+          {busy ? <Spinner size={16} /> : ios.done}
+        </button>
+      }
+    >
+      <div className={s.profileSheet}>
+        <button className={s.profilePhoto} onClick={() => fileRef.current?.click()}>
+          {photo ? <img src={photo.url} alt="" /> : <Avatar user={me ? { ...me, name: name || me.name } : null} size={96} />}
+          <span>{ios.edit}</span>
+        </button>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="image/*"
+          hidden
+          onChange={async (e) => {
+            const f = e.target.files?.[0];
+            e.target.value = '';
+            if (!f) return;
+            const blob = await fileToSquareJpeg(f, 480);
+            setPhoto({ blob, url: URL.createObjectURL(blob) });
+          }}
+        />
+        <div className={s.fields}>
+          <input value={name} placeholder={accountName} maxLength={32} onChange={(e) => setName(e.target.value)} aria-label={accountName} />
+          {host && <input value={partyName} placeholder={wrapped.party} maxLength={40} onChange={(e) => setPartyName(e.target.value)} aria-label={wrapped.party} />}
+        </div>
+      </div>
+    </Sheet>
   );
 }

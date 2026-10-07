@@ -58,6 +58,7 @@ our own taste. Every one traces to:
 | Onboarding | Locket (+ Snapchat birthday, Retro Rewind cold start, Widgetable pet) | research/01, 10; [I] locket panels and widget gallery frame |
 | Lock Screen / Home Screen | Yope lock widget, Locket widget, iOS widgets | [I] yope-02, locket-02/-05; research/27 |
 | Settings, paywall, notifications, group page | iOS Settings/Mail + Locket Gold, Retro Premium, Snapchat storage, Yope 1:1 sheet | research/10–12; [I] frames yope-1on1-* |
+| In-Claude build: "View only" pill, system-camera shutter | iCloud sharing permission wording; stock iOS capture sheet | [B-high], [HIG]; docs/IN-CLAUDE.md |
 
 ## Measured from the INSPO images
 | Value | Measured | Used as |

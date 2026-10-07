@@ -71,7 +71,10 @@ export default function JoinPage() {
     const r = await api.post<{ groupId: string }>(`/join/${code}`);
     setActive(r.groupId);
     await queryClient.invalidateQueries({ queryKey: ['me'] });
-    nav('/');
+    // Joined in the middle of sign-up: carry on with the steps after contacts (the group step is
+    // skipped for someone who already has a group).
+    const me = queryClient.getQueryData<{ user: { onboarded: boolean } }>(['me']);
+    nav(me && !me.user.onboarded ? '/welcome/rewind' : '/');
   };
   const hosts = d.group.hosts?.length ? d.group.hosts : d.group.members.slice(0, 1).map((m) => m.name.split(' ')[0]);
   return (

@@ -6,6 +6,7 @@ import { all, json, now, run } from '../db.ts';
 import { env } from '../env.ts';
 import { getGroup, getUser, id, seenSet } from '../repo.ts';
 import { toUser } from '../realtime.ts';
+import { platform } from '../platform.ts';
 
 /**
  * The one door every push goes through. `decidePush` (packages/shared/src/notify.ts) enforces the
@@ -19,7 +20,7 @@ function vapid() {
   if (!fs.existsSync(vapidFile)) fs.writeFileSync(vapidFile, JSON.stringify(webpush.generateVAPIDKeys()));
   return JSON.parse(fs.readFileSync(vapidFile, 'utf8')) as { publicKey: string; privateKey: string };
 }
-export const vapidPublicKey = () => vapid().publicKey;
+export const vapidPublicKey = () => (platform.inPage ? '' : vapid().publicKey);
 
 run(`CREATE TABLE IF NOT EXISTS push_subs (user_id TEXT NOT NULL, endpoint TEXT PRIMARY KEY, sub TEXT NOT NULL, created_at INTEGER NOT NULL)`);
 
@@ -28,6 +29,7 @@ export function savePushSubscription(userId: string, sub: { endpoint: string }) 
 }
 
 async function webPush(userId: string, payload: { title: string; body: string; url: string; tag: string }) {
+  if (platform.inPage) return; // the in-Claude build has no Web Push: the in-app inbox and toasts only
   const subs = all<{ endpoint: string; sub: string }>('SELECT endpoint, sub FROM push_subs WHERE user_id = ?', userId);
   if (!subs.length) return;
   const keys = vapid();

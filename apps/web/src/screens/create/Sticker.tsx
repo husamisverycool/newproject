@@ -4,7 +4,7 @@ import { BRAND, bereal, imessage, ios, whatsapp } from '@app/shared';
 import { NavBar, Screen, Section, Spinner } from '../../components/ios';
 import { Icon } from '../../components/Icon';
 import { api } from '../../lib/api';
-import { useCamera } from '../../lib/camera';
+import { systemCameraShot, useCamera } from '../../lib/camera';
 import { haptic } from '../../lib/feedback';
 import { queryClient, useFeed, useMe } from '../../lib/queries';
 import { cutout, faceCrop, loadImage } from '../../lib/vision';
@@ -226,7 +226,12 @@ function InstantRealMoji() {
             {busy ? <Spinner size={18} /> : bereal.realMojiContinue}
           </button>
         ) : (
-          <button className={s.shutter} disabled={!cam.ready} aria-label={ios.axShutter} onClick={async () => { setShot(await cam.capture(900)); haptic('medium'); }} />
+          <button className={s.shutter} disabled={!cam.ready && !cam.error} aria-label={ios.axShutter} onClick={async () => {
+            const taken = cam.ready ? await cam.capture(900) : await systemCameraShot('user', 900);
+            if (!taken) return;
+            setShot(taken);
+            haptic('medium');
+          }} />
         )}
       </div>
       {err.node}

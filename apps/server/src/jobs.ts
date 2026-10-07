@@ -8,6 +8,7 @@ import { generateRecap, generateWall, weekTitle } from './services/walls.ts';
 import { closeGame, currentGame, startWeeklyGame } from './services/games.ts';
 import { grantPack } from './services/cards.ts';
 import { planTick } from './services/plans.ts';
+import { platform } from './platform.ts';
 
 /**
  * The weekly ritual clock (Locket Rollcall + Lapse/Dispo "develop"):
@@ -80,10 +81,12 @@ export async function developWeek(group: Group, weekKey: string, at = now()) {
   }
 }
 
-let timer: NodeJS.Timeout | null = null;
+let timer: ReturnType<typeof setInterval> | null = null;
 
-export function startJobs(intervalMs = 30_000) {
-  const run = async () => {
+/** One pass of every scheduled job. The in-Claude build calls this from the page that holds the jobs lease. */
+export async function runJobsOnce() {
+  platform.jobDepth++;
+  try {
     for (const g of allGroups()) {
       try {
         await tickGroup(g);
@@ -96,8 +99,13 @@ export function startJobs(intervalMs = 30_000) {
     } catch (e) {
       console.warn('[jobs] plan tick failed', e);
     }
-  };
-  void run();
-  timer = setInterval(run, intervalMs);
+  } finally {
+    platform.jobDepth--;
+  }
+}
+
+export function startJobs(intervalMs = 30_000) {
+  void runJobsOnce();
+  timer = setInterval(() => void runJobsOnce(), intervalMs);
   return () => timer && clearInterval(timer);
 }

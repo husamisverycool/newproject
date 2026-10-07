@@ -1,3 +1,4 @@
+import { LIVE } from '../lib/static';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Route, Routes, useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
@@ -6,7 +7,7 @@ import { api, ApiError } from '../lib/api';
 import { queryClient, useActiveGroup, useMe } from '../lib/queries';
 import { useUi } from '../lib/store';
 import { haptic } from '../lib/feedback';
-import { useCamera, fileToSquareJpeg, photoTakenAt } from '../lib/camera';
+import { useCamera, fileToSquareJpeg, photoTakenAt, systemCameraShot } from '../lib/camera';
 import { Icon } from '../components/Icon';
 import { Alert, Avatar, Section, Row, Sheet, Spinner } from '../components/ios';
 import { Mascot } from '../components/Mascot';
@@ -83,6 +84,8 @@ function Intro() {
   const me = useMe();
   useEffect(() => {
     if (params.get('join')) draft.joinCode = params.get('join')!;
+    // In Claude, opening the shared app is the invitation: suggest the owner's group.
+    else if (LIVE) void import('../live/engine').then(({ suggestedJoinCode }) => suggestedJoinCode()).then((c) => c && !draft.joinCode && (draft.joinCode = c));
   }, [params]);
   return (
     <div className={s.intro}>
@@ -263,8 +266,23 @@ function ContactsStep() {
 }
 
 /* 5 ── Rewind cold start: Retro's Rewind tab [V]; picks seed the "starter wall" (spec §A1) */
+/** Post the Rewind picks to a group (the starter wall, spec §A1). */
+async function postRewind(groupId: string) {
+  for (const r of draft.rewind.slice(0, 10)) {
+    const fd = new FormData();
+    fd.set('groupIds', groupId);
+    fd.set('main', r.blob, 'rewind.jpg');
+    fd.set('kind', 'rewind');
+    fd.set('fromRoll', 'true');
+    fd.set('takenAt', String(r.takenAt));
+    await api.post('/posts', fd).catch(() => undefined);
+  }
+  draft.rewind = [];
+}
+
 function RewindStep() {
   const nav = useNavigate();
+  const me = useMe();
   const input = useRef<HTMLInputElement>(null);
   const [items, setItems] = useState<DialItem[]>(draft.rewind.map((r) => ({ id: r.url, src: r.url, takenAt: r.takenAt })));
   const [picked, setPicked] = useState<Set<string>>(new Set());
@@ -299,11 +317,15 @@ function RewindStep() {
       )}
       <input ref={input} type="file" accept="image/*" multiple hidden onChange={(e) => add(e.target.files)} />
       <div className={s.cta}>
-        <Primary onClick={() => {
+        <Primary onClick={async () => {
           draft.rewind = draft.rewind.filter((r) => picked.has(r.url));
-          nav('/welcome/group');
+          // Someone who joined a friend's group during sign-up seeds that group and skips making one.
+          const joined = me.data?.groups[0];
+          if (!joined) return nav('/welcome/group');
+          await postRewind(joined.id);
+          nav('/welcome/likeness');
         }}>{locket.continue}</Primary>
-        {!items.length && <button className={s.secondary} onClick={() => nav('/welcome/group')}>{locket.notNow}</button>}
+        {!items.length && <button className={s.secondary} onClick={() => nav(me.data?.groups.length ? '/welcome/likeness' : '/welcome/group')}>{locket.notNow}</button>}
       </div>
     </Step>
   );
@@ -349,16 +371,7 @@ export function GroupForm({ onCreated, submitLabel }: { onCreated: (id: string) 
           setBusy(true);
           const res = await api.post<{ group: { id: string } }>('/groups', { name: name.trim(), species, mascotName: mascotName.trim(), ritualDay: day, developHour: 21, timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
           setActive(res.group.id);
-          for (const r of draft.rewind.slice(0, 10)) {
-            const fd = new FormData();
-            fd.set('groupIds', res.group.id);
-            fd.set('main', r.blob, 'rewind.jpg');
-            fd.set('kind', 'rewind');
-            fd.set('fromRoll', 'true');
-            fd.set('takenAt', String(r.takenAt));
-            await api.post('/posts', fd).catch(() => undefined);
-          }
-          draft.rewind = [];
+          await postRewind(res.group.id);
           await queryClient.invalidateQueries({ queryKey: ['me'] });
           onCreated(res.group.id);
         }}>{busy ? <Spinner /> : submitLabel}</Primary>
@@ -456,7 +469,12 @@ export function LikenessCapture({ onDone }: { onDone: () => void }) {
           ))}
         </div>
         <div className={s.cta}>
-          <button className={s.shutter} disabled={!cam.ready} aria-label={ios.axShutter} onClick={async () => { setShots([...shots, await cam.capture(900)]); haptic('medium'); }} />
+          <button className={s.shutter} disabled={!cam.ready && !cam.error} aria-label={ios.axShutter} onClick={async () => {
+            const shot = cam.ready ? await cam.capture(900) : await systemCameraShot('user', 900);
+            if (!shot) return;
+            setShots([...shots, shot]);
+            haptic('medium');
+          }} />
         </div>
       </>
     );

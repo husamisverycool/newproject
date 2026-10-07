@@ -57,6 +57,8 @@ export interface PostDTO {
   seen: boolean;
   /** Present only for the poster (spec §C: reactions visible only to the poster, counts hidden). */
   reactions?: { user: PublicUser | null; emoji: string | null; stickerUrl: string | null; createdAt: number; guest: boolean }[];
+  /** Members who tagged themselves in the photo (spec §S self-tagging only). */
+  tags: PublicUser[];
 }
 
 export function toDTO(posts: PostFull[], viewerId: string): PostDTO[] {
@@ -66,11 +68,16 @@ export function toDTO(posts: PostFull[], viewerId: string): PostDTO[] {
       ? all<{ ref_id: string }>(`SELECT ref_id FROM views WHERE user_id = ? AND ref_id IN (${posts.map(() => '?').join(',')})`, viewerId, ...posts.map((p) => p.id)).map((r) => r.ref_id)
       : [],
   );
+  const tagRows = posts.length
+    ? all<{ post_id: string; user_id: string }>(`SELECT post_id, user_id FROM post_tags WHERE post_id IN (${posts.map(() => '?').join(',')}) ORDER BY created_at`, ...posts.map((p) => p.id))
+    : [];
+  const tagUsers = new Map(usersByIds([...new Set(tagRows.map((r) => r.user_id))]).map((u) => [u.id, publicUser(u)]));
   return posts.map((p) => {
     const dto: PostDTO = {
       id: p.id, groupId: p.groupId, user: users.get(p.userId)!, kind: p.kind, media: p.media, caption: p.caption, takenAt: p.takenAt,
       createdAt: p.createdAt, weekKey: p.weekKey, ritual: p.ritual, fromRoll: p.fromRoll, frame: p.frame, remember: p.remember,
       maxTier: p.maxTier, planId: p.planId, mine: p.userId === viewerId, seen: seen.has(p.id) || p.userId === viewerId,
+      tags: tagRows.filter((r) => r.post_id === p.id).map((r) => tagUsers.get(r.user_id)).filter((u): u is PublicUser => Boolean(u)),
     };
     if (reactionsVisibleTo(viewerId, p)) {
       const rs = reactionsFor(p.id);

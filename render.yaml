@@ -1,0 +1,24 @@
+# One-click hosting on Render (render.com → New → Blueprint → this repository).
+# A web service from the Dockerfile with a persistent disk for the database and photos.
+services:
+  - type: web
+    name: roll
+    runtime: docker
+    plan: starter
+    healthCheckPath: /api/health
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 5
+    envVars:
+      - key: DEMO
+        value: "0"
+      # The public address, for invite links (e.g. https://roll.onrender.com).
+      - key: PUBLIC_URL
+        sync: false
+      # Optional: the game master writes with Claude; without it, it speaks deck lines only.
+      - key: ANTHROPIC_API_KEY
+        sync: false
+      # Optional: image styles through Gemini; without it, the local renderer.
+      - key: GEMINI_API_KEY
+        sync: false

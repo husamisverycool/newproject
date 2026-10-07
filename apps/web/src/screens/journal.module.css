@@ -300,3 +300,19 @@
 .tabSpace {
   height: calc(var(--safe-bottom) + 96px);
 }
+
+/* The pull-down search field (UISearchController) [HIG] */
+.search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  height: 36px;
+  margin: 10px 16px 0;
+  width: calc(100% - 32px);
+  padding: 0 8px;
+  border-radius: 10px;
+  background: var(--sys-fill3);
+  color: var(--sys-label2);
+  font: var(--t-body);
+  text-align: left;
+}

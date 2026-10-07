@@ -159,7 +159,9 @@ export interface Trade {
   createdAt: number;
 }
 
-export type ObjectKind = 'sticker' | 'comic' | 'zine' | 'figurine' | 'meme' | 'wall' | 'recap' | 'share_card';
+/** Google Photos Create tools made on the device (spec §G/§H): photo_to_video, cinematic, animation, highlight; the recap slideshow export (iOS 27). */
+export type CreationKind = 'photo_to_video' | 'cinematic' | 'animation' | 'highlight' | 'slideshow';
+export type ObjectKind = 'sticker' | 'comic' | 'zine' | 'figurine' | 'meme' | 'wall' | 'recap' | 'share_card' | CreationKind;
 
 export interface LikenessObject {
   id: ID;

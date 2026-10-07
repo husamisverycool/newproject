@@ -1,6 +1,6 @@
 import { assignRoles, computeAwards, computeGroupAwards, localParts, seeded, type Group } from '@app/shared';
-import { all, now } from '../db.ts';
-import { getGroup, members, objectsFor, postsForGroup, publicUser } from '../repo.ts';
+import { all, get, json, now, run } from '../db.ts';
+import { getGroup, id, members, objectsFor, postsForGroup, publicUser } from '../repo.ts';
 import { toGroup } from '../realtime.ts';
 import { GameError } from './cards.ts';
 import { statsFor } from './games.ts';
@@ -93,6 +93,18 @@ export function wrapped(group: Group, viewerId: string, year: number) {
 
 /* ───────────────────────── Party mode (Wrapped Party + Jackbox) ───────────────────────── */
 
+/**
+ * Wrapped Party [V-weak] (research/15 §1e): the host steps "Create the party" → "Make it your own"
+ * ("update profile image and name, rename your party") → "Invite your friends" → "Start the party";
+ * guests "Join Party", then "confirm name and photo", then wait in the "waiting room"; the host can
+ * "hand off hosting duties". The party is kept in the database so every member's device sees the same
+ * room. Names and photos changed here belong to the party only; the account keeps its own.
+ */
+interface PartyProfile {
+  name?: string;
+  avatar?: string | null;
+}
+
 interface Party {
   id: string;
   code: string;
@@ -103,73 +115,138 @@ interface Party {
   audience: string[];
   answers: Record<string, Record<number, string>>;
   createdAt: number;
+  /** "rename your party" — null keeps the feature name. */
+  name: string | null;
+  /** "update profile image and name" / "confirm name and photo", per person, for this party. */
+  profiles: Record<string, PartyProfile>;
 }
 
-const parties = new Map<string, Party>();
 /** Jackbox-style: the first 10 who join play; everyone after joins the audience. */
 export const PARTY_PLAYERS = 10;
+
+function loadParty(groupId: string): Party | null {
+  const r = get<{ state: string }>('SELECT state FROM wrapped_parties WHERE group_id = ?', groupId);
+  const p = r ? json.parse<Party | null>(r.state, null) : null;
+  return p ? { ...p, name: p.name ?? null, profiles: p.profiles ?? {} } : null;
+}
+
+function saveParty(p: Party) {
+  run('INSERT OR REPLACE INTO wrapped_parties (group_id, state, updated_at) VALUES (?, ?, ?)', p.groupId, json.str(p), now());
+}
 
 function partyView(p: Party, year: number) {
   const ms = members(p.groupId);
   const users = new Map(ms.map((m) => [m.userId, publicUser(m.user)]));
+  const person = (u: string) => {
+    const base = users.get(u);
+    if (!base) return null;
+    const o = p.profiles[u];
+    return { ...base, name: o?.name || base.name, avatar: o?.avatar !== undefined ? o.avatar : base.avatar };
+  };
   const { stats } = statsFor(getGroup(p.groupId)!, undefined, Date.UTC(year, 0, 1));
   const awards = computeAwards(stats.filter((s) => p.players.includes(s.userId) || p.audience.includes(s.userId)), `${p.id}`, 5);
   return {
-    id: p.id, code: p.code, hostId: p.hostId, slide: p.slide,
-    players: p.players.map((u) => users.get(u)).filter(Boolean),
-    audience: p.audience.map((u) => users.get(u)).filter(Boolean),
-    awards: awards.map((a) => ({ ...a, winners: a.winners.map((w) => users.get(w)).filter(Boolean) })),
+    id: p.id, code: p.code, hostId: p.hostId, slide: p.slide, name: p.name,
+    players: p.players.map(person).filter(Boolean),
+    audience: p.audience.map(person).filter(Boolean),
+    awards: awards.map((a) => ({ ...a, winners: a.winners.map(person).filter(Boolean) })),
     answers: p.answers,
   };
 }
 
 export function startParty(group: Group, hostId: string) {
-  const existing = [...parties.values()].find((p) => p.groupId === group.id);
+  const existing = loadParty(group.id);
   if (existing) return existing;
-  const p: Party = { id: `party_${Date.now().toString(36)}`, code: inviteCode().slice(0, 4), groupId: group.id, hostId, slide: 0, players: [hostId], audience: [], answers: {}, createdAt: now() };
-  parties.set(p.id, p);
+  const p: Party = { id: id('party'), code: inviteCode().slice(0, 4), groupId: group.id, hostId, slide: 0, players: [hostId], audience: [], answers: {}, createdAt: now(), name: null, profiles: {} };
+  saveParty(p);
   return p;
 }
 
 export function partyFor(groupId: string) {
-  return [...parties.values()].find((p) => p.groupId === groupId) ?? null;
+  return loadParty(groupId);
+}
+
+function mustParty(groupId: string) {
+  const p = loadParty(groupId);
+  if (!p) throw new GameError('no_party');
+  return p;
 }
 
 export function joinParty(groupId: string, userId: string, year: number) {
-  const p = partyFor(groupId);
-  if (!p) throw new GameError('no_party');
+  const p = mustParty(groupId);
   if (!p.players.includes(userId) && !p.audience.includes(userId)) {
     if (p.players.length < PARTY_PLAYERS) p.players.push(userId);
     else p.audience.push(userId);
+    saveParty(p);
   }
   broadcast(p, year);
   return partyView(p, year);
 }
 
 export function advanceParty(groupId: string, userId: string, slide: number, year: number) {
-  const p = partyFor(groupId);
-  if (!p) throw new GameError('no_party');
+  const p = mustParty(groupId);
   if (p.hostId !== userId) throw new GameError('host_only');
   p.slide = Math.max(0, slide);
+  saveParty(p);
   broadcast(p, year);
   return partyView(p, year);
 }
 
 export function answerParty(groupId: string, userId: string, question: number, answer: string, year: number) {
-  const p = partyFor(groupId);
-  if (!p) throw new GameError('no_party');
+  const p = mustParty(groupId);
   p.answers[userId] = { ...(p.answers[userId] ?? {}), [question]: answer };
+  saveParty(p);
   broadcast(p, year);
 }
 
+/** "Make it your own": the host renames the party (an empty name goes back to the feature name). */
+export function renameParty(groupId: string, userId: string, name: string, year: number) {
+  const p = mustParty(groupId);
+  if (p.hostId !== userId) throw new GameError('host_only');
+  p.name = String(name ?? '').trim().slice(0, 40) || null;
+  saveParty(p);
+  broadcast(p, year);
+  return partyView(p, year);
+}
+
+/** "update profile image and name" (host) / "confirm name and photo" (guest), for this party only. */
+export function setPartyProfile(groupId: string, userId: string, input: PartyProfile, year: number) {
+  const p = mustParty(groupId);
+  if (!p.players.includes(userId) && !p.audience.includes(userId)) throw new GameError('not_joined');
+  const cur = p.profiles[userId] ?? {};
+  p.profiles[userId] = {
+    name: input.name === undefined ? cur.name : String(input.name).trim().slice(0, 32) || undefined,
+    avatar: input.avatar === undefined ? cur.avatar : input.avatar,
+  };
+  saveParty(p);
+  broadcast(p, year);
+  return partyView(p, year);
+}
+
+/** The host can "hand off hosting duties" to anyone in the room; an audience member moves up to play. */
+export function handOffParty(groupId: string, userId: string, toUserId: string, year: number) {
+  const p = mustParty(groupId);
+  if (p.hostId !== userId) throw new GameError('host_only');
+  if (toUserId === userId) return partyView(p, year);
+  if (!p.players.includes(toUserId) && !p.audience.includes(toUserId)) throw new GameError('not_joined');
+  if (!p.players.includes(toUserId)) {
+    p.audience = p.audience.filter((u) => u !== toUserId);
+    p.players.push(toUserId);
+  }
+  p.hostId = toUserId;
+  saveParty(p);
+  broadcast(p, year);
+  return partyView(p, year);
+}
+
 export function endParty(groupId: string, userId: string) {
-  const p = partyFor(groupId);
-  if (p && p.hostId === userId) parties.delete(p.id);
+  const p = loadParty(groupId);
+  if (p && p.hostId === userId) run('DELETE FROM wrapped_parties WHERE group_id = ?', groupId);
   toGroup(groupId, { type: 'party', groupId, state: null });
 }
 
 export function partyState(groupId: string, year: number) {
-  const p = partyFor(groupId);
+  const p = loadParty(groupId);
   return p ? partyView(p, year) : null;
 }
 

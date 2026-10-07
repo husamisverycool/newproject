@@ -1,11 +1,12 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
 import { BrowserRouter, MemoryRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
-import { STATIC } from './lib/static';
+import { LIVE, STATIC } from './lib/static';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient, useMe } from './lib/queries';
 import { useRealtime } from './lib/realtime';
 import { Stage } from './stage/Stage';
 import { Toasts } from './components/Toasts';
+import { LiveBanner } from './live/LiveBanner';
 import { Spinner } from './components/ios';
 import { CameraHome } from './screens/CameraHome';
 
@@ -38,6 +39,8 @@ const Notifications = lazy(() => import('./screens/Notifications'));
 const NewGroup = lazy(() => import('./screens/NewGroup'));
 const PostView = lazy(() => import('./screens/PostView'));
 const DemoLogin = lazy(() => import('./screens/DemoLogin'));
+const Search = lazy(() => import('./screens/Search'));
+const Bestie = lazy(() => import('./screens/Bestie'));
 
 function Loading() {
   return (
@@ -72,11 +75,14 @@ function AppRoutes() {
         <Route path="/roll" element={<RollComposer />} />
         <Route path="/journal" element={<Journal />} />
         <Route path="/journal/calendar" element={<Calendar />} />
+        <Route path="/journal/search" element={<Search />} />
+        <Route path="/bestie/:userId" element={<Bestie />} />
         <Route path="/g/:groupId/week/:weekKey" element={<WeekView />} />
         <Route path="/rewind" element={<Rewind />} />
         <Route path="/chats" element={<ChatList />} />
         <Route path="/chat/:groupId" element={<ChatThread />} />
         <Route path="/plan/:planId" element={<PlanPage />} />
+        <Route path="/plan/:planId/edit" element={<NewPlan />} />
         <Route path="/g/:groupId/new-plan" element={<NewPlan />} />
         <Route path="/p/:postId" element={<PostView />} />
         <Route path="/g/:groupId/cards" element={<Binder />} />
@@ -101,8 +107,15 @@ function AppRoutes() {
   );
 }
 
-/** The static preview runs inside another page's frame, so it keeps navigation in memory. */
-const Router = STATIC ? MemoryRouter : BrowserRouter;
+/**
+ * The static preview and the in-Claude build run inside another page's frame, so they keep navigation
+ * in memory; a `#/path` on the page's address opens that screen first.
+ */
+const inFrame = STATIC || LIVE;
+const initialEntries = [inFrame && location.hash.startsWith('#/') ? location.hash.slice(1) : '/'];
+function Router({ children }: { children: ReactNode }) {
+  return inFrame ? <MemoryRouter initialEntries={initialEntries}>{children}</MemoryRouter> : <BrowserRouter>{children}</BrowserRouter>;
+}
 
 function useWide() {
   const q = '(min-width: 900px) and (min-height: 700px)';
@@ -126,11 +139,13 @@ export function App() {
             <Stage>
               <AppRoutes />
               <Toasts />
+              {LIVE && <LiveBanner />}
             </Stage>
           ) : (
             <div className="device-full">
               <AppRoutes />
               <Toasts />
+              {LIVE && <LiveBanner />}
             </div>
           )}
         </Gate>

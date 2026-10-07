@@ -20,6 +20,7 @@ import {
 } from '@app/shared';
 import { all, get, json, now, run, setClockOffset } from './db.ts';
 import { env } from './env.ts';
+import { platform } from './platform.ts';
 import { clearSession, createSession, currentUser, guestId, setSessionCookie } from './auth.ts';
 import {
   type UserFull,
@@ -56,6 +57,7 @@ import { GameError } from './services/cards.ts';
 import { developWeek, tickGroup } from './jobs.ts';
 import { REMIX_STYLES } from './ai/local.ts';
 import { usageReport } from './ai/image.ts';
+import { extra } from './routes-extra.ts';
 
 type Env = { Variables: { user: UserFull } };
 export const api = new Hono<Env>();
@@ -128,7 +130,9 @@ api.post('/auth/start', async (c) => {
   if (!name) return fail(c, 400, 'name_required');
   if (!(birthYear > 1900 && birthYear <= new Date().getFullYear() - 13)) return fail(c, 400, 'age', snapchat.whensYourBirthday);
   const palette = ['#FFC800', '#1CB0F6', '#CE82FF', '#58CC02', '#FF9600', '#FF4B4B', '#2B70C9'];
-  const user = createUser({ name, birthYear, color: body.color ?? palette[Math.floor(Math.random() * palette.length)], timeZone: body.timeZone });
+  const external = platform.userIdFor?.(c) ?? undefined;
+  if (external && getUser(external)) return c.json({ user: getUser(external) });
+  const user = createUser({ id: external, name, birthYear, color: body.color ?? palette[Math.floor(Math.random() * palette.length)], timeZone: body.timeZone });
   setSessionCookie(c, createSession(user.id));
   return c.json({ user });
 });
@@ -283,7 +287,7 @@ api.get('/groups/:groupId', (c) => {
   const ms = members(g.id);
   const votes = all<{ user_id: string; vote: number }>('SELECT user_id, vote FROM archive_votes WHERE group_id = ?', g.id);
   return c.json({
-    group: { ...g, mascot: { ...g.mascot, stage: mascotStage(g.mascot.xp) }, inviteUrl: `${env.publicUrl}/j/${g.inviteCode}` },
+    group: { ...g, mascot: { ...g.mascot, stage: mascotStage(g.mascot.xp) }, inviteUrl: platform.inPage ? env.publicUrl || g.inviteCode : `${env.publicUrl}/j/${g.inviteCode}` },
     me: membership(g.id, u.id),
     members: ms.map((m) => ({ user: publicUser(m.user), role: m.role, joinedAt: m.joinedAt, badge: ((m.user.settings as Record<string, unknown>).badges as Record<string, string> | undefined)?.[g.id] ?? null })),
     ritual: posts.ritualState(g, u.id),
@@ -435,7 +439,7 @@ api.post('/posts', async (c) => {
   const live = frames.length >= 3 ? await framesToLive(frames.slice(0, 16)) : null;
   if (live) bytes += live.bytes;
   const voice = await fileBuf(body.voice);
-  const voiceStored = voice ? storeBlob(voice, String(body.voiceType ?? '').includes('mp4') ? 'm4a' : 'webm') : null;
+  const voiceStored = voice ? await storeBlob(voice, String(body.voiceType ?? '').includes('mp4') ? 'm4a' : 'webm') : null;
   if (voiceStored) bytes += voiceStored.bytes;
   const golden = await isGoldenHour(main).catch(() => false);
   const kind = (['photo', 'dual', 'rewind'].includes(String(body.kind)) ? String(body.kind) : insetStored ? 'dual' : 'photo') as 'photo' | 'dual' | 'rewind';
@@ -573,7 +577,7 @@ api.post('/objects/figurine', async (c) => {
   const body = await c.req.parseBody();
   const cutout = await fileBuf(body.cutout);
   const post = body.postId ? getPost(String(body.postId)) : null;
-  const original = (await fileBuf(body.original)) ?? (post ? readMedia(post.media.main) : null);
+  const original = (await fileBuf(body.original)) ?? (post ? await readMedia(post.media.main) : null);
   if (!cutout || !original) return fail(c, 400, 'cutout_required');
   const o = await objects.makeFigurine(c.get('user'), { cutout, original, subjectId: String(body.subjectId ?? c.get('user').id), groupId: String(body.groupId) });
   return c.json({ object: o });
@@ -583,7 +587,7 @@ api.post('/objects/meme', async (c) => {
   const body = await c.req.parseBody();
   const face = await fileBuf(body.face);
   const tpost = body.templatePostId ? getPost(String(body.templatePostId)) : null;
-  const template = (await fileBuf(body.template)) ?? (tpost ? readMedia(tpost.media.main) : null);
+  const template = (await fileBuf(body.template)) ?? (tpost ? await readMedia(tpost.media.main) : null);
   if (!face || !template) return fail(c, 400, 'inputs_required');
   const size = await imageSize(template);
   const box = json.parse(String(body.box ?? ''), { x: size.width * 0.35, y: size.height * 0.2, w: size.width * 0.3, h: size.width * 0.3 });
@@ -757,7 +761,7 @@ api.post('/groups/:groupId/messages', async (c) => {
     const file = await fileBuf(body.file);
     if (!file) return fail(c, 400, 'file_required');
     const kind = String(body.kind) === 'voice' ? 'voice' : 'photo';
-    const media = kind === 'voice' ? storeBlob(file, String(body.type ?? '').includes('mp4') ? 'm4a' : 'webm').url : (await storeImage(file, u.plan)).url;
+    const media = kind === 'voice' ? (await storeBlob(file, String(body.type ?? '').includes('mp4') ? 'm4a' : 'webm')).url : (await storeImage(file, u.plan)).url;
     msg = insertMessage({ groupId: g.id, userId: u.id, kind, media, body: body.body ? String(body.body).slice(0, 500) : null, meta: { duration: Number(body.duration) || undefined } });
   } else {
     const b = await c.req.json<{ kind?: 'text' | 'sticker' | 'post_reply'; body?: string; stickerId?: string; refId?: string }>();
@@ -787,8 +791,8 @@ api.get('/plans/:planId', (c) => {
   return p ? c.json({ plan: p }) : fail(c, 404, 'not_found');
 });
 api.post('/plans/:planId/rsvp', async (c) => {
-  const { status } = await c.req.json<{ status: plans.RsvpStatus }>();
-  plans.rsvp(c.req.param('planId'), c.get('user').id, status);
+  const { status, plusOnes, note } = await c.req.json<{ status: plans.RsvpStatus; plusOnes?: number; note?: string | null }>();
+  plans.rsvp(c.req.param('planId'), c.get('user').id, status, { plusOnes, note });
   return c.json({ plan: plans.planView(c.req.param('planId'), c.get('user').id) });
 });
 api.post('/plans/:planId/vote', async (c) => {
@@ -867,9 +871,9 @@ api.post('/orders/:orderId/chip', async (c) => {
   return c.json({ ok: true });
 });
 api.get('/groups/:groupId/storage', (c) => c.json(shopSvc.storage(memberGroup(c))));
-api.get('/groups/:groupId/export', (c) => {
+api.get('/groups/:groupId/export', async (c) => {
   const g = memberGroup(c);
-  const zip = shopSvc.exportArchive(g, c.get('user').id);
+  const zip = await shopSvc.exportArchive(g, c.get('user').id);
   return new Response(new Uint8Array(zip), { headers: { 'content-type': 'application/zip', 'content-disposition': `attachment; filename="${g.name}-archive.zip"` } });
 });
 
@@ -953,3 +957,6 @@ api.post('/demo/develop', async (c) => {
 });
 
 api.get('/admin/ai-usage', (c) => c.json({ usage: usageReport() }));
+
+/* Plans edit/poster/comments, self-tags + search, bestie lane, Create tools, Wrapped Party extras: routes-extra.ts */
+api.route('/', extra);

@@ -24,6 +24,17 @@ export function useWidgets() {
   return useQuery({ queryKey: ['widgets'], queryFn: () => api.get<{ groups: WidgetGroup[]; hideStreak: boolean }>('/widgets'), refetchInterval: 20_000 });
 }
 
+interface BestieWidget {
+  groupId: string;
+  user: PublicUser;
+  latest: { media: { main: string; thumb?: string }; caption: string | null; createdAt: number } | null;
+}
+
+/** Locket's "Best Friend or Crush widget" [V-weak]: photos from only that person (spec §C). */
+function useBestieWidget() {
+  return useQuery({ queryKey: ['widgets', 'bestie'], queryFn: () => api.get<{ bestie: BestieWidget | null }>('/widgets/bestie'), refetchInterval: 20_000 });
+}
+
 /** The second device: the Lock Screen or the Home Screen, switchable. */
 export function SystemPhone() {
   const stage = useUi((st) => st.stage);
@@ -113,6 +124,8 @@ function LockScreen({ data }: { data: WidgetGroup[] }) {
             <span className={s.laText}>
               <b>{locket.rollcallTitle}</b>
               <span>{locket.shareYourWeek}</span>
+              {/* spec §N: "a lock-screen countdown to the dump and progress such as '7/12 posted'" */}
+              <span className={s.laProgress}>{spec.posted(g.ritual.posted, g.ritual.of)}</span>
             </span>
             <span className={s.laTimer}>{bereal.timer(hms(g.ritual.developsAt - now))}</span>
           </div>
@@ -145,11 +158,14 @@ function LockScreen({ data }: { data: WidgetGroup[] }) {
  * the caption pill ("Sundays ☀️"), the sender's avatar bottom left, the yellow count badge top right
  * and the app name under it; when empty, three avatars in yellow rings and "N Friends" (frame
  * locket-widget-gallery). Stock app icons around it and the dock. Next to it the group pet
- * (Widgetable [V]) and Retro's time-hop widget [V-weak] ("time hop back to your own memories").
+ * (Widgetable [V]) and Retro's time-hop widget [V-weak] ("time hop back to your own memories"). With a
+ * Best Friend chosen (spec §C), a second small Locket widget shows only that friend's photos ("Best
+ * Friend or Crush widget" [V-weak]), labelled with their name.
  */
 function HomeScreen({ data }: { data: WidgetGroup[] }) {
   const main = data[0];
   const latest = main?.latest;
+  const bestie = useBestieWidget().data?.bestie ?? null;
   return (
     <div className={s.home}>
       <div className={s.grid}>
@@ -193,6 +209,37 @@ function HomeScreen({ data }: { data: WidgetGroup[] }) {
             <span className={s.label}>{a.name}</span>
           </div>
         ))}
+        {bestie && (
+          <div className={s.cell2}>
+            {/* The same small Locket widget [I], filled by one friend; their face when nothing came yet */}
+            <div className={s.locketWidget}>
+              {bestie.latest ? (
+                <>
+                  <img src={bestie.latest.media.thumb ?? bestie.latest.media.main} alt="" />
+                  {bestie.latest.caption && <span className={s.lwCaption}>{bestie.latest.caption}</span>}
+                  <span className={s.lwFace}>
+                    <Avatar user={bestie.user} size={20} />
+                  </span>
+                </>
+              ) : (
+                <span className={s.lwEmpty}>
+                  <span className={s.lwRings}>
+                    <Avatar user={bestie.user} size={30} />
+                  </span>
+                </span>
+              )}
+            </div>
+            <span className={s.label}>{bestie.user.name.split(' ')[0]}</span>
+          </div>
+        )}
+        {bestie && ios.homeApps.slice(3).map((a) => (
+          <div key={a.name} className={s.app}>
+            <span className={s.icon} style={{ background: a.bg }}>
+              <AppGlyph name={a.name} />
+            </span>
+            <span className={s.label}>{a.name}</span>
+          </div>
+        ))}
         {main?.memory && (
           <div className={s.cell4}>
             <div className={s.memoryWidget}>
@@ -201,7 +248,7 @@ function HomeScreen({ data }: { data: WidgetGroup[] }) {
             </div>
           </div>
         )}
-        {ios.homeApps.slice(3).map((a) => (
+        {!bestie && ios.homeApps.slice(3).map((a) => (
           <div key={a.name} className={s.app}>
             <span className={s.icon} style={{ background: a.bg }}>
               <AppGlyph name={a.name} />

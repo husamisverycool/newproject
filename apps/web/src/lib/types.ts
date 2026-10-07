@@ -37,6 +37,11 @@ export interface Me {
     rewindDeleteSync?: boolean;
     demo?: boolean;
     badges?: Record<string, string | null>;
+    /** spec §L: opt-in caption + self-tag search */
+    searchOptIn?: boolean;
+    /** spec §C: the Best Friend or Crush widget's person (Locket) */
+    bestie?: { groupId: string; userId: string } | null;
+    appIcon?: string;
   };
 }
 
@@ -104,6 +109,8 @@ export interface Post {
   seen: boolean;
   blurred?: boolean;
   reactions?: { user: PublicUser | null; emoji: string | null; stickerUrl: string | null; createdAt: number; guest: boolean }[];
+  /** Members who tagged themselves in the photo (spec §S self-tagging only). */
+  tags?: PublicUser[];
 }
 
 export interface Streak {
@@ -344,6 +351,26 @@ export interface Message {
   post?: Post | null;
 }
 
+export interface PlanSettingsT {
+  maybe: boolean;
+  showGuestList: boolean;
+  showGuestCount: boolean;
+  plusOnes?: number;
+  hideTimestamps?: boolean;
+}
+
+export interface PlanGuest {
+  user: PublicUser | null;
+  status: 'going' | 'maybe' | 'cant_go';
+  plusOnes: number;
+  note: string | null;
+}
+
+export type PlanFeedItem =
+  | { kind: 'comment'; id: string; user: PublicUser | null; body: string | null; media: string | null; createdAt: number | null; canDelete: boolean }
+  | { kind: 'blast'; id: string; user: PublicUser | null; body: string | null; media: string | null; createdAt: number | null }
+  | { kind: 'rsvp'; id: string; user: PublicUser | null; status: 'going' | 'maybe' | 'cant_go'; plusOnes: number; note: string; createdAt: number | null };
+
 export interface PlanT {
   id: string;
   groupId: string;
@@ -359,8 +386,16 @@ export interface PlanT {
   options: { at: number; votes: { user: PublicUser | null; vote: string }[] }[];
   going: PublicUser[];
   maybe: PublicUser[];
-  /** Partiful Settings [V]: accept "Maybe", show the guest list / count to guests. */
-  settings?: { maybe: boolean; showGuestList: boolean; showGuestCount: boolean };
+  /** Partiful Settings [V]: accept "Maybe", show the guest list / count to guests, +1s per guest, hide feed timestamps. */
+  settings?: PlanSettingsT;
+  /** The uploaded poster photo (Partiful "upload your own photo" [V]); null = the typographic poster. */
+  poster?: string | null;
+  /** Everyone the viewer may see, with their +1s and RSVP note. */
+  guests?: PlanGuest[];
+  myPlusOnes?: number;
+  myNote?: string | null;
+  /** Activity Feed, newest first: comments, Text Blasts and RSVP notes. */
+  feed?: PlanFeedItem[];
   /** null when the host hides the guest count from guests */
   goingCount?: number | null;
   cantGoCount: number;

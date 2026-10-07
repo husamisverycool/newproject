@@ -302,3 +302,37 @@
 .page :global(.ios-group) {
   background: color-mix(in srgb, var(--sys-bg) 86%, transparent);
 }
+
+.loading {
+  display: flex;
+  justify-content: center;
+  padding-top: calc(var(--safe-top) + 140px);
+}
+.center {
+  justify-content: center;
+}
+/* UIStepper [HIG] for Settings > RSVPs "number of +1s" [V] */
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  height: 32px;
+  border-radius: 8px;
+  background: var(--sys-fill);
+  margin-left: 12px;
+}
+.stepper button {
+  width: 47px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--sys-label);
+}
+.stepper button:disabled {
+  color: var(--sys-label3);
+}
+.stepper i {
+  width: 1px;
+  height: 18px;
+  background: var(--sys-separator);
+}
