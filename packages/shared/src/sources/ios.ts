@@ -6,6 +6,27 @@
 export const ios = {
   /** [HIG] Contacts address field labels, used for Retro's "Mailing Address" [I] */
   addressFields: ['Name', 'Street', 'City, State', 'ZIP'] as const,
+  /** [HIG] the two system surfaces */
+  lockScreen: 'Lock Screen',
+  /** [HIG] */
+  homeScreen: 'Home Screen',
+  /** [I] locket-02/-05: the stock apps around the Locket widget (name + icon color) */
+  homeApps: [
+    { name: 'Calendar', bg: '#ffffff' },
+    { name: 'Photos', bg: '#ffffff' },
+    { name: 'Notes', bg: '#ffffff' },
+    { name: 'Clock', bg: '#ffffff' },
+    { name: 'App Store', bg: '#1d8af8' },
+    { name: 'Maps', bg: '#7fd47f' },
+    { name: 'Podcasts', bg: '#9b4fdc' },
+  ] as const,
+  /** [I] locket-05: dock */
+  dockApps: [
+    { name: 'Phone', bg: '#34c759' },
+    { name: 'Safari', bg: '#ffffff' },
+    { name: 'Messages', bg: '#34c759' },
+    { name: 'Music', bg: '#fc3c44' },
+  ] as const,
   /** [HIG] standard alert / sheet buttons */
   ok: 'OK',
   /** [HIG] */

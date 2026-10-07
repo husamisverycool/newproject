@@ -152,7 +152,7 @@ api.patch('/me', async (c) => {
   const u = c.get('user');
   const b = await c.req.json<{ name?: string; likenessScope?: LikenessScope; likenessAllow?: string[]; autoAiCreations?: boolean; settings?: Record<string, unknown>; onboarded?: boolean; verifyAdult?: boolean }>();
   if (b.name) updateUser(u.id, { name: b.name.trim().slice(0, 32) });
-  if (b.likenessScope && ['no_one', 'my_groups', 'specific_friends'].includes(b.likenessScope)) updateUser(u.id, { likeness_scope: b.likenessScope });
+  if (b.likenessScope && ['no_one', 'my_groups', 'specific_friends', 'everyone'].includes(b.likenessScope)) updateUser(u.id, { likeness_scope: b.likenessScope });
   if (b.likenessAllow) run('UPDATE users SET likeness_allow = ? WHERE id = ?', json.str(b.likenessAllow.slice(0, 50)), u.id);
   if (typeof b.autoAiCreations === 'boolean') updateUser(u.id, { auto_ai: b.autoAiCreations ? 1 : 0 });
   if (b.settings) updateSettings(u.id, b.settings);
@@ -217,6 +217,32 @@ api.post('/me/plan', async (c) => {
   if (!(plan in PLANS)) return fail(c, 400, 'bad_plan');
   shopSvc.setPlan(c.get('user').id, plan);
   return c.json({ user: getUser(c.get('user').id) });
+});
+
+/**
+ * Delete Account (App Review Guideline 5.1.1(v)). Yope's terms [V]: a deleted photo leaves "our servers and
+ * the Yope App accounts of whomever you sent it to", so the member's photos (and the cards, reactions and
+ * memory pins made from them) go with the account. Sessions, memberships, posts and likeness cascade from
+ * users. A group left without an admin passes it to its longest-standing member (WhatsApp [B-high]).
+ */
+api.delete('/me', (c) => {
+  const u = c.get('user');
+  const gids = groupsForUser(u.id).map((g) => g.id);
+  for (const p of all<{ id: string }>('SELECT id FROM posts WHERE user_id = ?', u.id)) run('DELETE FROM memory WHERE source_post_id = ?', p.id);
+  run('DELETE FROM trades WHERE from_user = ? OR to_user = ?', u.id, u.id);
+  run('DELETE FROM wonder WHERE opener_id = ?', u.id);
+  run('DELETE FROM cards WHERE owner_id = ?', u.id);
+  run('DELETE FROM blocks WHERE user_id = ? OR blocked_id = ?', u.id, u.id);
+  for (const t of ['packs', 'wishlist', 'views', 'reactions', 'wall_reactions', 'archive_votes', 'plan_rsvps', 'plan_votes', 'notifications', 'join_waitlist', 'push_subs']) run(`DELETE FROM ${t} WHERE user_id = ?`, u.id);
+  run('DELETE FROM users WHERE id = ?', u.id);
+  for (const gid of gids) {
+    if (!get('SELECT 1 AS x FROM memberships WHERE group_id = ? AND role = ?', gid, 'admin')) {
+      run("UPDATE memberships SET role = 'admin' WHERE group_id = ? AND user_id = (SELECT user_id FROM memberships WHERE group_id = ? ORDER BY joined_at LIMIT 1)", gid, gid);
+    }
+    toGroup(gid, { type: 'group', groupId: gid });
+  }
+  clearSession(c);
+  return c.json({ ok: true });
 });
 
 api.get('/notifications', (c) => c.json({ notifications: notificationsFor(c.get('user').id) }));
@@ -493,8 +519,8 @@ api.post('/groups/:groupId/walls/:weekKey', async (c) => {
 
 api.post('/groups/:groupId/walls/:weekKey/remix', async (c) => {
   const g = memberGroup(c);
-  const { style } = await c.req.json<{ style?: walls.WallStyle }>().catch(() => ({ style: undefined }));
-  const res = walls.generateWall(g, c.req.param('weekKey'), style ?? 'chaos', c.get('user').id);
+  const { style } = await c.req.json<{ style?: string }>().catch(() => ({ style: undefined }));
+  const res = walls.generateWall(g, c.req.param('weekKey'), walls.wallStyle(style), c.get('user').id);
   if (!res) return fail(c, 400, 'no_posts');
   return c.json(res);
 });
@@ -661,8 +687,16 @@ api.post('/groups/:groupId/game/:gameId/telephone', async (c) => {
 });
 api.post('/groups/:groupId/game/:gameId/challenge', async (c) => {
   const g = memberGroup(c);
-  const { postId } = await c.req.json<{ postId: string }>();
-  games.enterChallenge(g, c.get('user').id, c.req.param('gameId'), postId);
+  // Instagram "Add Yours": { prompt } types the prompt (once); { postId } answers it with a photo.
+  const b = await c.req.json<{ postId?: string; prompt?: string }>();
+  if (b.prompt !== undefined) games.setChallengePrompt(g, c.get('user').id, c.req.param('gameId'), b.prompt);
+  else games.enterChallenge(g, c.get('user').id, c.req.param('gameId'), b.postId ?? '');
+  return c.json({ game: games.gameView(g, c.get('user').id) });
+});
+// Jackbox: the VIP's "Everybody's in" ends the round and reveals the results.
+api.post('/groups/:groupId/game/:gameId/close', (c) => {
+  const g = memberGroup(c);
+  games.vipClose(g, c.get('user').id, c.req.param('gameId'));
   return c.json({ game: games.gameView(g, c.get('user').id) });
 });
 api.post('/groups/:groupId/game/:gameId/guess', async (c) => {
@@ -671,19 +705,16 @@ api.post('/groups/:groupId/game/:gameId/guess', async (c) => {
   games.guessWhose(g, c.get('user').id, c.req.param('gameId'), b.postId, b.userId);
   return c.json({ game: games.gameView(g, c.get('user').id) });
 });
-api.get('/groups/:groupId/game/:gameId/share', (c) => c.json({ text: games.shareGrid(memberGroup(c), c.req.param('gameId'), c.get('user').id) }));
+api.get('/groups/:groupId/game/:gameId/share', (c) => c.json({ text: games.shareGrid(memberGroup(c), c.req.param('gameId'), c.get('user').id, c.req.query('theme') !== 'light') }));
 api.get('/groups/:groupId/roles', (c) => c.json({ roles: games.weeklyRoles(memberGroup(c)) }));
 api.get('/groups/:groupId/games', (c) => {
   const g = memberGroup(c);
   return c.json({ games: all<{ id: string; week_key: string; kind: string; state: string; closed_at: number | null }>('SELECT * FROM games WHERE group_id = ? ORDER BY created_at DESC LIMIT 12', g.id).map((x) => ({ id: x.id, weekKey: x.week_key, kind: x.kind, closed: Boolean(x.closed_at), results: json.parse<{ results?: unknown }>(x.state, {}).results ?? null })) });
 });
 
-api.get('/groups/:groupId/memory', (c) => {
-  const g = memberGroup(c);
-  const items = games.memoryItems(g.id);
-  const users = new Map(usersByIds([...new Set(items.map((i) => i.addedBy))]).map((u) => [u.id, publicUser(u)]));
-  return c.json({ items: items.map((i) => ({ ...i, addedBy: users.get(i.addedBy) ?? null })), mascot: g.mascot.name });
-});
+// Character.ai memory (May 2026): Story Memory, Facts, Memory Usage; "Pin" locks a fact's wording into Story Memory.
+api.get('/groups/:groupId/memory', (c) => c.json(games.memoryView(memberGroup(c))));
+api.post('/groups/:groupId/memory/:memoryId/pin', (c) => c.json({ id: games.pinFact(memberGroup(c), c.req.param('memoryId'), c.get('user').id) }));
 api.post('/groups/:groupId/memory', async (c) => {
   const g = memberGroup(c);
   const { text } = await c.req.json<{ text: string }>();
@@ -692,7 +723,9 @@ api.post('/groups/:groupId/memory', async (c) => {
 });
 api.delete('/groups/:groupId/memory/:memoryId', (c) => {
   const g = memberGroup(c);
-  run('DELETE FROM memory WHERE id = ? AND group_id = ?', c.req.param('memoryId'), g.id);
+  const mid = c.req.param('memoryId');
+  if (mid.includes(':')) games.forgetFact(g, mid);
+  else run('DELETE FROM memory WHERE id = ? AND group_id = ?', mid, g.id);
   return c.json({ ok: true });
 });
 
@@ -865,6 +898,9 @@ api.get('/widgets', (c) => {
         streak: r.streak.weeks,
         ritual: { isOpen: r.isOpen, developsAt: r.developsAt, opensAt: r.opensAt, posted: r.posted, of: r.of, posters: r.posters, youPosted: r.youPosted },
         memory: memories[0] ?? null,
+        // Locket widget [I] (locket-02): the yellow count badge — photos from friends you haven't opened.
+        unseen: posts.toDTO(posts.visiblePosts(g, u.id).filter((p) => p.userId !== u.id), u.id).filter((p) => !p.seen).length,
+        members: members(g.id).map((m) => publicUser(m.user)).slice(0, 30),
       };
     }),
     hideStreak: Boolean(u.settings.hideStreakOnWidget),

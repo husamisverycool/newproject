@@ -819,3 +819,15 @@
   color: #000;
   font: 700 17px/1 var(--font-sf);
 }
+
+/* Single photo (PostView) */
+.single {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.single > div {
+  height: 100%;
+}

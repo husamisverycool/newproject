@@ -5,7 +5,18 @@ import type { CSSProperties } from 'react';
  * "lightning bolt" flash and "arrow" flip, BeReal's three dots). 24×24, 2px rounded strokes.
  */
 const P: Record<string, string> = {
+  /** Kahoot! answer-tile shapes [V-weak] (research/24 §2): triangle (red), diamond (blue), circle (yellow), square (green); drawn filled */
+  kahootTriangle: 'M12 4 21 19.5H3L12 4Z',
+  kahootDiamond: 'M12 2.5 21.5 12 12 21.5 2.5 12 12 2.5Z',
+  kahootCircle: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18Z',
+  kahootSquare: 'M4 4h16v16H4V4Z',
+  /** Google Photos "AI info" section icon [V-weak] (research/06 §1.6): an 'i' badged with a sparkle */
+  infoSparkle: 'M11 21a8 8 0 1 1 7.6-10.5M11 11v5M11 7.5h.01M19 13.5c.3 1.9 1.6 3.2 3.5 3.5-1.9.3-3.2 1.6-3.5 3.5-.3-1.9-1.6-3.2-3.5-3.5 1.9-.3 3.2-1.6 3.5-3.5Z',
+  /** iOS Settings › Focus › Do Not Disturb tile [HIG]: SF Symbol moon.fill, drawn filled */
+  moon: 'M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z',
   bolt: 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z',
+  /** iOS Phone app handset [HIG] */
+  phone: 'M7 3.5h2.5l1.5 4.5-2 1.5a11 11 0 0 0 5.5 5.5l1.5-2 4.5 1.5V17a2.5 2.5 0 0 1-2.5 2.5A15.5 15.5 0 0 1 4.5 6 2.5 2.5 0 0 1 7 3.5Z',
   /** Retro Rewind tab glyph [I] (retro-01/-05): a clock with a counter-clockwise arrow */
   clockBack: 'M4.5 12a7.5 7.5 0 1 0 2.2-5.3L4.5 9M4.5 4.5V9H9M12 7.5V12l3 2',
   /** Yope tab glyphs [I] (yope-01 tab bar), drawn filled: two chat bubbles */
@@ -114,7 +125,7 @@ const P: Record<string, string> = {
   zigzag: 'M3 12l3-3 3 3 3-3 3 3 3-3 3 3',
 };
 
-const FILLED = new Set(['bolt', 'play', 'heart', 'flame', 'rewind', 'skipBack', 'skipForward', 'star', 'sparkle']);
+const FILLED = new Set(['kahootTriangle', 'kahootDiamond', 'kahootCircle', 'kahootSquare', 'moon', 'bolt', 'play', 'heart', 'flame', 'rewind', 'skipBack', 'skipForward', 'star', 'sparkle']);
 
 export function Icon({ name, size = 24, color = 'currentColor', filled, strokeWidth = 2, style, className }: { name: keyof typeof P | string; size?: number; color?: string; filled?: boolean; strokeWidth?: number; style?: CSSProperties; className?: string }) {
   const d = P[name] ?? P.info;

@@ -1,12 +1,14 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
+import { BRAND, bereal, ios, locket, pets, spec, yope } from '@app/shared';
 import { api } from '../lib/api';
-import { countdown, firstName, timeAgo, weekRange } from '../lib/format';
 import type { Post, PublicUser, MascotState } from '../lib/types';
 import { useUi } from '../lib/store';
-import { Avatar, AvatarStack, StreakBadge, Wordmark } from '../components/ui';
+import { Avatar } from '../components/ios';
+import { AppIcon } from '../components/Brand';
 import { Mascot } from '../components/Mascot';
 import { Icon } from '../components/Icon';
+import s from './system.module.css';
 
 interface WidgetGroup {
   group: { id: string; name: string; emoji: string; mascot: MascotState };
@@ -14,28 +16,34 @@ interface WidgetGroup {
   streak: number;
   ritual: { isOpen: boolean; developsAt: number; opensAt: number; posted: number; of: number; posters: PublicUser[]; youPosted: boolean };
   memory: { yearsAgo: number; posts: Post[] } | null;
+  unseen: number;
+  members: PublicUser[];
 }
 
 export function useWidgets() {
   return useQuery({ queryKey: ['widgets'], queryFn: () => api.get<{ groups: WidgetGroup[]; hideStreak: boolean }>('/widgets'), refetchInterval: 20_000 });
 }
 
-/** The second device: Lock Screen or Home Screen, switchable. */
+/** The second device: the Lock Screen or the Home Screen, switchable. */
 export function SystemPhone() {
-  const stage = useUi((s) => s.stage);
+  const stage = useUi((st) => st.stage);
   const w = useWidgets();
   const mode = stage === 'app' ? 'lock' : stage;
-  return <div className="sys">{mode === 'lock' ? <LockScreen data={w.data?.groups ?? []} /> : <HomeScreen data={w.data?.groups ?? []} hideStreak={Boolean(w.data?.hideStreak)} />}</div>;
+  return <div className={s.sys}>{mode === 'lock' ? <LockScreen data={w.data?.groups ?? []} /> : <HomeScreen data={w.data?.groups ?? []} />}</div>;
 }
 
 export function SystemSwitch() {
-  const stage = useUi((s) => s.stage);
-  const setStage = useUi((s) => s.setStage);
+  const stage = useUi((st) => st.stage);
+  const setStage = useUi((st) => st.setStage);
   const mode = stage === 'app' ? 'lock' : stage;
   return (
-    <div className="sys-switch">
-      <button aria-pressed={mode === 'lock'} onClick={() => setStage('lock')}>Lock Screen</button>
-      <button aria-pressed={mode === 'home'} onClick={() => setStage('home')}>Home Screen</button>
+    <div className={s.switch}>
+      <button aria-pressed={mode === 'lock'} onClick={() => setStage('lock')}>
+        {ios.lockScreen}
+      </button>
+      <button aria-pressed={mode === 'home'} onClick={() => setStage('home')}>
+        {ios.homeScreen}
+      </button>
     </div>
   );
 }
@@ -49,72 +57,82 @@ function useNow(ms = 1000) {
   return now;
 }
 
-/* ───────────────────────── Lock Screen ───────────────────────── */
+const hms = (ms: number) => {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  return `${h > 0 ? `${h}:` : ''}${String(m).padStart(h > 0 ? 2 : 1, '0')}:${String(t % 60).padStart(2, '0')}`;
+};
 
+/* ───────── Lock Screen ─────────
+ * Yope's lock screen [I] (yope-02): the iOS date and big glass clock; a photo widget at the bottom
+ * the width of a Live Activity (HIG 371 pt), the friend's photo filling it with the time large in the
+ * middle and the caption under it, the sender's avatar bottom left; flashlight and camera at the
+ * bottom. During the ritual the Rollcall Live Activity [V] ("Every Sunday, you'll get a Live Activity
+ * (it looks similar to a notification) inviting you to share your week") sits above it with
+ * BeReal's running countdown [V]. Lock Screen widgets above the clock [HIG]: the pet (Widgetable /
+ * Pengu "Raise Pets Together" [V]) and the streak (Yope "🔥N" [I]).
+ */
 function LockScreen({ data }: { data: WidgetGroup[] }) {
   const now = useNow();
   const d = new Date(now);
   const main = data[0];
-  const toasts = useUi((s) => s.toasts);
+  const toasts = useUi((st) => st.toasts);
   return (
-    <div className="lock">
-      <div className="lock-date">{d.toLocaleDateString([], { weekday: 'long', month: 'long', day: 'numeric' })}</div>
-      <div className="lock-time">{d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M/i, '')}</div>
+    <div className={s.lock}>
+      <div className={s.lockDate}>{d.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'long' }).replace(',', '')}</div>
+      <div className={s.lockTime}>{d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M/i, '')}</div>
       {main && (
-        <div className="lock-widgets">
-          {/* accessoryCircular: mascot level ring */}
-          <div className="acc-circ" title="Mascot level">
-            <svg viewBox="0 0 36 36" className="ring">
-              <circle cx="18" cy="18" r="15" stroke="rgba(255,255,255,.25)" strokeWidth="3" fill="none" />
-              <circle cx="18" cy="18" r="15" stroke="#fff" strokeWidth="3" fill="none" strokeDasharray={`${main.group.mascot.stage.progress * 94} 94`} transform="rotate(-90 18 18)" strokeLinecap="round" />
-            </svg>
-            <Mascot species={main.group.mascot.species} level={main.group.mascot.stage.level} size={34} idle={false} style={{ filter: 'grayscale(1) brightness(2.2)' }} />
-          </div>
-          {/* accessoryRectangular: next roll */}
-          <div className="acc-rect">
-            <div className="acc-rect-title">
-              {main.group.emoji} {main.group.name}
-            </div>
-            <div className="acc-rect-body">{main.ritual.isOpen ? `${main.ritual.posted}/${main.ritual.of} posted` : `develops in ${countdown(main.ritual.developsAt - now)}`}</div>
-            <div className="acc-rect-sub">
-              <Icon name="flame" size={12} /> {main.streak}-week streak
-            </div>
-          </div>
+        <div className={s.accessories}>
+          <span className={s.accCirc} aria-label={pets.raiseTogether}>
+            <Mascot species={main.group.mascot.species} level={main.group.mascot.stage.level} size={40} style={{ filter: 'grayscale(1) brightness(1.9)' }} />
+          </span>
+          <span className={s.accRect}>
+            <b>{main.group.name}</b>
+            <span>{yope.streakCount(main.streak)}</span>
+          </span>
         </div>
       )}
-      <div className="lock-spacer" />
-      {data.map((g) => (g.ritual.isOpen ? <LiveActivity key={g.group.id} g={g} now={now} /> : null))}
+      <div className={s.spacer} />
       {toasts.slice(-2).map((t) => (
-        <div key={t.id} className="lock-note">
-          <span className="lock-note-icon">
-            <Wordmark size={9} />
+        <div key={t.id} className={s.note}>
+          <AppIcon size={38} />
+          <span className={s.noteText}>
+            <b>{t.title}</b>
+            <span>{t.body}</span>
           </span>
-          <span className="grow">
-            <span className="lock-note-title">{t.title}</span>
-            <span className="lock-note-body">{t.body}</span>
-          </span>
-          <span className="lock-note-time">now</span>
+          <span className={s.noteTime}>{ios.now}</span>
         </div>
       ))}
-      {!data.some((g) => g.ritual.isOpen) && main?.latest && (
-        <div className="lock-note">
-          <span className="lock-note-icon">
-            <Wordmark size={9} />
-          </span>
-          <span className="grow">
-            <span className="lock-note-title">
-              {main.group.emoji} {main.group.name}
+      {data.map((g) =>
+        g.ritual.isOpen && !g.ritual.youPosted ? (
+          <div key={g.group.id} className={s.la}>
+            <span className={s.laLead}>
+              <Icon name="megaphone" size={24} strokeWidth={2} />
             </span>
-            <span className="lock-note-body">{firstName(main.latest.user.name)} posted · next roll {weekRange(main.latest.weekKey)}</span>
+            <span className={s.laText}>
+              <b>{locket.rollcallTitle}</b>
+              <span>{locket.shareYourWeek}</span>
+            </span>
+            <span className={s.laTimer}>{bereal.timer(hms(g.ritual.developsAt - now))}</span>
+          </div>
+        ) : null,
+      )}
+      {main?.latest && (
+        <div className={s.photoWidget}>
+          <img src={main.latest.media.thumb ?? main.latest.media.main} alt="" className={main.latest.blurred ? s.blur : ''} />
+          <span className={s.pwTime}>{yope.time(main.latest.createdAt)}</span>
+          {main.latest.caption && !main.latest.blurred && <span className={s.pwCaption}>{main.latest.caption}</span>}
+          <span className={s.pwFace}>
+            <Avatar user={main.latest.user} size={26} />
           </span>
-          <span className="lock-note-time">{timeAgo(main.latest.createdAt)}</span>
         </div>
       )}
-      <div className="lock-bottom">
-        <span className="lock-round">
+      <div className={s.lockBottom}>
+        <span className={s.round} aria-label={ios.axFlash}>
           <Icon name="bolt" size={20} />
         </span>
-        <span className="lock-round">
+        <span className={s.round} aria-label={ios.axShutter}>
           <Icon name="camera" size={20} />
         </span>
       </div>
@@ -122,127 +140,149 @@ function LockScreen({ data }: { data: WidgetGroup[] }) {
   );
 }
 
-/**
- * Lock Screen Live Activity for the Sunday roll (Locket Rollcall: "Every Sunday, Locket takes over
- * the Lock Screen with a Live Activity"). HIG geometry: ≤160 pt tall, 20 pt margins.
+/* ───────── Home Screen ─────────
+ * Locket's Home Screen [I] (locket-02 / -05): the small Locket widget top left — the photo filling it,
+ * the caption pill ("Sundays ☀️"), the sender's avatar bottom left, the yellow count badge top right
+ * and the app name under it; when empty, three avatars in yellow rings and "N Friends" (frame
+ * locket-widget-gallery). Stock app icons around it and the dock. Next to it the group pet
+ * (Widgetable [V]) and Retro's time-hop widget [V-weak] ("time hop back to your own memories").
  */
-function LiveActivity({ g, now }: { g: WidgetGroup; now: number }) {
-  const pct = g.ritual.of ? g.ritual.posted / g.ritual.of : 0;
+function HomeScreen({ data }: { data: WidgetGroup[] }) {
+  const main = data[0];
+  const latest = main?.latest;
   return (
-    <div className="la">
-      <div className="la-top">
-        <Mascot species={g.group.mascot.species} level={g.group.mascot.stage.level} outfit={g.group.mascot.outfit} size={44} idle={false} />
-        <div className="grow">
-          <div className="la-title">
-            {g.group.name} <span className="la-dim">· roll day</span>
+    <div className={s.home}>
+      <div className={s.grid}>
+        <div className={s.cell2}>
+          <div className={s.locketWidget}>
+            {latest ? (
+              <>
+                <img src={latest.media.thumb ?? latest.media.main} alt="" className={latest.blurred ? s.blur : ''} />
+                {latest.caption && !latest.blurred && <span className={s.lwCaption}>{latest.caption}</span>}
+                <span className={s.lwFace}>
+                  <Avatar user={latest.user} size={20} />
+                </span>
+                {main.unseen > 0 && <span className={s.lwBadge}>{main.unseen}</span>}
+              </>
+            ) : (
+              <span className={s.lwEmpty}>
+                <span className={s.lwRings}>
+                  {(main?.members ?? []).slice(0, 3).map((u) => (
+                    <Avatar key={u.id} user={u} size={30} />
+                  ))}
+                </span>
+                <b>{locket.widgetFriends(main?.members.length ?? 0)}</b>
+              </span>
+            )}
           </div>
-          <div className="la-count">{countdown(g.ritual.developsAt - now)}</div>
-          <div className="la-sub">until it develops</div>
+          <span className={s.label}>{BRAND.name}</span>
         </div>
-        <div className="la-ring">
-          <svg viewBox="0 0 48 48">
-            <circle cx="24" cy="24" r="20" stroke="rgba(255,255,255,.18)" strokeWidth="5" fill="none" />
-            <circle cx="24" cy="24" r="20" stroke="var(--yellow)" strokeWidth="5" fill="none" strokeDasharray={`${pct * 125.6} 125.6`} transform="rotate(-90 24 24)" strokeLinecap="round" />
-          </svg>
-          <span>
-            {g.ritual.posted}/{g.ritual.of}
-          </span>
+        <div className={s.cell2}>
+          <div className={s.petWidget}>{main && <Mascot species={main.group.mascot.species} level={main.group.mascot.stage.level} outfit={main.group.mascot.outfit} size={110} />}</div>
+          <span className={s.label}>{main?.group.mascot.name}</span>
         </div>
+        <div className={s.app}>
+          <AppIcon size={60} />
+          <span className={s.label}>{BRAND.name}</span>
+        </div>
+        {ios.homeApps.slice(0, 3).map((a) => (
+          <div key={a.name} className={s.app}>
+            <span className={s.icon} style={{ background: a.bg }}>
+              <AppGlyph name={a.name} />
+            </span>
+            <span className={s.label}>{a.name}</span>
+          </div>
+        ))}
+        {main?.memory && (
+          <div className={s.cell4}>
+            <div className={s.memoryWidget}>
+              <img src={main.memory.posts[0].media.thumb ?? main.memory.posts[0].media.main} alt="" />
+              <span>{spec.thisWeekYearsAgo(main.memory.yearsAgo)}</span>
+            </div>
+          </div>
+        )}
+        {ios.homeApps.slice(3).map((a) => (
+          <div key={a.name} className={s.app}>
+            <span className={s.icon} style={{ background: a.bg }}>
+              <AppGlyph name={a.name} />
+            </span>
+            <span className={s.label}>{a.name}</span>
+          </div>
+        ))}
       </div>
-      <div className="la-bottom">
-        <AvatarStack users={g.ritual.posters} size={22} max={6} />
-        <span className="la-dim">{g.ritual.youPosted ? 'You’re in' : `${g.ritual.posted} posted`}</span>
-        <span className="la-btn">{g.ritual.youPosted ? 'Open' : 'Post yours'}</span>
+      <span className={s.search}>
+        <Icon name="searchGlass" size={12} strokeWidth={2.4} />
+        {ios.search}
+      </span>
+      <div className={s.dock}>
+        {ios.dockApps.map((a) => (
+          <span key={a.name} className={s.icon} style={{ background: a.bg }} aria-label={a.name}>
+            <AppGlyph name={a.name} />
+          </span>
+        ))}
       </div>
     </div>
   );
 }
 
-/* ───────────────────────── Home Screen ───────────────────────── */
-
-function HomeScreen({ data, hideStreak }: { data: WidgetGroup[]; hideStreak: boolean }) {
-  const now = useNow(30_000);
-  const main = data[0];
-  return (
-    <div className="home">
-      <div className="home-grid">
-        {/* Locket widget: friend's latest photo, name + streak score on the photo */}
-        <div className="w w-small w-photo">
-          {main?.latest ? (
-            <>
-              <img src={main.latest.media.thumb ?? main.latest.media.main} alt="" />
-              <div className="w-photo-meta">
-                <Avatar user={main.latest.user} size={22} />
-                <span>{firstName(main.latest.user.name)}</span>
-                {!hideStreak && <StreakBadge weeks={main.streak} size={12} />}
-              </div>
-              {main.latest.caption && <div className="w-caption">{main.latest.caption}</div>}
-            </>
-          ) : (
-            <div className="w-empty">
-              <Wordmark size={22} />
-              <span>New photos from friends land here</span>
-            </div>
-          )}
-        </div>
-        {/* Widgetable / Pengu co-pet: the group mascot */}
-        <div className="w w-small w-mascot" style={{ background: 'var(--g1)' }}>
-          {main && (
-            <>
-              <Mascot species={main.group.mascot.species} level={main.group.mascot.stage.level} outfit={main.group.mascot.outfit} size={96} />
-              <div className="w-mascot-meta">
-                <b>{main.group.mascot.name}</b> · Lv {main.group.mascot.stage.level}
-                <div className="w-bar">
-                  <span style={{ width: `${main.group.mascot.stage.progress * 100}%` }} />
-                </div>
-              </div>
-            </>
-          )}
-        </div>
-        {/* Retro "time hop" widget: your own memories */}
-        <div className="w w-medium w-memory">
-          {main?.memory ? (
-            <>
-              <img src={main.memory.posts[0].media.thumb ?? main.memory.posts[0].media.main} alt="" />
-              <div className="w-memory-meta">
-                <span className="w-memory-n">{main.memory.yearsAgo}</span>
-                <span>year ago this week</span>
-              </div>
-            </>
-          ) : (
-            <div className="w-roll">
-              <div className="w-roll-head">
-                <Wordmark size={16} /> <span className="la-dim">{main?.group.name}</span>
-              </div>
-              <div className="w-roll-count">{main ? countdown(main.ritual.developsAt - now) : '—'}</div>
-              <div className="la-dim">until this week develops</div>
-              <div className="w-roll-row">
-                {main && <AvatarStack users={main.ritual.posters} size={22} />}
-                <span className="la-dim">{main ? `${main.ritual.posted}/${main.ritual.of} in the roll` : ''}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-      <div className="home-icons">
-        <div className="app-icon">
-          <span className="app-icon-art">
-            <Wordmark size={17} />
-          </span>
-          <span className="app-icon-label">roll.</span>
-        </div>
-        {['Camera', 'Photos', 'Messages', 'Settings'].map((n) => (
-          <div key={n} className="app-icon">
-            <span className="app-icon-art app-icon-blank" />
-            <span className="app-icon-label">{n}</span>
-          </div>
-        ))}
-      </div>
-      <div className="dock">
-        {[0, 1, 2, 3].map((i) => (
-          <span key={i} className="app-icon-art app-icon-blank" />
-        ))}
-      </div>
-    </div>
-  );
+/** Simplified stock iOS app icons [I] as they appear in locket-02 / -05 (Calendar shows the day). */
+function AppGlyph({ name }: { name: string }) {
+  const now = new Date();
+  switch (name) {
+    case 'Calendar':
+      return (
+        <svg viewBox="0 0 60 60" width="60" height="60">
+          <text x="30" y="17" textAnchor="middle" fontSize="10" fontWeight="600" fill="#ff3b30" fontFamily="-apple-system, system-ui">{now.toLocaleDateString('en-US', { weekday: 'short' })}</text>
+          <text x="30" y="47" textAnchor="middle" fontSize="30" fontWeight="300" fill="#000" fontFamily="-apple-system, system-ui">{now.getDate()}</text>
+        </svg>
+      );
+    case 'Photos':
+      return (
+        <svg viewBox="0 0 60 60" width="60" height="60">
+          {['#f5b400', '#f6801f', '#ec4a3f', '#c54a9b', '#8063c1', '#3b8de0', '#43b86f', '#a6cf3e'].map((c, i) => (
+            <ellipse key={c} cx="30" cy="19" rx="6" ry="11" fill={c} opacity="0.85" transform={`rotate(${i * 45} 30 30)`} />
+          ))}
+        </svg>
+      );
+    case 'Notes':
+      return (
+        <svg viewBox="0 0 60 60" width="60" height="60">
+          <rect width="60" height="16" fill="#f8cf38" />
+          {[26, 34, 42, 50].map((y) => (
+            <line key={y} x1="6" x2="54" y1={y} y2={y} stroke="#d6d6d6" strokeWidth="1" />
+          ))}
+        </svg>
+      );
+    case 'Clock':
+      return (
+        <svg viewBox="0 0 60 60" width="60" height="60">
+          <circle cx="30" cy="30" r="25" fill="#fff" stroke="#000" strokeWidth="1.5" />
+          <line x1="30" y1="30" x2="30" y2="13" stroke="#000" strokeWidth="2.4" strokeLinecap="round" />
+          <line x1="30" y1="30" x2="42" y2="34" stroke="#000" strokeWidth="2.4" strokeLinecap="round" />
+          <line x1="30" y1="30" x2="22" y2="46" stroke="#ff9500" strokeWidth="1" />
+        </svg>
+      );
+    case 'App Store':
+      return <Icon name="pencil" size={34} color="#fff" strokeWidth={2.6} style={{ margin: 13 }} />;
+    case 'Maps':
+      return <Icon name="location" size={30} color="#fff" filled style={{ margin: 15 }} />;
+    case 'Podcasts':
+      return <Icon name="mic" size={30} color="#fff" strokeWidth={2.6} style={{ margin: 15 }} />;
+    case 'Phone':
+      return <Icon name="phone" size={30} color="#fff" filled style={{ margin: 15 }} />;
+    case 'Safari':
+      return (
+        <svg viewBox="0 0 60 60" width="60" height="60">
+          <circle cx="30" cy="30" r="24" fill="#1d8af8" />
+          <path d="M30 14 34 30 30 46 26 30Z" fill="#fff" transform="rotate(45 30 30)" />
+          <path d="M30 14 34 30 26 30Z" fill="#ff3b30" transform="rotate(45 30 30)" />
+        </svg>
+      );
+    case 'Messages':
+      return <Icon name="chat" size={34} color="#fff" filled style={{ margin: 13 }} />;
+    case 'Music':
+      return <Icon name="note" size={30} color="#fff" filled style={{ margin: 15 }} />;
+    default:
+      return null;
+  }
 }

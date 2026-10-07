@@ -4,16 +4,17 @@ import { useLocation } from 'react-router';
 import { api } from '../lib/api';
 import { queryClient, useActiveGroup, useConfig, useRitual } from '../lib/queries';
 import { useUi } from '../lib/store';
-import { countdown } from '../lib/format';
 import { Mascot } from '../components/Mascot';
-import { Wordmark } from '../components/ui';
+import { Wordmark } from '../components/Brand';
+import { bereal, demo, locket } from '@app/shared';
 import { SystemPhone, SystemSwitch } from './SystemPhone';
 import './stage.css';
 
 /**
- * Desktop presentation: the app runs inside an iPhone-sized frame (393×852 pt) next to a second
- * device showing the system surfaces the spec relies on — Lock Screen Live Activity (Locket
- * Rollcall), Home Screen widgets (Locket, Retro, Widgetable) — fed by the same live data.
+ * Desktop presentation [DEMO]: the app runs inside an iPhone-sized frame (393×852 pt) next to a second
+ * device showing the system surfaces the spec relies on — the Lock Screen (Yope [I], the Rollcall
+ * Live Activity [V]) and the Home Screen widgets (Locket [I], Widgetable [V], Retro [V-weak]) — fed
+ * by the same live data. The intro uses Locket's own store lines [V].
  */
 export function Stage({ children }: { children: ReactNode }) {
   const loc = useLocation();
@@ -23,10 +24,10 @@ export function Stage({ children }: { children: ReactNode }) {
     <div className="stage">
       <div className="stage-intro">
         <Wordmark size={44} />
-        <p className="stage-tag">friends-only camera</p>
-        <p className="stage-copy">One roll a week. Post through the week, and on roll day everyone’s moments develop together into a wall, a recap and a pack of cards.</p>
+        <p className="stage-tag">{locket.subtitle}</p>
+        <p className="stage-copy">{locket.storeLine}</p>
         {cfg.data?.demo && me.data && <DemoPanel groupId={group?.id ?? null} />}
-        <p className="stage-foot">Every pixel traces to a source app. See <code>docs/INSPIRATION.md</code>.</p>
+        <p className="stage-foot">{demo.provenance}</p>
       </div>
       <Device notchSlot={<IslandActivity groupId={group?.id ?? null} />} label="app">
         <div className="device-screen" data-path={loc.pathname}>
@@ -79,7 +80,14 @@ export function Device({ children, notchSlot, label, dim }: { children: ReactNod
   );
 }
 
-/** Dynamic Island compact presentation of the Sunday Live Activity (leading: mascot, trailing: countdown). */
+const clock = (ms: number) => {
+  const t = Math.max(0, Math.floor(ms / 1000));
+  const h = Math.floor(t / 3600);
+  const m = Math.floor((t % 3600) / 60);
+  return `${h > 0 ? `${h}:` : ''}${String(m).padStart(h > 0 ? 2 : 1, '0')}:${String(t % 60).padStart(2, '0')}`;
+};
+
+/** Dynamic Island compact presentation of the ritual Live Activity [HIG]: leading the mascot, trailing BeReal's countdown [V]. */
 function IslandActivity({ groupId }: { groupId: string | null }) {
   const r = useRitual(groupId);
   const { group } = useActiveGroup();
@@ -93,9 +101,9 @@ function IslandActivity({ groupId }: { groupId: string | null }) {
   return (
     <div className="island-compact">
       <span className="island-lead">
-        <Mascot species={group.mascot.species} level={group.mascot.stage.level} size={26} idle={false} />
+        <Mascot species={group.mascot.species} level={group.mascot.stage.level} size={26} />
       </span>
-      <span className="island-trail">{countdown(left)}</span>
+      <span className="island-trail">{bereal.timer(clock(left))}</span>
     </div>
   );
 }
@@ -116,7 +124,7 @@ function DemoPanel({ groupId }: { groupId: string | null }) {
   };
   return (
     <div className="demo">
-      <div className="demo-label">Demo · view as</div>
+      <div className="demo-label">{demo.viewAs}</div>
       <div className="demo-users">
         {users.data?.users.map((u) => (
           <button
@@ -132,11 +140,11 @@ function DemoPanel({ groupId }: { groupId: string | null }) {
           </button>
         ))}
       </div>
-      <div className="demo-label">Demo · time</div>
+      <div className="demo-label">{demo.time}</div>
       <div className="demo-users">
-        <button className="demo-user" disabled={busy} onClick={() => act(() => api.post('/demo/clock', { to: 'ritual', groupId }))}>Jump to roll day</button>
-        <button className="demo-user" disabled={busy} onClick={() => act(() => api.post('/demo/clock', { to: 'develop', groupId }))}>Develop now</button>
-        <button className="demo-user" disabled={busy} onClick={() => act(() => api.post('/demo/clock', { to: 'reset', groupId }))}>Back to today</button>
+        <button className="demo-user" disabled={busy} onClick={() => act(() => api.post('/demo/clock', { to: 'ritual', groupId }))}>{demo.jumpToRoll}</button>
+        <button className="demo-user" disabled={busy} onClick={() => act(() => api.post('/demo/clock', { to: 'develop', groupId }))}>{demo.developNow}</button>
+        <button className="demo-user" disabled={busy} onClick={() => act(() => api.post('/demo/clock', { to: 'reset', groupId }))}>{demo.backToToday}</button>
       </div>
     </div>
   );

@@ -1,0 +1,398 @@
+/*
+ * The second device. Geometry from Apple HIG (research: scratchpad/hig-la-widgets.md, 393×852 pt):
+ * Live Activity 371 pt wide, ≤160 pt tall, 14 pt margins; small widget 158 pt, radius ≈ 22; Lock
+ * Screen circular 72 pt, rectangular 160×72. Looks from the INSPO folder [I]: Yope's lock screen
+ * (yope-02: glass date + clock, the photo widget with the time large over it); Locket's Home Screen
+ * (locket-02, -05: the photo widget with a caption pill, avatar and yellow badge; label under it).
+ */
+.sys {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family: var(--font-sf);
+  color: #fff;
+}
+.switch {
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+}
+.switch button {
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.7);
+  font: 600 13px/32px var(--font-sf);
+}
+.switch button[aria-pressed='true'] {
+  background: #fff;
+  color: #000;
+}
+.blur {
+  filter: blur(18px);
+  transform: scale(1.15);
+}
+
+/* Lock Screen [I] yope-02 — wallpaper is the system blue from the screenshot */
+.lock {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 64px 11px 26px;
+  background: linear-gradient(180deg, #8fb7e6 0%, #6c9fe0 55%, #4f8ad8 100%);
+}
+.lockDate {
+  font: 600 21px/1 var(--font-sf);
+  color: rgba(255, 255, 255, 0.82);
+}
+.lockTime {
+  margin-top: 2px;
+  font: 600 96px/1 var(--font-sf-rounded);
+  letter-spacing: -0.02em;
+  color: rgba(255, 255, 255, 0.72);
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4), 0 2px 10px rgba(30, 60, 120, 0.25);
+}
+.accessories {
+  margin-top: 10px;
+  display: flex;
+  gap: 10px;
+}
+.accCirc {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.accRect {
+  width: 160px;
+  height: 72px;
+  border-radius: 18px;
+  padding: 10px 12px;
+  background: rgba(255, 255, 255, 0.18);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 2px;
+  font: 600 15px/18px var(--font-sf);
+}
+.accRect b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.spacer {
+  flex: 1;
+}
+/* [HIG] notification */
+.note {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 12px 14px;
+  border-radius: 22px;
+  background: rgba(245, 245, 245, 0.62);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  color: #000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.noteText {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  font: 400 15px/20px var(--font-sf);
+}
+.noteText b {
+  font-weight: 600;
+}
+.noteText span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.noteTime {
+  align-self: flex-start;
+  font: 400 13px/18px var(--font-sf);
+  color: rgba(0, 0, 0, 0.5);
+}
+/* Live Activity [HIG] 371 pt wide, 14 pt margins, dark material */
+.la {
+  width: 100%;
+  margin-bottom: 8px;
+  padding: 14px;
+  border-radius: 22px;
+  background: rgba(0, 0, 0, 0.72);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.laLead {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--locket-yellow);
+  color: #000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+}
+.laText {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  font: 400 15px/20px var(--font-sf);
+}
+.laText b {
+  font-weight: 700;
+}
+.laTimer {
+  font: 700 22px/1 var(--font-sf);
+  font-variant-numeric: tabular-nums;
+}
+/* [I] yope-02 photo widget */
+.photoWidget {
+  position: relative;
+  width: 100%;
+  height: 150px;
+  border-radius: 22px;
+  overflow: hidden;
+}
+.photoWidget img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.pwTime,
+.pwCaption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.45);
+}
+.pwTime {
+  top: 50%;
+  transform: translateY(-75%);
+  font: 800 24px/1 var(--font-sf);
+}
+.pwCaption {
+  top: 50%;
+  transform: translateY(45%);
+  font: 600 14px/1.2 var(--font-sf);
+}
+.pwFace {
+  position: absolute;
+  left: 10px;
+  bottom: 10px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+.lockBottom {
+  width: 100%;
+  margin-top: 16px;
+  padding: 0 30px;
+  display: flex;
+  justify-content: space-between;
+}
+.round {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.24);
+  -webkit-backdrop-filter: blur(20px);
+  backdrop-filter: blur(20px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Home Screen [I] locket-05 — the dusk wallpaper from the screenshot */
+.home {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 64px 27px 18px;
+  background: linear-gradient(180deg, #7f9bd2 0%, #b8b3c8 45%, #e6b28d 70%, #3a3a46 100%);
+}
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 60px);
+  grid-auto-rows: 82px;
+  justify-content: space-between;
+  row-gap: 14px;
+}
+.cell2 {
+  grid-column: span 2;
+  grid-row: span 2;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.cell4 {
+  grid-column: span 4;
+  grid-row: span 2;
+}
+.locketWidget,
+.petWidget {
+  position: relative;
+  width: 158px;
+  height: 158px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: #1c1c1e;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.18);
+}
+.locketWidget img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.lwCaption {
+  position: absolute;
+  left: 50%;
+  bottom: 9px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 46px);
+  height: 22px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: rgba(40, 40, 40, 0.5);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  font: 600 11px/22px var(--font-sf);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.lwFace {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  border-radius: 50%;
+  box-shadow: 0 0 0 1.5px #fff;
+}
+.lwBadge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--locket-yellow);
+  color: #000;
+  font: 700 12px/20px var(--font-sf);
+  text-align: center;
+}
+.lwEmpty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  font: 700 15px/1 var(--font-sf);
+}
+.lwRings {
+  display: flex;
+}
+.lwRings > span {
+  margin-left: -8px;
+  box-shadow: 0 0 0 2px #1c1c1e, 0 0 0 4px var(--locket-yellow);
+}
+.lwRings > span:first-child {
+  margin-left: 0;
+}
+.petWidget {
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.memoryWidget {
+  position: relative;
+  height: 158px;
+  border-radius: 22px;
+  overflow: hidden;
+}
+.memoryWidget img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.memoryWidget span {
+  position: absolute;
+  left: 12px;
+  bottom: 10px;
+  font: 600 14px/1 var(--font-sf);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.5);
+}
+.app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 5px;
+}
+.icon {
+  width: 60px;
+  height: 60px;
+  border-radius: 13.4px;
+  display: inline-block;
+  overflow: hidden;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.12);
+}
+.label {
+  font: 400 12px/14px var(--font-sf);
+  color: #fff;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  max-width: 76px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.search {
+  align-self: center;
+  margin-top: auto;
+  margin-bottom: 14px;
+  height: 26px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  -webkit-backdrop-filter: blur(16px);
+  backdrop-filter: blur(16px);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font: 600 12px/1 var(--font-sf);
+}
+.dock {
+  margin: 0 -15px;
+  height: 92px;
+  padding: 0 16px;
+  border-radius: 34px;
+  background: rgba(255, 255, 255, 0.22);
+  -webkit-backdrop-filter: blur(24px);
+  backdrop-filter: blur(24px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
