@@ -23,7 +23,7 @@ export function Stage({ children }: { children: ReactNode }) {
   return (
     <div className="stage">
       <div className="stage-intro">
-        <Wordmark size={44} />
+        <Wordmark size={44} color="#fff" />
         <p className="stage-tag">{locket.subtitle}</p>
         <p className="stage-copy">{locket.storeLine}</p>
         {cfg.data?.demo && me.data && <DemoPanel groupId={group?.id ?? null} />}

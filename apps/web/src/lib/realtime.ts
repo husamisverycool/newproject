@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { queryClient, invalidateGroup } from './queries';
 import { useUi } from './store';
 import { sfx, haptic } from './feedback';
+import { STATIC } from './static';
 
 type Evt =
   | { type: 'hello' }
@@ -83,6 +84,7 @@ export function useRealtime(enabled: boolean) {
     let retry = 500;
     const connect = () => {
       const proto = location.protocol === 'https:' ? 'wss' : 'ws';
+      if (STATIC) return;
       socket = new WebSocket(`${proto}://${location.host}/ws`);
       socket.onmessage = (m) => {
         try {

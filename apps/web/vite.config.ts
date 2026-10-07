@@ -32,11 +32,28 @@ export default defineConfig({
   server: {
     port: Number(process.env.WEB_PORT ?? 5173),
     host: true,
+    allowedHosts: true,
     proxy: {
       '/api': API,
       '/media': API,
       '/ws': { target: API, ws: true },
     },
   },
-  build: { target: 'es2022', sourcemap: false, chunkSizeWarningLimit: 900 },
+  // `vite preview` serves the production build with the same API proxy (used for phone previews through a tunnel).
+  preview: {
+    port: Number(process.env.PREVIEW_PORT ?? 4173),
+    host: true,
+    allowedHosts: true,
+    proxy: {
+      '/api': API,
+      '/media': API,
+      '/ws': { target: API, ws: true },
+    },
+  },
+  build:
+    process.env.VITE_STATIC === '1'
+      ? // Static preview (src/lib/static.ts): one JS file and one CSS file with every asset inlined, so the
+        // page can be published as a single self-contained artifact.
+        { target: 'es2022', sourcemap: false, cssCodeSplit: false, assetsInlineLimit: 100_000_000, chunkSizeWarningLimit: 100_000, rollupOptions: { output: { inlineDynamicImports: true } } }
+      : { target: 'es2022', sourcemap: false, chunkSizeWarningLimit: 900 },
 });

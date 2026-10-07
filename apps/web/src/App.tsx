@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState, type ReactNode } from 'react';
-import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { BrowserRouter, MemoryRouter, Navigate, Route, Routes, useLocation, useNavigate } from 'react-router';
+import { STATIC } from './lib/static';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { queryClient, useMe } from './lib/queries';
 import { useRealtime } from './lib/realtime';
@@ -36,6 +37,7 @@ const Shop = lazy(() => import('./screens/Shop'));
 const Notifications = lazy(() => import('./screens/Notifications'));
 const NewGroup = lazy(() => import('./screens/NewGroup'));
 const PostView = lazy(() => import('./screens/PostView'));
+const DemoLogin = lazy(() => import('./screens/DemoLogin'));
 
 function Loading() {
   return (
@@ -52,10 +54,10 @@ function Gate({ children }: { children: ReactNode }) {
   const nav = useNavigate();
   useRealtime(Boolean(me.data));
   useEffect(() => {
-    if (me.isError && !loc.pathname.startsWith('/welcome') && !loc.pathname.startsWith('/j/')) nav('/welcome', { replace: true });
+    if (me.isError && !loc.pathname.startsWith('/welcome') && !loc.pathname.startsWith('/j/') && loc.pathname !== '/demo') nav('/welcome', { replace: true });
     if (me.data && !me.data.user.onboarded && !loc.pathname.startsWith('/welcome') && !loc.pathname.startsWith('/j/')) nav('/welcome/name', { replace: true });
   }, [me.isError, me.data, loc.pathname, nav]);
-  if (me.isLoading && !loc.pathname.startsWith('/j/')) return <Loading />;
+  if (me.isLoading && !loc.pathname.startsWith('/j/') && loc.pathname !== '/demo') return <Loading />;
   return <>{children}</>;
 }
 
@@ -64,6 +66,7 @@ function AppRoutes() {
     <Suspense fallback={<Loading />}>
       <Routes>
         <Route path="/welcome/*" element={<Onboarding />} />
+        <Route path="/demo" element={<DemoLogin />} />
         <Route path="/j/:code" element={<JoinPage />} />
         <Route path="/" element={<CameraHome />} />
         <Route path="/roll" element={<RollComposer />} />
@@ -98,6 +101,9 @@ function AppRoutes() {
   );
 }
 
+/** The static preview runs inside another page's frame, so it keeps navigation in memory. */
+const Router = STATIC ? MemoryRouter : BrowserRouter;
+
 function useWide() {
   const q = '(min-width: 900px) and (min-height: 700px)';
   const [wide, setWide] = useState(() => window.matchMedia(q).matches);
@@ -114,7 +120,7 @@ export function App() {
   const wide = useWide();
   return (
     <QueryClientProvider client={queryClient}>
-      <BrowserRouter>
+      <Router>
         <Gate>
           {wide ? (
             <Stage>
@@ -128,7 +134,7 @@ export function App() {
             </div>
           )}
         </Gate>
-      </BrowserRouter>
+      </Router>
     </QueryClientProvider>
   );
 }
