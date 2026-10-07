@@ -130,14 +130,14 @@ export function PlanCard({ plan }: { plan: PlanT }) {
           )}
           <span className={s.cardGoing}>
             {plan.going.length > 0 && <AvatarStack users={plan.going} size={20} edge="var(--yope-bubble)" />}
-            <span>{partiful.countGoing(plan.going.length)}</span>
+            {plan.goingCount !== null && <span>{partiful.countGoing(plan.goingCount ?? plan.going.length)}</span>}
             {plan.maybe.length > 0 && <span className={s.cardDim}>{partiful.countMaybe(plan.maybe.length)}</span>}
           </span>
         </span>
       </button>
       {plan.startsAt ? (
         <div className={s.cardRsvp}>
-          {RSVP_IDS.map((k) => (
+          {RSVP_IDS.filter((k) => k !== 'maybe' || plan.settings?.maybe !== false).map((k) => (
             <button key={k} aria-pressed={plan.mine === k} disabled={closed} onClick={() => void rsvpPlan(plan, k)}>
               <span className={s.cardEmoji}>{partiful.rsvpEmoji[k]}</span>
               {rsvpLabel[k]}

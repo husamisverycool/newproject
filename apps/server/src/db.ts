@@ -282,6 +282,10 @@ CREATE TABLE IF NOT EXISTS orders (
   status TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS plan_settings (
+  plan_id TEXT PRIMARY KEY,
+  settings TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS order_meta (
   order_id TEXT PRIMARY KEY,
   meta TEXT NOT NULL

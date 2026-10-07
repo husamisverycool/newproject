@@ -19,9 +19,11 @@ interface Draft {
   options: number[];
   location: string;
   details: string;
+  /** Partiful Settings [V]: accept "Maybe", show the guest list, show the guest count. */
+  settings: { maybe: boolean; showGuestList: boolean; showGuestCount: boolean };
 }
 /** Server defaults: theme cloudflow and the default Effect [V] sunbeams; title in Partiful Display. */
-const EMPTY: Draft = { title: '', titleFont: 'display', theme: 'cloudflow', effect: 'sunbeams', mode: 'date', startsAt: null, options: [], location: '', details: '' };
+const EMPTY: Draft = { title: '', titleFont: 'display', theme: 'cloudflow', effect: 'sunbeams', mode: 'date', startsAt: null, options: [], location: '', details: '', settings: { maybe: true, showGuestList: true, showGuestCount: true } };
 const MAX_OPTIONS = 6; // the server keeps six
 const key = (groupId: string) => `roll.planDraft.${groupId}`;
 const loadDraft = (groupId: string): Draft => {
@@ -53,7 +55,9 @@ const toLocal = (t: number) => {
  * changed from the toolbar on the event page itself [V]; "Settings" below them; "Save Draft" (required
  * before inviting; you can edit later); then the "Invite" screen listing the people you know [V].
  * Fill-ins: "Add Description" (Apple Invites [V]); the "add date" row and the date wheel (Contacts and
- * UIDatePicker [HIG]); theme names (Luma [V], see PlanCard). Our server has no event settings yet, so
+ * UIDatePicker [HIG]); theme names (Luma [V], see PlanCard). Settings stores Accept RSVPs › Maybe and
+ * Display + Privacy (guest list, guest count); Guest Approval and Auto-Reminders stay at this app's
+ * fixed values, locked, so
  * Settings shows Partiful's settings with this app's fixed values, locked. Everyone in the group is
  * invited (the plan lands in the group chat), so the Invite list shows the group.
  */
@@ -90,6 +94,7 @@ export default function NewPlan() {
         options: d.mode === 'poll' ? [...d.options].sort((a, b) => a - b) : [],
         location: d.location.trim() || undefined,
         details: d.details.trim() || undefined,
+        settings: d.settings ?? EMPTY.settings,
       });
       haptic('success');
       storeDraft(groupId, null);
@@ -249,11 +254,11 @@ export default function NewPlan() {
           <Row title={partiful.rsvpButtonStyle} value={partiful.emojis} />
         </Section>
         <Section header={partiful.acceptRsvps} style={{ margin: '0 0 24px' }}>
-          <Row title={partiful.maybe} accessory={<Locked on label={partiful.maybe} />} />
+          <Row title={partiful.maybe} accessory={<Switch on={(d.settings ?? EMPTY.settings).maybe} label={partiful.maybe} onChange={(v) => set({ settings: { ...(d.settings ?? EMPTY.settings), maybe: v } })} />} />
         </Section>
         <Section header={partiful.tabDisplay} style={{ margin: '0 0 24px' }}>
-          <Row title={partiful.showGuestList} accessory={<Locked on label={partiful.showGuestList} />} />
-          <Row title={partiful.showGuestCount} accessory={<Locked on label={partiful.showGuestCount} />} />
+          <Row title={partiful.showGuestList} accessory={<Switch on={(d.settings ?? EMPTY.settings).showGuestList} label={partiful.showGuestList} onChange={(v) => set({ settings: { ...(d.settings ?? EMPTY.settings), showGuestList: v } })} />} />
+          <Row title={partiful.showGuestCount} accessory={<Switch on={(d.settings ?? EMPTY.settings).showGuestCount} label={partiful.showGuestCount} onChange={(v) => set({ settings: { ...(d.settings ?? EMPTY.settings), showGuestCount: v } })} />} />
         </Section>
         <Section header={partiful.tabHosts} style={{ margin: '0 0 24px' }}>
           <Row icon={<Avatar user={me.data?.user} size={32} />} title={me.data?.user.name ?? ''} />

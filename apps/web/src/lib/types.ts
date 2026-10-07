@@ -359,6 +359,10 @@ export interface PlanT {
   options: { at: number; votes: { user: PublicUser | null; vote: string }[] }[];
   going: PublicUser[];
   maybe: PublicUser[];
+  /** Partiful Settings [V]: accept "Maybe", show the guest list / count to guests. */
+  settings?: { maybe: boolean; showGuestList: boolean; showGuestCount: boolean };
+  /** null when the host hides the guest count from guests */
+  goingCount?: number | null;
   cantGoCount: number;
   invited: PublicUser[];
   mine: 'going' | 'maybe' | 'cant_go' | null;

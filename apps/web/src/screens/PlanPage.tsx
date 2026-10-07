@@ -125,7 +125,7 @@ export default function PlanPage() {
             <FindATime plan={p} myId={myId} onPick={setPick} onVote={refresh} />
           ) : (
             <div className={s.rsvp}>
-              {RSVP_IDS.map((k) => (
+              {RSVP_IDS.filter((k) => k !== 'maybe' || p.settings?.maybe !== false).map((k) => (
                 <button key={k} className={s.rsvpBtn} aria-pressed={p.mine === k} disabled={closed} onClick={() => void rsvpPlan(p, k)}>
                   <span className={s.rsvpEmoji}>{partiful.rsvpEmoji[k]}</span>
                   {rsvpLabel[k]}
@@ -138,7 +138,7 @@ export default function PlanPage() {
 
           <button className={s.going} onClick={() => setSheet('guests')}>
             {p.going.length + p.maybe.length > 0 && <AvatarStack users={[...p.going, ...p.maybe]} size={28} max={6} edge="var(--sys-bg)" />}
-            <span>{partiful.countGoing(p.going.length)}</span>
+            {p.goingCount !== null && <span>{partiful.countGoing(p.goingCount ?? p.going.length)}</span>}
             {p.maybe.length > 0 && <span className={s.dim}>{partiful.countMaybe(p.maybe.length)}</span>}
             {p.isHost && p.cantGoCount > 0 && <span className={s.dim}>{partiful.countOf(p.cantGoCount, partiful.cantGo)}</span>}
           </button>
@@ -180,7 +180,7 @@ export default function PlanPage() {
       {p.isHost && (
         <div className={s.hostBar}>
           <button className={s.barCount} onClick={() => setSheet('guests')}>
-            {partiful.countGoing(p.going.length)}
+            {p.goingCount !== null && partiful.countGoing(p.goingCount ?? p.going.length)}
           </button>
           <button className={s.barBlast} onClick={() => setSheet('blast')}>
             {partiful.textBlast}
