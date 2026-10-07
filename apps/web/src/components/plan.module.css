@@ -1,0 +1,120 @@
+.poster {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  gap: 4px;
+  aspect-ratio: 16 / 10;
+  padding: 16px;
+  border-radius: 18px;
+  overflow: hidden;
+  isolation: isolate;
+  text-align: left;
+}
+.big {
+  aspect-ratio: 1;
+  border-radius: 26px;
+  padding: 22px;
+}
+.posterTitle {
+  font-weight: 800;
+  font-size: 26px;
+  line-height: 1.05;
+  letter-spacing: -0.03em;
+  z-index: 2;
+}
+.big .posterTitle {
+  font-size: 40px;
+}
+.posterDate {
+  font: 700 13px/1 var(--font-ui);
+  opacity: 0.8;
+  z-index: 2;
+}
+.glitter {
+  position: absolute;
+  inset: 0;
+  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.9) 1px, transparent 1.5px), radial-gradient(circle, rgba(255, 255, 255, 0.6) 1px, transparent 1.5px);
+  background-size: 18px 18px, 11px 11px;
+  background-position: 0 0, 6px 9px;
+  mix-blend-mode: overlay;
+  animation: twinkle 2.4s ease-in-out infinite alternate;
+}
+@keyframes twinkle {
+  from {
+    opacity: 0.5;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sunbeams {
+  position: absolute;
+  inset: -50%;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, 0.35) 0deg 8deg, transparent 8deg 24deg);
+  animation: spinbeams 24s linear infinite;
+  z-index: 0;
+  mix-blend-mode: soft-light;
+}
+@keyframes spinbeams {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.fireworks i {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  margin: -40px;
+  border-radius: 50%;
+  background: radial-gradient(circle, transparent 30%, var(--yellow) 32%, transparent 36%), repeating-conic-gradient(var(--white) 0deg 4deg, transparent 4deg 30deg);
+  -webkit-mask: radial-gradient(circle, transparent 20%, #000 22%, #000 48%, transparent 50%);
+  mask: radial-gradient(circle, transparent 20%, #000 22%, #000 48%, transparent 50%);
+}
+
+.card {
+  width: 260px;
+  border-radius: 22px;
+  background: var(--white);
+  color: var(--black);
+  padding: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  text-align: left;
+}
+.cardBody {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 8px 8px 6px;
+}
+.cardWhen {
+  font: 700 14px/1.2 var(--font-ui);
+}
+.cardGoing {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 600 13px/1 var(--font-ui);
+  color: var(--eel);
+}
+.cardRsvp {
+  height: 38px;
+  border-radius: 999px;
+  background: var(--black);
+  color: var(--white);
+  font: 700 14px/38px var(--font-ui);
+  text-align: center;
+}
+.going {
+  background: var(--green);
+}
+.maybe {
+  background: var(--yellow);
+  color: var(--black);
+}
+.cant_go {
+  background: var(--swan);
+  color: var(--eel);
+}

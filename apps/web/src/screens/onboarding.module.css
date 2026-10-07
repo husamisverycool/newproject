@@ -1,0 +1,380 @@
+.intro {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: calc(var(--safe-top) + 10px) 24px calc(var(--safe-bottom) + 14px);
+}
+.collage {
+  position: relative;
+  flex: 1;
+  min-height: 300px;
+}
+.collageCard {
+  position: absolute;
+  width: 46%;
+  aspect-ratio: 1;
+  border-radius: var(--r-widget);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+}
+.introText {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
+  margin: 8px 0 22px;
+}
+.tagline {
+  margin: 4px 0 0;
+  font: 700 17px/22px var(--font-ui);
+  color: var(--white);
+}
+.sub {
+  margin: 0;
+  font: var(--t-subhead);
+  color: var(--text-2);
+  max-width: 300px;
+}
+.cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 12px;
+  width: 100%;
+}
+.textBtn {
+  font: 600 15px/1 var(--font-ui);
+  color: var(--text-2);
+  padding: 10px;
+}
+
+.step {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  padding: var(--safe-top) 24px calc(var(--safe-bottom) + 14px);
+  overflow-y: auto;
+}
+.stepTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 48px;
+  flex: none;
+}
+.progress {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--g2);
+  margin: 0 18px;
+  overflow: hidden;
+}
+.progress span {
+  display: block;
+  height: 100%;
+  border-radius: 3px;
+  background: var(--yellow);
+  transition: width 0.4s var(--ease-out);
+}
+.title {
+  margin: 22px 0 8px;
+  font: 800 30px/36px var(--font-ui);
+  letter-spacing: -0.02em;
+  text-align: center;
+}
+.lede {
+  margin: 0 auto 14px;
+  font: var(--t-subhead);
+  color: var(--text-2);
+  text-align: center;
+  max-width: 320px;
+}
+.err {
+  text-align: center;
+  color: var(--red);
+  font: var(--t-footnote);
+}
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 18px;
+}
+.bigField {
+  width: 100%;
+  height: 60px;
+  border-radius: 18px;
+  border: 0;
+  background: var(--g1);
+  color: var(--white);
+  font: 700 22px/1 var(--font-ui);
+  text-align: center;
+  outline: none;
+}
+.bigField::placeholder {
+  color: var(--g3);
+}
+.bigField:focus {
+  box-shadow: 0 0 0 2px var(--g3);
+}
+.emojiField {
+  width: 60px;
+  height: 60px;
+  border-radius: 18px;
+  border: 0;
+  background: var(--g1);
+  font-size: 28px;
+  text-align: center;
+  outline: none;
+  flex: none;
+}
+.codeField {
+  text-align: center;
+  font: 800 28px/1 var(--font-ui);
+  letter-spacing: 0.3em;
+  height: 64px;
+}
+
+/* iOS picker wheels */
+.picker {
+  position: relative;
+  display: flex;
+  justify-content: center;
+  gap: 4px;
+  height: 180px;
+  margin-top: 26px;
+  mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+  -webkit-mask-image: linear-gradient(transparent, #000 30%, #000 70%, transparent);
+}
+.pickerBand {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  top: 72px;
+  height: 36px;
+  border-radius: 10px;
+  background: var(--g2);
+}
+.wheel {
+  position: relative;
+  height: 180px;
+  scroll-snap-type: y mandatory;
+}
+.wheelItem {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  font: 400 20px/1 var(--font-ui);
+  color: var(--text-3);
+}
+.wheelOn {
+  color: var(--white);
+  font-weight: 600;
+}
+
+.hero {
+  display: flex;
+  justify-content: center;
+  margin-top: 30px;
+}
+.contactBubbles {
+  display: flex;
+}
+.contactBubble {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  margin-left: -16px;
+  box-shadow: 0 0 0 4px var(--black);
+}
+
+.rollPick {
+  margin-top: 18px;
+  height: 260px;
+  border-radius: var(--r-widget);
+  background: var(--g1);
+  border: 2px dashed var(--g3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  color: var(--white);
+}
+.dialWrap {
+  margin-top: 6px;
+}
+
+.mascotPick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+.speciesRow {
+  display: flex;
+  gap: 12px;
+}
+.species {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  transition: transform var(--dur-fast);
+}
+.speciesOn {
+  box-shadow: 0 0 0 3px var(--black), 0 0 0 5px var(--white);
+  transform: scale(1.1);
+}
+.dayLabel {
+  font: 600 13px/18px var(--font-ui);
+  color: var(--text-2);
+  margin-top: 4px;
+}
+.days {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 6px;
+}
+.days button {
+  height: 44px;
+  border-radius: 12px;
+  background: var(--g1);
+  font: 700 14px/1 var(--font-ui);
+}
+.days .dayOn {
+  background: var(--yellow);
+  color: var(--black);
+}
+
+.inviteCard {
+  margin: 10px auto 0;
+  width: 100%;
+  border-radius: var(--r-widget);
+  background: var(--g1);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.gateText {
+  font: 800 20px/24px var(--font-ui);
+}
+.gateBar {
+  display: flex;
+  gap: 6px;
+}
+.gateBar span,
+.poseDots span {
+  width: 40px;
+  height: 8px;
+  border-radius: 4px;
+  background: var(--g3);
+}
+.gateBar .gateOn,
+.poseDots .gateOn {
+  background: var(--yellow);
+}
+.code {
+  font: 800 22px/1 var(--font-ui);
+  letter-spacing: 0.3em;
+  color: var(--text-2);
+}
+
+.likeCam {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--r-widget);
+  overflow: hidden;
+  background: var(--g1);
+  margin-top: 6px;
+  flex: none;
+}
+.likeVideo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+/* Sora: face "within the oval guide" */
+.oval {
+  position: absolute;
+  left: 50%;
+  top: 46%;
+  width: 58%;
+  height: 74%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.55), inset 0 0 0 3px var(--white);
+}
+.poseHint {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 18px;
+  text-align: center;
+  font: 700 16px/1 var(--font-ui);
+}
+.poseDots {
+  position: absolute;
+  top: 14px;
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.scope {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+}
+.scopeRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: var(--g1);
+  text-align: left;
+}
+.scopeOn {
+  box-shadow: inset 0 0 0 2px var(--yellow);
+}
+
+.fakeLa {
+  width: 100%;
+  border-radius: 24px;
+  padding: 14px 18px;
+  background: var(--g1);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.fakeLaCount {
+  font: 800 28px/32px var(--font-round);
+  color: var(--yellow);
+  font-variant-numeric: tabular-nums;
+}
+.fakeLaPill {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  box-shadow: inset 0 0 0 5px var(--yellow);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font: 700 13px/1 var(--font-ui);
+}

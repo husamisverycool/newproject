@@ -1,0 +1,3 @@
+MediaPipe models (selfie_segmenter, blaze_face_short_range)
+are distributed by Google under the Apache License 2.0. Downloaded from storage.googleapis.com/mediapipe-models.
+They run on-device for sticker cut-outs and face framing; no image leaves the device for segmentation.

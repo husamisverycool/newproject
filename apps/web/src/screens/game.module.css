@@ -1,0 +1,482 @@
+/*
+ * Weekly game — Duolingo's game styling (round type, 2px outlined speech bubble beside the
+ * character, lip buttons, Feather Green for "go") wrapped around the source party games:
+ * tbh / Gas poll cards (full-bleed gradient card, four white name pills), Gartic Phone chains
+ * and album replay, BeReal-style challenge card, Wordle share grid.
+ */
+.screen {
+  background: var(--black);
+}
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: calc(var(--safe-top) + 4px) 10px 6px;
+  flex: none;
+}
+.headTitle {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  font: 800 16px/20px var(--font-round);
+}
+.headTitle span {
+  font: 600 12px/16px var(--font-round);
+  color: var(--text-3);
+}
+.body {
+  flex: 1;
+  min-height: 0;
+  padding: 4px var(--margin) 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+/* Character + speech bubble (Duolingo lesson character) */
+.gm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.speech {
+  position: relative;
+  flex: 1;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 2px solid var(--g3);
+  font: 600 15px/21px var(--font-round);
+  color: var(--white);
+}
+.speech::before {
+  content: '';
+  position: absolute;
+  left: -9px;
+  top: 50%;
+  width: 14px;
+  height: 14px;
+  background: var(--black);
+  border-left: 2px solid var(--g3);
+  border-bottom: 2px solid var(--g3);
+  transform: translateY(-50%) rotate(45deg);
+}
+
+/* Superlatives — tbh / Gas */
+.poll {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.pollDots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+.pollDot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--g3);
+  transition: width var(--dur) var(--ease-out), background var(--dur);
+}
+.pollDotDone {
+  background: var(--hare);
+}
+.pollDotOn {
+  width: 22px;
+  border-radius: 4px;
+  background: var(--white);
+}
+.pollCard {
+  border-radius: 28px;
+  padding: 26px 18px 16px;
+  min-height: 430px;
+  display: flex;
+  flex-direction: column;
+  color: var(--white);
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+}
+.pollQ {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 10px 6px 24px;
+  font: 800 26px/32px var(--font-round);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+.pollOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.pollOption {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 58px;
+  padding: 0 12px 0 10px;
+  border-radius: 18px;
+  background: var(--white);
+  color: var(--black);
+  font: 800 16px/1 var(--font-round);
+  text-align: left;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.18);
+  transition: transform 80ms, box-shadow 80ms;
+}
+.pollOption > * {
+  position: relative;
+}
+.pollOption span:nth-of-type(2) {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pollOption:active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+.pollMine {
+  box-shadow: inset 0 0 0 3px var(--black), 0 4px 0 rgba(0, 0, 0, 0.18);
+}
+.pollFill {
+  position: absolute !important;
+  inset: 0 auto 0 0;
+  background: var(--swan);
+  transition: width 600ms var(--ease-out);
+}
+.pollFoot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 14px;
+  font: 600 12px/1 var(--font-round);
+  opacity: 0.85;
+}
+.pollFoot button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.22);
+  color: var(--white);
+  font: 800 12px/1 var(--font-round);
+}
+
+/* Photo telephone — Gartic Phone */
+.tel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.err {
+  margin: 0;
+  font: 600 13px/18px var(--font-round);
+  color: var(--red);
+}
+.chain {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  border-radius: 20px;
+  border: 2px solid var(--g3);
+}
+.chainSteps {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+.chainSteps::-webkit-scrollbar {
+  display: none;
+}
+.step {
+  flex: none;
+  width: 104px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.step img,
+.stepText {
+  width: 104px;
+  height: 104px;
+  border-radius: 14px;
+  object-fit: cover;
+}
+.stepText {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+  background: var(--white);
+  color: var(--eel);
+  text-align: center;
+  font: 700 13px/17px var(--font-round);
+  overflow: hidden;
+}
+.stepBy {
+  font: 700 11px/1 var(--font-round);
+  color: var(--text-2);
+  text-align: center;
+}
+.go {
+  flex: none;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 14px;
+  background: var(--green);
+  border-bottom: 4px solid var(--green-lip);
+  color: var(--white);
+  font: 800 14px/1 var(--font-round);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.go:disabled {
+  background: var(--g2);
+  border-color: var(--g1);
+  color: var(--wolf);
+}
+.waiting {
+  font: 600 13px/1 var(--font-round);
+  color: var(--text-3);
+}
+.replay {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--purple);
+  color: var(--white);
+  font: 800 12px/1 var(--font-round);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.pickGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  padding-bottom: 16px;
+}
+.pickGrid button {
+  aspect-ratio: 1;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.pickGrid img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.replayView {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  background: color-mix(in srgb, var(--black) 92%, transparent);
+  overflow-y: auto;
+  padding: calc(var(--safe-top) + 40px) 28px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.replayStep {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.replayStep:nth-child(even) {
+  align-items: flex-end;
+}
+.replayBy {
+  font: 800 12px/1 var(--font-round);
+  color: var(--text-2);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.replayStep img {
+  width: 72%;
+  border-radius: 18px;
+}
+.replayText {
+  max-width: 82%;
+  padding: 12px 16px;
+  border-radius: 18px;
+  background: var(--white);
+  color: var(--eel);
+  font: 800 20px/26px var(--font-round);
+}
+
+/* Weekly challenge */
+.challenge {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.challengeCard {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 26px 20px;
+  border-radius: 24px;
+  background: var(--white);
+  color: var(--black);
+}
+.challengeKicker {
+  font: 800 12px/1 var(--font-round);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--wolf);
+}
+.challengeText {
+  font: 800 26px/31px var(--font-round);
+  letter-spacing: -0.01em;
+}
+.entries {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+.entry {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font: 700 12px/1 var(--font-round);
+  color: var(--text-2);
+}
+.entry img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 14px;
+}
+
+/* Guess whose */
+.guess {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.guessGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+.guessTile {
+  position: relative;
+  aspect-ratio: 1;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.guessTile img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.guessed {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--white);
+  color: var(--black);
+  font: 800 11px/1 var(--font-round);
+}
+.guessBig {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+.guessOptions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  padding-bottom: 16px;
+}
+.guessOptions :global(.lip) {
+  text-transform: none;
+  letter-spacing: 0;
+  justify-content: flex-start;
+  padding: 0 12px;
+}
+
+/* Results */
+.results {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.resultsHead {
+  font: 800 20px/24px var(--font-round);
+}
+.result {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border-radius: 18px;
+  border: 2px solid var(--g3);
+  border-bottom-width: 4px;
+}
+.resultEmoji {
+  font-size: 30px;
+  flex: none;
+}
+.resultTitle {
+  display: block;
+  font: 800 15px/19px var(--font-round);
+}
+.resultLine {
+  display: block;
+  font: 500 13px/17px var(--font-round);
+  color: var(--text-2);
+}
+.resultWho {
+  display: flex;
+  flex: none;
+}
+.resultWho > * + * {
+  margin-left: -8px;
+}
+
+/* Share — Wordle grid */
+.shareGridBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 46px;
+  border-radius: 14px;
+  border: 2px solid var(--g3);
+  border-bottom-width: 4px;
+  font: 800 14px/1 var(--font-round);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.miniGrid {
+  font-size: 12px;
+  letter-spacing: 0;
+}
+.sharePre {
+  margin: 0 0 14px;
+  padding: 14px;
+  border-radius: 16px;
+  background: var(--g2);
+  font: 500 15px/21px var(--font-ui);
+  white-space: pre-wrap;
+}
