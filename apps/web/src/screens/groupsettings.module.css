@@ -1,0 +1,168 @@
+/*
+ * Group page (/g/:groupId/settings), opened from the chat header capsule (Yope [I] yope-04/-05).
+ * Yope's dark look where Yope shows it, measured from research/inspo:
+ * - frame yope-1on1-feed: the shared cover photo across the top with ‹ in a dark circle; over it rises a
+ *   dark sheet with a grabber; the sheet header is a big round picture overlapping the sheet's top edge,
+ *   the name in bold white and a lime streak pill "🔥5" with black text [I];
+ * - colors: background #161717, circles #2E3032, surfaces #2C2C2C, lime #CFFA14 [I] (tokens --yope-*).
+ * Everything below the header is a stock iOS inset grouped list [HIG] (hig.css), on Yope's surfaces.
+ * The group's picture is its mascot (spec §M).
+ */
+.screen {
+  background: var(--yope-bg);
+  color: #fff;
+  --sys-grouped: var(--yope-bg);
+  --sys-grouped2: var(--yope-bubble);
+}
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* ‹ circle [I] yope-04 / frame yope-1on1-feed */
+.back {
+  position: absolute;
+  top: calc(var(--safe-top) + 10px);
+  left: 16px;
+  z-index: 5;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--yope-circle);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Cover: the shared photo across the top; the sheet starts ≈ 28 pt under the ‹ circle [I] */
+.cover {
+  height: calc(var(--safe-top) + 106px);
+  background: var(--yope-circle) center / cover no-repeat;
+}
+
+/* Sheet rising over the cover, ≈ 30 pt corners; grabber measured 44×5, 13 pt from the top [I] */
+.sheet {
+  position: relative;
+  margin-top: -28px;
+  min-height: calc(100% - 100px);
+  border-radius: 30px 30px 0 0;
+  background: var(--yope-bg);
+  padding-bottom: calc(var(--safe-bottom) + 28px);
+}
+.grabber {
+  position: absolute;
+  top: 13px;
+  left: 50%;
+  width: 44px;
+  height: 5px;
+  margin-left: -22px;
+  border-radius: 2.5px;
+  background: rgba(235, 235, 245, 0.3);
+}
+
+/* Header, measured from frame yope-1on1-feed [I]: 80 pt picture 29 pt from the left, 10 pt above the
+   sheet edge in a sheet-colored ring; name bold 24 pt 24 pt to its right, its centre 55 pt below the
+   sheet edge; the lime pill 9 pt after the name, 23 pt tall. */
+.head {
+  display: flex;
+  align-items: flex-start;
+  padding: 0 20px 22px 29px;
+}
+.face {
+  flex: none;
+  width: 80px;
+  height: 80px;
+  margin-top: -10px;
+  margin-right: 24px;
+  border-radius: 50%;
+  background: var(--yope-circle);
+  box-shadow: 0 0 0 7px var(--yope-bg);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.name {
+  min-width: 0;
+  font: 700 24px/29px var(--font-sf);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 40px;
+}
+.streak {
+  flex: none;
+  margin: 43px 0 0 9px;
+  height: 23px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--yope-lime);
+  color: #000;
+  font: 700 15px/23px var(--font-sf);
+}
+
+/* Small pictures inside rows: 29 pt like the Settings icons [HIG] */
+.tileFace {
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--yope-circle);
+}
+
+/* Spec wording is lowercase ("open the archive", "guess whose photo"); shown sentence-case as iOS rows are */
+.cap {
+  display: inline-block;
+}
+.cap::first-letter {
+  text-transform: uppercase;
+}
+
+/* Centred red row (Messages › details › Leave this Conversation) [HIG] */
+.center {
+  justify-content: center;
+  text-align: center;
+}
+.off {
+  opacity: 0.4;
+}
+
+/* Invite sheet: QR on white, the link, Copy Link / Share [HIG] */
+.invite {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 8px 0 12px;
+}
+.qr {
+  padding: 12px;
+  border-radius: 24px;
+  background: #fff;
+}
+.link {
+  max-width: 100%;
+  font: var(--t-subhead);
+  color: rgba(235, 235, 245, 0.6);
+  overflow-wrap: anywhere;
+  text-align: center;
+  user-select: all;
+}
+.buttons {
+  width: 100%;
+  display: flex;
+  gap: 10px;
+}
+.buttons > * {
+  flex: 1;
+}

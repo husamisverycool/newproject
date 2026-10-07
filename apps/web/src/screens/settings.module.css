@@ -1,0 +1,74 @@
+/*
+ * Settings (/me/settings): a stock iOS inset grouped list [HIG] (hig.css .ios-section / .ios-row),
+ * following the system light/dark appearance. Entry: Retro's profile gear [I] (retro-02).
+ *
+ * Blocks and their sources:
+ * - row tiles: the iOS Settings app's 29 pt colored squares [HIG] — Notifications red, Focus indigo,
+ *   Privacy & Security blue, General gray [B-high]; Live Activities green and the AI row purple [B-low];
+ *   the plan row uses Locket yellow (#F6B100 [I]) for "Locket Gold" [V-weak].
+ * - storage rows: Settings › General › iPhone Storage [HIG] — app icon, name, size on the right, and the
+ *   capacity bar whose Photos segment is yellow [B-med].
+ * - Sign Out / Delete Account: the Apple Account page's centred red text rows [HIG].
+ */
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 8px 0 calc(var(--safe-bottom) + 24px);
+}
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+/* iPhone Storage list: the app icon is a 29 pt rounded square [HIG] */
+.appIcon {
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background: var(--sys-fill3);
+}
+
+/* Capacity bar under a storage row (iPhone Storage) [HIG] */
+.bar {
+  display: block;
+  height: 6px;
+  margin-top: 7px;
+  border-radius: 3px;
+  overflow: hidden;
+  background: var(--sys-fill2);
+}
+.bar > i {
+  display: block;
+  height: 100%;
+  min-width: 3px;
+  border-radius: 3px;
+  background: var(--sys-yellow);
+}
+
+/* Centred red rows (Apple Account › Sign Out) [HIG] */
+.center {
+  justify-content: center;
+  text-align: center;
+}
+.center:disabled {
+  opacity: 0.4;
+}
+
+/* Checkmark accessory in the My Data sheet [HIG] */
+.check {
+  color: var(--sys-blue);
+  flex: none;
+}
+.sheetPad {
+  padding-top: 8px;
+}
+.sheetPad :global(.ios-section) {
+  margin-left: 0;
+  margin-right: 0;
+}
