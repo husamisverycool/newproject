@@ -17,7 +17,8 @@ const P: Record<string, string> = {
   /** Yope voice message waveform [I] */
   waveform: 'M3 12h.01M6 9v6M9 6v12M12 9v6M15 4v16M18 8v8M21 11v2',
   /** Yope sticker button [I]: circle with a peeled corner */
-  peel: 'M20.5 12A8.5 8.5 0 1 1 12 3.5M20.5 12c-4.7 0-8.5-3.8-8.5-8.5M20.5 12 12 3.5',
+  /** Yope sticker button [I]: a round sticker with its corner peeled (drawn filled) */
+  peel: 'M20.5 13A8.5 8.5 0 1 1 11 3.5c0 5.2 4.3 9.5 9.5 9.5Z',
   /** BeReal tag-friends chip [I]: person with + */
   personPlus: 'M10 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM2.5 20.5c.8-3.6 3.9-6 7.5-6 1.5 0 2.9.4 4 1.1M19 14v6M16 17h6',
   /** BeReal music chip [I] */
@@ -112,7 +113,7 @@ export function Icon({ name, size = 24, color = 'currentColor', filled, strokeWi
   const fill = filled ?? FILLED.has(name);
   return (
     <svg width={size} height={size} viewBox="0 0 24 24" fill={fill ? color : 'none'} stroke={color} strokeWidth={strokeWidth} strokeLinecap="round" strokeLinejoin="round" style={style} className={className} aria-hidden>
-      <path d={d} />
+      <path d={d} fillRule="evenodd" />
     </svg>
   );
 }

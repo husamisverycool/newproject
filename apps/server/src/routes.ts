@@ -688,7 +688,10 @@ api.get('/groups/:groupId/messages', (c) => {
   const users = new Map(usersByIds([...new Set(msgs.map((m) => m.userId).filter(Boolean) as string[])]).map((u) => [u.id, publicUser(u)]));
   const planIds = msgs.filter((m) => m.kind === 'plan' && m.refId).map((m) => m.refId!);
   const planMap = new Map(planIds.map((pid) => [pid, plans.planView(pid, c.get('user').id)]));
-  return c.json({ messages: msgs.map((m) => ({ ...m, user: m.userId ? users.get(m.userId) ?? null : null, plan: m.refId ? planMap.get(m.refId) ?? null : null })), mascot: { ...g.mascot, stage: mascotStage(g.mascot.xp) } });
+  // Locket chat [I] (locket-04): a reply shows the photo it answers, with the poster chip and caption.
+  const replyIds = new Set(msgs.filter((m) => m.kind === 'post_reply' && m.refId).map((m) => m.refId!));
+  const refMap = new Map(replyIds.size ? posts.toDTO(posts.visiblePosts(g, c.get('user').id).filter((p) => replyIds.has(p.id)), c.get('user').id).map((p) => [p.id, p]) : []);
+  return c.json({ messages: msgs.map((m) => ({ ...m, user: m.userId ? users.get(m.userId) ?? null : null, plan: m.kind === 'plan' && m.refId ? planMap.get(m.refId) ?? null : null, post: m.kind === 'post_reply' && m.refId ? refMap.get(m.refId) ?? null : null })), mascot: { ...g.mascot, stage: mascotStage(g.mascot.xp) } });
 });
 
 api.post('/groups/:groupId/messages', async (c) => {

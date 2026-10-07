@@ -11,6 +11,14 @@ export const imessage = {
   addSticker: 'Add Sticker',
   /** [B-med] "+" menu → "Stickers" */
   stickers: 'Stickers',
+  /** [HIG] Messages list title */
+  title: 'Messages',
+  /** [B-med] list preview for an image */
+  previewPhoto: 'Photo',
+  /** [B-high] list preview for a voice message */
+  previewAudio: 'Audio Message',
+  /** [B-med] list preview for a sticker */
+  previewSticker: 'Sticker',
 } as const;
 
 export const invites = {

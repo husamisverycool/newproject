@@ -93,6 +93,8 @@ export const yope = {
   monthSeparator: (t: number) => new Date(t).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toLowerCase(),
   /** [I] yope-05: time over each photo "8:00 AM" */
   time: (t: number) => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+  /** [I] yope-04: voice message length "00:38" */
+  voiceTime: (sec: number) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(Math.round(sec) % 60).padStart(2, '0')}`,
   /** [I] App Store headlines (line 2 bold) */
   headlines: [['find friends', 'like you'], ['put them on', 'your lock screen'], ['your life =', 'daily & monthly recaps'], ['react. talk.', 'go chaotic.']] as const,
   /** [I] yope-05 headline */

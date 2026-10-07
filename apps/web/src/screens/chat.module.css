@@ -1,415 +1,516 @@
-/* Chat list */
-.listRow {
+/*
+ * Group chat, measured from research/inspo/store/yope-04-chat and -05 [I] (Yope) and locket-04-chat
+ * [I] (Locket): background #161717, dark gray bubbles on both sides, lime camera circle, gray
+ * capsules and circles. SF Pro [I]. The game master bubble is Duolingo's [V] (research/14).
+ */
+.root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  background: var(--yope-bg);
+  color: #fff;
+  font-family: var(--font-sf);
+}
+
+/* Header [I] yope-04: ‹ circle · capsule (face, name, 🔥N, ›) · film-strip circle */
+.header {
+  flex: none;
   display: flex;
   align-items: center;
-  gap: 12px;
-  width: 100%;
-  padding: 10px var(--margin);
-  text-align: left;
+  gap: 10px;
+  padding: calc(var(--safe-top) + 8px) 14px 10px;
 }
-.listRow:active {
-  background: var(--g1);
-}
-.listAvatar {
-  position: relative;
-  width: 58px;
-  height: 58px;
+.circle {
+  flex: none;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: var(--g1);
+  background: var(--yope-circle);
+  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
+}
+.capsule {
+  flex: 1;
+  min-width: 0;
+  height: 44px;
+  padding: 0 12px 0 6px;
+  border-radius: 999px;
+  background: var(--yope-circle);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+}
+.capsuleFace {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.08);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
   flex: none;
 }
-.listEmoji {
-  font-size: 28px;
-}
-.listMascot {
-  position: absolute;
-  right: -4px;
-  bottom: -4px;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--black);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-.listTop {
-  display: flex;
-  justify-content: space-between;
-  gap: 8px;
-}
-.listName {
-  font: 700 16px/20px var(--font-ui);
-}
-.listTime {
-  font: 500 13px/20px var(--font-ui);
-  color: var(--text-3);
-}
-.listPreview {
-  display: block;
-  font: 400 15px/20px var(--font-ui);
-  color: var(--text-2);
-  white-space: nowrap;
+.capsuleName {
+  font: 600 16px/1 var(--font-sf);
   overflow: hidden;
   text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.unreadDot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--yellow);
+/* [I] yope-04 "🔥451" in a darker inner pill */
+.streak {
   flex: none;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font: 600 13px/1 var(--font-sf);
+}
+.capsule > svg {
+  margin-left: auto;
+  flex: none;
+  opacity: 0.7;
 }
 
 /* Thread */
-.header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: calc(var(--safe-top) + 2px) 8px 6px;
-  border-bottom: 0.5px solid var(--hairline);
-  flex: none;
-}
-.headCenter {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-.headEmoji {
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
-  background: var(--g1);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-.headName {
-  font: 700 14px/18px var(--font-ui);
-  margin-top: 2px;
-}
-.headSub {
-  font: 500 11px/13px var(--font-ui);
-  color: var(--text-3);
-}
 .thread {
   flex: 1;
-  min-height: 0;
-  padding: 10px 12px 12px;
+  overflow-y: auto;
+  padding: 6px 14px 12px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 8px;
+  scrollbar-width: none;
 }
-.day {
-  text-align: center;
-  font: 600 12px/1 var(--font-ui);
-  color: var(--text-3);
-  margin: 14px 0 8px;
+.thread::-webkit-scrollbar {
+  display: none;
+}
+/* [I] locket-04: "Today at 9:40 PM" centred, gray, footnote */
+.stamp {
+  align-self: center;
+  margin: 10px 0 4px;
+  font: 500 13px/18px var(--font-sf);
+  color: rgba(255, 255, 255, 0.45);
 }
 .system {
+  align-self: center;
+  max-width: 80%;
   text-align: center;
-  font: 500 12px/16px var(--font-ui);
-  color: var(--text-2);
-  margin: 6px 0;
+  font: 500 13px/18px var(--font-sf);
+  color: rgba(255, 255, 255, 0.55);
 }
-.developed {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  height: 32px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--g1);
-  font: 700 13px/1 var(--font-ui);
-  color: var(--yellow);
+.system:disabled {
+  opacity: 1;
 }
 .row {
   display: flex;
   align-items: flex-end;
   gap: 8px;
-  margin-top: 8px;
+  max-width: 100%;
 }
-.grouped {
-  margin-top: 0;
+.tight {
+  margin-bottom: -4px;
 }
 .mine {
   flex-direction: row-reverse;
 }
-.col {
-  display: flex;
-  flex-direction: column;
-  max-width: 76%;
-  gap: 2px;
+.faceGap {
+  width: 28px;
+  flex: none;
 }
-.mine .col {
-  align-items: flex-end;
-}
-.author {
-  font: 600 12px/1 var(--font-ui);
-  color: var(--text-2);
-  margin: 0 0 3px 12px;
-}
+/* [I] yope-04: dark gray bubble, white text, both sides */
 .bubble {
+  max-width: 72%;
   padding: 9px 14px;
   border-radius: 20px;
-  background: var(--g2);
-  font: 400 16px/21px var(--font-ui);
-  word-wrap: break-word;
+  background: var(--yope-bubble);
+  font: 400 16px/21px var(--font-sf);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
-.bubbleMine {
-  background: var(--yellow);
-  color: var(--black);
-}
-.blast {
-  background: var(--white);
-  color: var(--black);
-}
-.blastTag {
-  display: block;
-  font: 800 11px/1 var(--font-ui);
-  text-transform: uppercase;
-  letter-spacing: 0.04em;
-  margin-bottom: 4px;
-  opacity: 0.6;
-}
-.time {
-  font: 500 10px/1 var(--font-ui);
-  color: var(--text-3);
-  margin: 2px 8px 0;
-}
+/* [I] yope-04: cut-out stickers sit loose in the chat */
 .sticker {
   width: 120px;
   height: 120px;
   object-fit: contain;
+  filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.35));
 }
+/* [I] yope-04/-05: photo with the time large and centred, caption under it */
 .photo {
-  width: 220px;
-  border-radius: 20px;
+  position: relative;
+  width: 74%;
+  aspect-ratio: 4 / 3;
+  border-radius: 22px;
+  overflow: hidden;
+  display: block;
 }
-.replyTo {
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+.photo strong,
+.photo em {
+  position: absolute;
+  left: 0;
+  right: 0;
+  text-align: center;
+  color: #fff;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+.photo strong {
+  top: 50%;
+  transform: translateY(-60%);
+  font: 800 26px/1 var(--font-sf);
+}
+.photo em {
+  top: 50%;
+  transform: translateY(70%);
+  font: 600 15px/1.2 var(--font-sf);
+  font-style: normal;
+}
+
+/* [I] locket-04: the answered photo + chip + caption pill */
+.replyPhoto {
+  position: relative;
+  align-self: flex-start;
+  width: 82%;
+  aspect-ratio: 1;
+  border-radius: 34px;
+  overflow: hidden;
+  margin: 4px 0 2px 36px;
+}
+.replyMine {
+  align-self: flex-end;
+  margin: 4px 0 2px;
+}
+.replyPhoto img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.blurred {
+  filter: blur(24px);
+  transform: scale(1.15);
+}
+.replyChip {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  height: 28px;
+  padding: 0 10px 0 4px;
+  border-radius: 999px;
+  background: rgba(40, 40, 40, 0.5);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  font: 600 12px/1 var(--font-ui);
-  color: var(--text-2);
-  margin: 0 8px 2px;
+  gap: 6px;
+  font: 600 13px/1 var(--font-sf);
 }
+.replyChip i {
+  font-style: normal;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.6);
+}
+.replyCaption {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  transform: translateX(-50%);
+  max-width: calc(100% - 32px);
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: rgba(60, 60, 60, 0.45);
+  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: blur(14px);
+  font: 600 14px/30px var(--font-sf);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* [I] yope-04 voice: ▶ circle · waveform · "00:38" */
 .voice {
-  display: flex;
+  height: 44px;
+  min-width: 210px;
+  padding: 0 14px 0 6px;
+  border-radius: 999px;
+  background: var(--yope-voice);
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
-  height: 42px;
-  padding: 0 14px;
-  border-radius: 21px;
-  background: var(--g2);
+  gap: 10px;
+  color: #fff;
+}
+.voicePlay {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.14);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
 }
 .wave {
+  flex: 1;
+  height: 22px;
   display: flex;
   align-items: center;
   gap: 2px;
-  height: 20px;
 }
 .wave i {
-  width: 3px;
-  border-radius: 2px;
-  background: currentColor;
-  opacity: 0.8;
+  width: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.85);
 }
 .vdur {
-  font: 600 12px/1 var(--font-ui);
+  font: 500 12px/1 var(--font-sf);
   font-variant-numeric: tabular-nums;
+  color: rgba(255, 255, 255, 0.7);
 }
 
-/* Game master (Duolingo-style character card) */
-.gm {
-  display: flex;
-  align-items: flex-end;
-  gap: 6px;
-  margin: 10px 0 4px;
-}
-.gmBubble {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  max-width: 78%;
-  padding: 12px 14px;
-  border-radius: 20px 20px 20px 6px;
-  background: var(--g1);
-  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--green) 55%, transparent);
-  font: 500 15px/20px var(--font-round);
-}
-.gmName {
-  font: 800 12px/1 var(--font-round);
-  text-transform: uppercase;
-  letter-spacing: 0.06em;
-  color: var(--green);
-}
-.gmChallenge {
-  font: 800 16px/20px var(--font-round);
-}
-.gmCta {
-  align-self: flex-start;
-  height: 36px;
-  padding: 0 16px;
-  border-radius: 12px;
-  background: var(--green);
-  border-bottom: 3px solid var(--green-lip);
-  color: var(--white);
-  font: 800 13px/1 var(--font-round);
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-}
+/* [HIG] iMessage typing indicator */
 .typing {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 8px;
-}
-.dots {
-  display: inline-flex;
-  gap: 4px;
-  padding: 10px 14px;
+  height: 36px;
+  padding: 0 14px;
   border-radius: 18px;
-  background: var(--g2);
+  background: var(--yope-bubble);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
 }
-.dots i {
+.typing i {
   width: 7px;
   height: 7px;
   border-radius: 50%;
-  background: var(--hare);
-  animation: dot 1.2s infinite;
+  background: rgba(255, 255, 255, 0.55);
+  animation: typing 1.2s infinite;
 }
-.dots i:nth-child(2) {
+.typing i:nth-child(2) {
   animation-delay: 0.15s;
 }
-.dots i:nth-child(3) {
+.typing i:nth-child(3) {
   animation-delay: 0.3s;
 }
-@keyframes dot {
+@keyframes typing {
   0%,
   60%,
   100% {
-    transform: translateY(0);
-    opacity: 0.5;
+    opacity: 0.35;
   }
   30% {
-    transform: translateY(-4px);
     opacity: 1;
   }
 }
 
-/* Composer */
+/* Game master — Duolingo's speech bubble [V]: white, 2 px #E5E5E5 border, radius 16, beside the
+   character (research/14 §1) */
+.gm {
+  display: flex;
+  align-items: flex-end;
+  gap: 6px;
+  margin: 6px 0;
+}
+.gmBubble {
+  position: relative;
+  max-width: 76%;
+  padding: 12px 14px;
+  border-radius: 16px;
+  border: 2px solid var(--duo-swan);
+  background: #fff;
+  color: var(--duo-eel);
+  font: 700 16px/22px var(--font-duo);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.gmChallenge {
+  font-weight: 500;
+}
+.gmCta {
+  align-self: flex-start;
+  height: 40px;
+  padding: 0 18px;
+  border-radius: 16px;
+  background: var(--duo-feather);
+  box-shadow: 0 4px 0 var(--duo-feather-lip);
+  color: #fff;
+  font: 700 15px/40px var(--font-duo);
+  letter-spacing: 0.04em;
+  margin-bottom: 4px;
+}
+
+/* Composer [I] yope-04: lime camera · "start typing..." · sticker circle · mic circle */
 .composer {
+  flex: none;
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 10px calc(var(--safe-bottom) + 6px);
-  border-top: 0.5px solid var(--hairline);
-  flex: none;
+  padding: 8px 12px calc(var(--safe-bottom) + 10px);
 }
-.compBtn {
+.cameraBtn {
+  flex: none;
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--g2);
+  background: var(--yope-lime);
+  color: #000;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  flex: none;
-}
-.inputWrap {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  height: 40px;
-  border-radius: 20px;
-  background: var(--g1);
-  box-shadow: inset 0 0 0 1px var(--g3);
-  padding: 0 4px 0 14px;
-  min-width: 0;
 }
 .input {
   flex: 1;
   min-width: 0;
-  background: none;
+  height: 40px;
+  padding: 0 16px;
   border: 0;
+  border-radius: 999px;
+  background: var(--yope-field);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.07); /* [I] faint outline */
+  color: #fff;
+  font: 400 16px/1 var(--font-sf);
   outline: none;
-  color: var(--white);
-  font: 400 16px/1 var(--font-ui);
 }
 .input::placeholder {
-  color: var(--text-3);
+  color: rgba(255, 255, 255, 0.45);
 }
-.inlineBtn {
-  width: 32px;
-  height: 32px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--text-2);
-}
-.sendBtn {
+.roundBtn {
+  flex: none;
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: var(--yellow);
-  color: var(--black);
+  background: var(--yope-field);
+  color: #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.recOn {
+  background: var(--sys-red, #ff453a);
+}
+/* [HIG] Messages send: arrow.up in a filled circle */
+.sendBtn {
+  flex: none;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--yope-lime);
+  color: #000;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stickerGrid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+  padding-bottom: 12px;
+}
+.stickerGrid button {
+  aspect-ratio: 1;
+}
+.stickerGrid img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+.makeSticker {
+  border-radius: 16px;
+  background: var(--sys-fill3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  font: 600 12px/1.2 var(--font-sf);
+  color: var(--sys-label);
+  text-align: center;
+  padding: 6px;
+}
+
+/* Chat list [HIG] Messages rows in Yope's colors */
+.list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 0 0 calc(var(--safe-bottom) + 16px);
+}
+.listTitle {
+  padding: 6px 16px 10px;
+  font: var(--t-large);
+  letter-spacing: 0.01em;
+}
+.listRow {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  text-align: left;
+  color: #fff;
+}
+.listFace {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--yope-circle);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex: none;
 }
-.recOn {
-  transform: scale(1.15);
-  color: var(--white);
-}
-.plusGrid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 14px;
-  padding: 6px 0 14px;
-}
-.plusGrid button {
+.listText {
+  flex: 1;
+  min-width: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  font: 600 12px/1 var(--font-ui);
+  gap: 3px;
+  padding-bottom: 10px;
+  border-bottom: 0.5px solid rgba(255, 255, 255, 0.12);
 }
-.plusGrid span {
-  width: 60px;
-  height: 60px;
-  border-radius: 18px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--white);
-}
-.stickerGrid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-  padding-bottom: 16px;
-}
-.stickerGrid button {
-  aspect-ratio: 1;
-  border-radius: 16px;
-  background: var(--g2);
+.listTop {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 6px;
+  align-items: baseline;
+  gap: 8px;
 }
-.stickerGrid img {
-  max-width: 100%;
-  max-height: 100%;
+.listName {
+  flex: 1;
+  min-width: 0;
+  font: 600 17px/22px var(--font-sf);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.makeSticker {
-  flex-direction: column;
-  gap: 4px;
-  font: 700 11px/1 var(--font-ui);
+.listTime {
+  font: 400 15px/20px var(--font-sf);
+  color: rgba(255, 255, 255, 0.45);
+}
+.listPreview {
+  font: 400 15px/20px var(--font-sf);
+  color: rgba(255, 255, 255, 0.55);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.unread {
+  position: absolute;
+  left: -12px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin-top: -5px;
+  border-radius: 50%;
+  background: var(--yope-lime);
 }

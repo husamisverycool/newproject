@@ -64,6 +64,14 @@ export const locket = {
   saySomething: 'Say something...',
   /** [I] locket-04-chat: centred timestamp "Today at 9:40 PM" */
   todayAt: (time: string) => `Today at ${time}`,
+  /** [I] locket-04-chat "Today at 9:40 PM"; other days follow the same pattern [B-low] */
+  stamp: (t: number, now: number = Date.now()) => {
+    const time = new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+    const day = (x: number) => new Date(x).toDateString();
+    if (day(t) === day(now)) return `Today at ${time}`;
+    if (day(t) === day(now - 86_400_000)) return `Yesterday at ${time}`;
+    return `${new Date(t).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${time}`;
+  },
   /** [I] frame locket-reply-grid: "Reply to Kile" (2021 reply sheet) */
   replyTo: (name: string) => `Reply to ${name}`,
   /** [I] frame locket-reply-grid: the 2×4 emoji grid (the eighth cell is the add-emoji glyph) */

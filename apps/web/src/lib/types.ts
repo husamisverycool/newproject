@@ -340,6 +340,8 @@ export interface Message {
   meta: Record<string, unknown>;
   user: PublicUser | null;
   plan?: PlanT | null;
+  /** the History photo a post_reply answers (Locket chat [I]) */
+  post?: Post | null;
 }
 
 export interface PlanT {

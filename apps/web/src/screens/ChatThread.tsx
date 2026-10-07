@@ -1,36 +1,43 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate, useParams } from 'react-router';
 import { motion } from 'motion/react';
+import { bereal, duolingo, imessage, ios, jackbox, locket, whatsapp, yope } from '@app/shared';
 import { api } from '../lib/api';
-import { queryClient, useGroup, useMe, useMessages } from '../lib/queries';
+import { queryClient, useActiveGroup, useMe, useMessages } from '../lib/queries';
 import { sendRealtime, onRealtime } from '../lib/realtime';
 import { haptic, sfx } from '../lib/feedback';
-import { clock, firstName } from '../lib/format';
+import { firstName } from '../lib/format';
 import type { Message } from '../lib/types';
 import { Icon } from '../components/Icon';
-import { Avatar, IconButton, PillButton, Sheet, Chip } from '../components/ui';
+import { Avatar, Sheet } from '../components/ios';
 import { Mascot } from '../components/Mascot';
-import { PlanCard, PlanPoster, THEMES } from '../components/PlanCard';
+import { PlanCard } from '../components/PlanCard';
 import s from './chat.module.css';
 
 /**
- * The group's photo chat (Yope: "built-in photo chats", "skip texting, and share visually"). Kept
- * separate from the wall — never mixing wall items into the chat list (spec §E, KakaoTalk rollback).
- * The mascot speaks as the game master; @mention it to talk to it. Plans are Partiful cards.
+ * The group chat, laid out from the INSPO images [I]:
+ * - Yope group chat (yope-04, yope-05): ‹ in a dark circle; a capsule with the group's face, its name,
+ *   the streak "🔥N" and ›; a film-strip circle at the right. Dark gray bubbles on both sides, the
+ *   sender's avatar beside their last bubble, cut-out stickers with no bubble, photos with the time
+ *   large over them, voice as ▶ + waveform + "00:38". Composer: lime camera circle, "start typing...",
+ *   sticker circle, mic.
+ * - Locket chat (locket-04): "Today at 9:40 PM" stamps; a reply shows the photo it answers with a
+ *   chip (avatar · name · "1hr") and its caption pill, then the reply.
+ * The mascot speaks as the game master in Duolingo's speech bubble [V] (research/14). The chat never
+ * mixes in wall items (spec §E).
  */
 export default function ChatThread() {
   const { groupId = '' } = useParams();
   const nav = useNavigate();
   const me = useMe();
-  const g = useGroup(groupId);
+  const { groups } = useActiveGroup();
+  const g = groups.find((x) => x.id === groupId);
   const m = useMessages(groupId);
   const [text, setText] = useState('');
-  const [plus, setPlus] = useState(false);
   const [stickers, setStickers] = useState(false);
-  const [planSheet, setPlanSheet] = useState(false);
   const [typing, setTyping] = useState<string | null>(null);
   const list = useRef<HTMLDivElement>(null);
-  const file = useRef<HTMLInputElement>(null);
+  const camera = useRef<HTMLInputElement>(null);
   const msgs = m.data?.messages ?? [];
   const mascot = m.data?.mascot;
   const myId = me.data?.user.id;
@@ -50,104 +57,110 @@ export default function ChatThread() {
     [groupId],
   );
 
-  const send = async (body: object) => {
+  const send = async (body: object | FormData) => {
     sfx.send();
     haptic('light');
     await api.post(`/groups/${groupId}/messages`, body);
     void queryClient.invalidateQueries({ queryKey: ['messages', groupId] });
   };
+  const sendText = () => {
+    const t = text.trim();
+    if (!t) return;
+    setText('');
+    void send({ kind: 'text', body: t });
+  };
 
-  const typingUser = typing ? g.data?.members.find((x) => x.user.id === typing)?.user : null;
+  const typingUser = typing ? g?.members.find((u) => u.id === typing) : null;
 
   return (
-    <div className="screen">
+    <div className={s.root}>
+      {/* Yope header [I] */}
       <header className={s.header}>
-        <IconButton icon="chevronLeft" label="Back" onClick={() => nav(-1)} />
-        <button className={s.headCenter} onClick={() => nav(`/g/${groupId}/settings`)}>
-          <span className={s.headEmoji}>{g.data?.group.emoji}</span>
-          <span className={s.headName}>{g.data?.group.name}</span>
-          <span className={s.headSub}>{g.data?.members.length} members</span>
+        <button className={s.circle} onClick={() => nav(-1)} aria-label={ios.back}>
+          <Icon name="chevronLeft" size={22} strokeWidth={2.6} />
         </button>
-        <IconButton icon="game" label="This week's game" onClick={() => nav(`/g/${groupId}/game`)} />
+        <button className={s.capsule} onClick={() => nav(`/g/${groupId}/settings`)}>
+          {g && (
+            <span className={s.capsuleFace}>
+              <Mascot species={g.mascot.species} level={g.mascot.stage.level} outfit={g.mascot.outfit} size={30} />
+            </span>
+          )}
+          <span className={s.capsuleName}>{g?.name}</span>
+          {g && g.ritual.streak > 0 && (
+            <span className={s.streak} aria-label={yope.streakCount(g.ritual.streak)}>
+              <Icon name="flame" size={13} filled />
+              {g.ritual.streak}
+            </span>
+          )}
+          <Icon name="chevronRight" size={16} strokeWidth={2.6} />
+        </button>
+        <button className={s.circle} onClick={() => g && nav(`/g/${groupId}/week/${g.ritual.weekKey}`)} aria-label={yope.recap}>
+          <Icon name="film" size={20} />
+        </button>
       </header>
 
-      <div ref={list} className={`${s.thread} scroll`}>
+      <div ref={list} className={s.thread}>
         {msgs.map((msg, i) => (
-          <Bubble key={msg.id} msg={msg} prev={msgs[i - 1]} mine={msg.userId === myId} mascot={mascot} groupId={groupId} />
+          <Bubble key={msg.id} msg={msg} prev={msgs[i - 1]} next={msgs[i + 1]} mine={msg.userId === myId} mascot={mascot} groupId={groupId} />
         ))}
         {typingUser && (
-          <div className={s.typing}>
-            <Avatar user={typingUser} size={22} /> <span className={s.dots}><i /><i /><i /></span>
+          <div className={s.row}>
+            <Avatar user={typingUser} size={28} />
+            <span className={s.typing}>
+              <i />
+              <i />
+              <i />
+            </span>
           </div>
         )}
       </div>
 
+      {/* Yope composer [I] */}
       <div className={s.composer}>
-        <button className={s.compBtn} onClick={() => setPlus(true)} aria-label="Add">
-          <Icon name="plus" size={22} />
+        <button className={s.cameraBtn} onClick={() => camera.current?.click()} aria-label={ios.axShutter}>
+          <Icon name="camera" size={22} filled color="#000" />
         </button>
-        <div className={s.inputWrap}>
-          <input
-            className={s.input}
-            placeholder="Message"
-            value={text}
-            onChange={(e) => {
-              setText(e.target.value);
-              sendRealtime({ type: 'typing', groupId });
-            }}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && text.trim()) {
-                void send({ kind: 'text', body: text });
-                setText('');
-              }
-            }}
-          />
-          <button className={s.inlineBtn} onClick={() => setStickers(true)} aria-label="Stickers">
-            <Icon name="smile" size={22} />
-          </button>
-        </div>
+        <input
+          className={s.input}
+          placeholder={yope.startTyping}
+          value={text}
+          onChange={(e) => {
+            setText(e.target.value);
+            sendRealtime({ type: 'typing', groupId });
+          }}
+          onKeyDown={(e) => e.key === 'Enter' && sendText()}
+        />
         {text.trim() ? (
-          <button className={s.sendBtn} onClick={() => { void send({ kind: 'text', body: text }); setText(''); }} aria-label="Send">
-            <Icon name="send" size={20} strokeWidth={2.6} />
+          <button className={s.sendBtn} onClick={sendText} aria-label={ios.share}>
+            <Icon name="arrowUp" size={20} strokeWidth={2.8} />
           </button>
         ) : (
-          <VoiceNote groupId={groupId} />
+          <>
+            <button className={s.roundBtn} onClick={() => setStickers(true)} aria-label={imessage.stickers}>
+              <Icon name="peel" size={22} filled />
+            </button>
+            <VoiceNote groupId={groupId} />
+          </>
         )}
       </div>
-      <input ref={file} type="file" accept="image/*" hidden onChange={async (e) => {
-        const f = e.target.files?.[0];
-        if (!f) return;
-        const fd = new FormData();
-        fd.set('kind', 'photo');
-        fd.set('file', f);
-        await api.post(`/groups/${groupId}/messages`, fd);
-        void queryClient.invalidateQueries({ queryKey: ['messages', groupId] });
-      }} />
+      <input
+        ref={camera}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        hidden
+        onChange={async (e) => {
+          const f = e.target.files?.[0];
+          e.target.value = '';
+          if (!f) return;
+          const fd = new FormData();
+          fd.set('kind', 'photo');
+          fd.set('file', f);
+          await send(fd);
+        }}
+      />
 
-      <Sheet open={plus} onClose={() => setPlus(false)}>
-        <div className={s.plusGrid}>
-          <button onClick={() => { setPlus(false); file.current?.click(); }}>
-            <span style={{ background: 'var(--blue)' }}><Icon name="photo" /></span>Photo
-          </button>
-          <button onClick={() => { setPlus(false); setPlanSheet(true); }}>
-            <span style={{ background: 'linear-gradient(135deg, var(--purple), var(--pink))' }}><Icon name="calendar" /></span>Plan
-          </button>
-          <button onClick={() => { setPlus(false); setStickers(true); }}>
-            <span style={{ background: 'var(--yellow)', color: 'var(--black)' }}><Icon name="sticker" /></span>Sticker
-          </button>
-          <button onClick={() => nav(`/g/${groupId}/game`)}>
-            <span style={{ background: 'var(--green)' }}><Icon name="game" /></span>Game
-          </button>
-          <button onClick={() => nav(`/g/${groupId}/memory`)}>
-            <span style={{ background: 'var(--g3)' }}><Icon name="memory" /></span>Memory
-          </button>
-          <button onClick={() => nav('/create')}>
-            <span style={{ background: 'var(--gemini)' }}><Icon name="sparkles" /></span>Create
-          </button>
-        </div>
-      </Sheet>
-
-      <Sheet open={stickers} onClose={() => setStickers(false)} title="Stickers">
+      <Sheet open={stickers} onClose={() => setStickers(false)} title={imessage.stickers} dark>
         <div className={s.stickerGrid}>
           {(me.data?.stickers ?? []).map((st) => (
             <button key={st.id} onClick={() => { void send({ kind: 'sticker', stickerId: st.id }); setStickers(false); }}>
@@ -155,61 +168,60 @@ export default function ChatThread() {
             </button>
           ))}
           <button className={s.makeSticker} onClick={() => nav('/create/sticker')}>
-            <Icon name="plus" size={22} /> Make one
+            <Icon name="plus" size={22} />
+            <span>{whatsapp.createSticker}</span>
           </button>
         </div>
       </Sheet>
-
-      <NewPlanSheet open={planSheet} onClose={() => setPlanSheet(false)} groupId={groupId} />
     </div>
   );
 }
 
-function Bubble({ msg, prev, mine, mascot, groupId }: { msg: Message; prev?: Message; mine: boolean; mascot?: { species: string; stage: { level: number }; outfit: string[]; name: string }; groupId: string }) {
+type MascotInfo = { species: string; stage: { level: number }; outfit: string[]; name: string };
+
+/** A Locket stamp row shows when an hour has passed since the previous message [I]/[B-low]. */
+function Bubble({ msg, prev, next, mine, mascot, groupId }: { msg: Message; prev?: Message; next?: Message; mine: boolean; mascot?: MascotInfo; groupId: string }) {
   const nav = useNavigate();
-  const showDay = !prev || new Date(prev.createdAt).toDateString() !== new Date(msg.createdAt).toDateString();
-  const grouped = prev && prev.userId === msg.userId && prev.kind !== 'system' && msg.createdAt - prev.createdAt < 5 * 60_000;
-  const day = showDay && <div className={s.day}>{new Date(msg.createdAt).toLocaleDateString([], { weekday: 'long', month: 'short', day: 'numeric' })}</div>;
+  const stamp = (!prev || msg.createdAt - prev.createdAt > 60 * 60_000) && <div className={s.stamp}>{locket.stamp(msg.createdAt)}</div>;
+  const lastOfRun = !next || next.userId !== msg.userId || next.kind === 'system' || next.kind === 'gm' || next.createdAt - msg.createdAt > 60 * 60_000;
 
   if (msg.kind === 'system') {
     const developed = msg.meta.developed as string | undefined;
     return (
       <>
-        {day}
-        <div className={s.system}>
-          {developed ? (
-            <button className={s.developed} onClick={() => nav(`/g/${groupId}/week/${developed}`)}>
-              <Icon name="film" size={16} /> {msg.body} · open the wall
-            </button>
-          ) : (
-            msg.body
-          )}
-        </div>
+        {stamp}
+        <button className={s.system} onClick={() => developed && nav(`/g/${groupId}/week/${developed}`)} disabled={!developed}>
+          {msg.body}
+        </button>
       </>
     );
   }
+
   if (msg.kind === 'gm') {
+    const cta = msg.meta.results ? duolingo.continue : msg.meta.gameKind ? jackbox.play : null;
     return (
       <>
-        {day}
+        {stamp}
         <motion.div className={s.gm} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}>
-          {mascot && <Mascot species={mascot.species} level={mascot.stage.level} outfit={mascot.outfit} size={44} idle={false} />}
+          {mascot && <Mascot species={mascot.species as never} level={mascot.stage.level} outfit={mascot.outfit} size={56} />}
           <div className={s.gmBubble}>
-            <span className={s.gmName}>{mascot?.name ?? 'Game master'}</span>
             <span>{msg.body}</span>
-            {typeof msg.meta.challenge === 'string' && <span className={s.gmChallenge}>📸 {msg.meta.challenge}</span>}
-            {(msg.meta.gameKind || msg.meta.results) ? (
-              <button className={s.gmCta} onClick={() => nav(`/g/${groupId}/game`)}>{msg.meta.results ? 'See the awards' : 'Play'}</button>
-            ) : null}
+            {typeof msg.meta.challenge === 'string' && <span className={s.gmChallenge}>{msg.meta.challenge}</span>}
+            {cta && (
+              <button className={s.gmCta} onClick={() => nav(`/g/${groupId}/game`)}>
+                {cta}
+              </button>
+            )}
           </div>
         </motion.div>
       </>
     );
   }
+
   if (msg.kind === 'plan' && msg.plan) {
     return (
       <>
-        {day}
+        {stamp}
         <div className={`${s.row} ${mine ? s.mine : ''}`}>
           {!mine && <Avatar user={msg.user} size={28} />}
           <PlanCard plan={msg.plan} />
@@ -217,42 +229,55 @@ function Bubble({ msg, prev, mine, mascot, groupId }: { msg: Message; prev?: Mes
       </>
     );
   }
-  const blast = Boolean(msg.meta.blast);
+
+  const face = !mine && (lastOfRun ? <Avatar user={msg.user} size={28} /> : <span className={s.faceGap} />);
+
   return (
     <>
-      {day}
-      <div className={`${s.row} ${mine ? s.mine : ''} ${grouped ? s.grouped : ''}`}>
-        {!mine && (grouped ? <span style={{ width: 28 }} /> : <Avatar user={msg.user} size={28} />)}
-        <div className={s.col}>
-          {!mine && !grouped && <span className={s.author}>{msg.user ? firstName(msg.user.name) : ''}</span>}
-          {msg.kind === 'sticker' && msg.media && <img src={msg.media} alt="Sticker" className={s.sticker} />}
-          {msg.kind === 'photo' && msg.media && <img src={msg.media} alt="" className={s.photo} />}
-          {msg.kind === 'voice' && msg.media && <VoicePlayer src={msg.media} duration={Number(msg.meta.duration ?? 0)} mine={mine} />}
-          {msg.kind === 'post_reply' && (
-            <button className={s.replyTo} onClick={() => msg.refId && nav(`/p/${msg.refId}`)}>
-              <Icon name="photo" size={14} /> replied to a photo
-            </button>
-          )}
-          {(msg.kind === 'text' || msg.kind === 'post_reply') && msg.body && (
-            <span className={`${s.bubble} ${mine ? s.bubbleMine : ''} ${blast ? s.blast : ''}`}>
-              {blast && <span className={s.blastTag}>📣 {String(msg.meta.planTitle ?? 'Blast')}</span>}
-              {msg.body}
-            </span>
-          )}
-          <span className={s.time}>{clock(msg.createdAt)}</span>
-        </div>
+      {stamp}
+      {msg.kind === 'post_reply' && msg.post && <PostReply post={msg.post} mine={mine} />}
+      <div className={`${s.row} ${mine ? s.mine : ''} ${lastOfRun ? '' : s.tight}`}>
+        {face}
+        {msg.kind === 'sticker' && msg.media && <img src={msg.media} alt="" className={s.sticker} />}
+        {msg.kind === 'photo' && msg.media && (
+          <span className={s.photo}>
+            <img src={msg.media} alt="" />
+            <strong>{yope.time(msg.createdAt)}</strong>
+            {msg.body && <em>{msg.body}</em>}
+          </span>
+        )}
+        {msg.kind === 'voice' && msg.media && <VoicePlayer src={msg.media} duration={Number(msg.meta.duration ?? 0)} />}
+        {(msg.kind === 'text' || msg.kind === 'post_reply') && msg.body && <span className={s.bubble}>{msg.body}</span>}
       </div>
     </>
   );
 }
 
-function VoicePlayer({ src, duration, mine }: { src: string; duration: number; mine: boolean }) {
+/** Locket chat [I] (locket-04): the answered photo, chip "avatar · Bobby · 1hr" top-left, caption pill at the bottom. */
+function PostReply({ post, mine }: { post: NonNullable<Message['post']>; mine: boolean }) {
+  const nav = useNavigate();
+  return (
+    <button className={`${s.replyPhoto} ${mine ? s.replyMine : ''}`} onClick={() => nav(`/p/${post.id}`)}>
+      <img src={post.media.thumb ?? post.media.main} alt="" className={post.blurred ? s.blurred : ''} />
+      <span className={s.replyChip}>
+        <Avatar user={post.user} size={20} />
+        <b>{firstName(post.user.name)}</b>
+        <i>{locket.ago(Date.now() - post.createdAt)}</i>
+      </span>
+      {post.caption && !post.blurred && <span className={s.replyCaption}>{post.caption}</span>}
+      {post.blurred && <span className={s.replyCaption}>{bereal.shareToView}</span>}
+    </button>
+  );
+}
+
+/** Yope voice message [I] (yope-04): ▶ in a circle, the waveform, "00:38". */
+function VoicePlayer({ src, duration }: { src: string; duration: number }) {
   const [playing, setPlaying] = useState(false);
   const a = useRef<HTMLAudioElement | null>(null);
-  const bars = useRef(Array.from({ length: 22 }, () => 0.25 + Math.random() * 0.75));
+  const bars = useMemo(() => Array.from({ length: 26 }, (_, i) => 0.3 + 0.7 * Math.abs(Math.sin(i * 1.7 + src.length))), [src]);
   return (
     <button
-      className={`${s.voice} ${mine ? s.bubbleMine : ''}`}
+      className={s.voice}
       onClick={() => {
         a.current ??= new Audio(src);
         a.current.onended = () => setPlaying(false);
@@ -265,18 +290,20 @@ function VoicePlayer({ src, duration, mine }: { src: string; duration: number; m
         }
       }}
     >
-      <Icon name={playing ? 'pause' : 'play'} size={16} />
+      <span className={s.voicePlay}>
+        <Icon name={playing ? 'pause' : 'play'} size={14} filled />
+      </span>
       <span className={s.wave}>
-        {bars.current.map((h, i) => (
+        {bars.map((h, i) => (
           <i key={i} style={{ height: `${h * 100}%` }} />
         ))}
       </span>
-      <span className={s.vdur}>{Math.max(1, Math.round(duration))}s</span>
+      <span className={s.vdur}>{yope.voiceTime(Math.max(1, duration))}</span>
     </button>
   );
 }
 
-/** Hold to record a voice message (Yope voice). */
+/** Hold the mic to record (Yope: "send voice messages in chat" [V]). */
 function VoiceNote({ groupId }: { groupId: string }) {
   const rec = useRef<MediaRecorder | null>(null);
   const chunks = useRef<Blob[]>([]);
@@ -315,71 +342,8 @@ function VoiceNote({ groupId }: { groupId: string }) {
     setOn(false);
   };
   return (
-    <button className={`${s.sendBtn} ${on ? s.recOn : ''}`} style={{ background: on ? 'var(--red)' : 'var(--g2)' }} onPointerDown={start} onPointerUp={stop} onPointerLeave={() => on && stop()} aria-label="Hold to record a voice message">
+    <button className={`${s.roundBtn} ${on ? s.recOn : ''}`} onPointerDown={start} onPointerUp={stop} onPointerLeave={() => on && stop()} aria-label={yope.voiceLine}>
       <Icon name="mic" size={20} />
     </button>
-  );
-}
-
-/* ───────────────────────── New plan (Partiful create) ───────────────────────── */
-
-function NewPlanSheet({ open, onClose, groupId }: { open: boolean; onClose: () => void; groupId: string }) {
-  const nav = useNavigate();
-  const [title, setTitle] = useState('');
-  const [theme, setTheme] = useState('cloudflow');
-  const [effect, setEffect] = useState('sunbeams');
-  const [font, setFont] = useState('manrope');
-  const [mode, setMode] = useState<'date' | 'poll'>('date');
-  const [date, setDate] = useState('');
-  const [opts, setOpts] = useState<string[]>(['', '']);
-  const [location, setLocation] = useState('');
-  const [busy, setBusy] = useState(false);
-  const create = async () => {
-    setBusy(true);
-    const r = await api.post<{ id: string }>(`/groups/${groupId}/plans`, {
-      title, theme, effect, titleFont: font, location,
-      startsAt: mode === 'date' && date ? new Date(date).getTime() : null,
-      options: mode === 'poll' ? opts.filter(Boolean).map((o) => new Date(o).getTime()) : [],
-    });
-    setBusy(false);
-    onClose();
-    nav(`/plan/${r.id}`);
-  };
-  return (
-    <Sheet open={open} onClose={onClose} title="New plan" height="94%">
-      <div className="stack gap12" style={{ paddingBottom: 16 }}>
-        <PlanPoster plan={{ title: title || 'Untitled plan', theme, effect, titleFont: font, startsAt: mode === 'date' && date ? new Date(date).getTime() : null }} />
-        <input className="field" placeholder="What's the plan?" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <div className="hstack gap8" style={{ flexWrap: 'wrap' }}>
-          {Object.entries(THEMES).map(([k, t]) => (
-            <Chip key={k} active={theme === k} onClick={() => setTheme(k)}>{t.name}</Chip>
-          ))}
-        </div>
-        <div className="hstack gap8">
-          {['none', 'sunbeams', 'fireworks'].map((e) => (
-            <Chip key={e} active={effect === e} onClick={() => setEffect(e)}>{e === 'none' ? 'No effect' : e[0].toUpperCase() + e.slice(1)}</Chip>
-          ))}
-          {['manrope', 'display'].map((f) => (
-            <Chip key={f} active={font === f} onClick={() => setFont(f)}>{f === 'manrope' ? 'Aa' : 'AA'}</Chip>
-          ))}
-        </div>
-        <div className="segmented">
-          <button aria-pressed={mode === 'date'} onClick={() => setMode('date')}>Set a Date</button>
-          <button aria-pressed={mode === 'poll'} onClick={() => setMode('poll')}>Poll your guests</button>
-        </div>
-        {mode === 'date' ? (
-          <input className="field" type="datetime-local" value={date} onChange={(e) => setDate(e.target.value)} />
-        ) : (
-          <>
-            {opts.map((o, i) => (
-              <input key={i} className="field" type="datetime-local" value={o} onChange={(e) => setOpts(opts.map((x, k) => (k === i ? e.target.value : x)))} />
-            ))}
-            {opts.length < 6 && <button className="chip" onClick={() => setOpts([...opts, ''])}>+ Add a time</button>}
-          </>
-        )}
-        <input className="field" placeholder="Where?" value={location} onChange={(e) => setLocation(e.target.value)} />
-        <PillButton disabled={!title.trim() || busy} onClick={create}>Post plan</PillButton>
-      </div>
-    </Sheet>
   );
 }

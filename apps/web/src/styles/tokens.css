@@ -52,7 +52,11 @@
   --locket-bubble-them: rgba(255, 255, 255, 0.14); /* [I] locket-04: dark translucent left bubble, white text */
   --yope-lime: #cffa14; /* [I] measured: camera button + streak pill (yope-04, frame yope-1on1-feed) */
   --yope-pink: #fa2283; /* [I] measured: profile name sticker (yope-01) */
-  --yope-bg: #1c1c1e; /* [I] dark neutral chat background (yope-04) ≈ [HIG] secondarySystemBackground dark */
+  --yope-bg: #161717; /* [I] measured: chat background (yope-04) */
+  --yope-bubble: #2c2c2c; /* [I] measured: text bubbles, both sides (yope-04 #232323–#2D2D2B) */
+  --yope-voice: #393939; /* [I] measured: voice message capsule (yope-04) */
+  --yope-field: #2f2f2f; /* [I] measured: "start typing..." capsule (yope-04) */
+  --yope-circle: #2e3032; /* [I] measured: ‹ and film-strip circles (yope-04 #26282A–#37393B) */
   --bereal-red: #ed4338; /* [I] measured: notification badge (bereal-05) */
   --retro-red: #e5333a; /* [I] measured: "6 new" pill (retro-01) */
   --retro-plus: #f2f2f2; /* [I] light-gray "+" tile (retro-01/-02) */
