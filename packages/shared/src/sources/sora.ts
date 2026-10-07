@@ -1,19 +1,21 @@
 /**
- * Sora app cameos → likeness consent (spec §S). Research: research/06 §3 and research/16 §3.
- * Spec adapts the options to "no one / my groups / specific friends"; "Everyone" is dropped (no public surface).
+ * Sora app likeness permissions → likeness consent (spec §F, §S). Research: research/06 §3,
+ * research/16 §3 and research/26 §12. A US court barred OpenAI from Sora's original feature name
+ * (Feb 2026) and the feature is now "Characters" [V-weak]; the old name is not used anywhere here.
+ * The four audience options are Sora's [V]; spec §S adds "my groups" for the onboarding picker.
  */
 export const sora = {
   /** [V] option 1 */
   onlyMe: 'Only me',
   /** [V] option 2 */
   peopleIApprove: 'People I approve',
+  /** [V] option 3: "Mutuals" (you follow them and they follow you) */
+  mutuals: 'Mutuals',
+  /** [V] option 4 */
+  everyone: 'Everyone',
   /** [S] spec §S "my groups" in place of Sora's "Mutuals" */
   myGroups: 'My groups',
-  /** [V-weak] path: edit cameo → cameo preferences → restrictions */
-  editCameo: 'Edit Cameo',
-  /** [V-weak] */
-  preferences: 'Cameo preferences',
-  /** [V-weak] */
+  /** [V-weak] path: edit → preferences → restrictions */
   restrictions: 'Restrictions',
   /** [V] official examples of restriction instructions */
   restrictionExamples: ["don't put me in videos that involve political commentary", "don't let me say this word"] as const,
@@ -21,8 +23,8 @@ export const sora = {
   directions: { left: 'left', right: 'right', up: 'up', down: 'down' },
   /** [V-weak] (summary wording) "You can see drafts that include your likeness, even if someone else created them" */
   draftsLine: 'You can see drafts that include your likeness, even if someone else created them',
-  /** [V-weak] "you can remove or retake your cameo anytime" */
+  /** [V-weak] from "you can remove or retake your [likeness] anytime" */
   retake: 'Retake',
-  /** [V-weak] */
-  removeCameo: 'Remove',
+  /** [V-weak] from "you can remove or retake your [likeness] anytime"; "you can always remove videos that include your [likeness]" */
+  remove: 'Remove',
 } as const;

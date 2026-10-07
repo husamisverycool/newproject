@@ -1,286 +1,327 @@
+/*
+ * Partiful event page. Same look as the Partiful guest page (join.module.css) for consistency:
+ * - black actions, black borders, black headings, "no blue accent, just pure contrast" [V-weak]; so the
+ *   stock iOS tint (--sys-blue) is set to --partiful-ink across this page and its sheets;
+ * - display face "Partiful Display Medium" at -0.03em [V-weak]; UI face "TWK Lausanne Pan" [V-weak]
+ *   (--font-partiful), SF when not installed;
+ * - RSVP buttons: the guest page's bordered tiles, filled black when chosen (black filled buttons [V-weak]);
+ * - the back button, rows, switch, segmented control, sheets and alert are stock iOS [HIG] because
+ *   Partiful's layouts for them are UNKNOWN; the host bar is the iOS 26 floating glass bar [B-med].
+ */
 .page {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(180deg, var(--periwinkle), var(--white) 38%);
-  color: var(--black);
+  --sys-blue: var(--partiful-ink);
+  color: var(--partiful-ink);
+  font-family: var(--font-partiful);
 }
-.top {
-  position: sticky;
-  top: 0;
-  z-index: 5;
-  padding: calc(var(--safe-top) + 2px) 14px 4px;
+.scroll {
+  position: relative;
+  z-index: 1;
+  padding-top: calc(var(--safe-top) + 56px);
+  padding-bottom: calc(var(--safe-bottom) + 32px);
+}
+.withBar {
+  padding-bottom: calc(var(--safe-bottom) + 104px);
 }
 .back {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.8);
-  -webkit-backdrop-filter: blur(10px);
-  backdrop-filter: blur(10px);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--black);
+  position: absolute;
+  z-index: 5;
+  top: calc(var(--safe-top) + 6px);
+  left: 16px;
 }
-.posterWrap {
-  padding: 0 22px;
-  margin-top: -6px;
-}
-.posterWrap > div {
-  box-shadow: 0 24px 50px color-mix(in srgb, var(--purple) 40%, transparent), 0 6px 16px rgba(0, 0, 0, 0.12);
+.poster {
+  margin: 0 20px;
+  box-shadow: 0 20px 44px color-mix(in srgb, var(--partiful-purple) 30%, transparent);
+  border-radius: 20px;
 }
 .body {
-  padding: 18px 22px 0;
+  padding: 20px 20px 0;
 }
 .title {
   margin: 0;
-  font-weight: 800;
-  font-size: 34px;
-  line-height: 38px;
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.05;
   letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
 }
-.host {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-top: 10px;
-  font: 500 14px/1 var(--font-ui);
-  color: var(--eel);
-}
-.facts {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 18px;
-}
+
+/* Facts: icon + two lines, the date then the time [HIG] */
 .fact {
   display: flex;
   align-items: flex-start;
   gap: 12px;
-  font: 400 15px/20px var(--font-ui);
+  margin-top: 16px;
+  color: inherit;
+  text-decoration: none;
+}
+.fact > svg {
+  flex: none;
+  margin-top: 1px;
+}
+.fact > span {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: 400 15px/20px var(--font-partiful);
 }
 .fact b {
-  display: block;
-  font-weight: 700;
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 22px;
 }
 .factSub {
-  display: block;
-  color: var(--wolf);
-  font-size: 14px;
+  color: var(--sys-label2);
 }
-.details {
-  margin: 16px 0 0;
-  font: 400 15px/21px var(--font-ui);
-  color: var(--eel);
+.hosted {
+  margin-top: 14px;
+  font: 500 15px/20px var(--font-partiful);
 }
+
+/* RSVP: the guest page's tiles (join.module.css) */
 .rsvp {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 20px;
+  gap: 10px;
+  margin-top: 22px;
 }
 .rsvpBtn {
-  height: 56px;
-  border-radius: 18px;
-  background: var(--white);
-  box-shadow: inset 0 0 0 1.5px var(--swan);
+  height: 64px;
+  border-radius: 16px;
+  background: var(--sys-bg);
+  box-shadow: inset 0 0 0 1.5px var(--partiful-ink);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 4px;
-  font: 700 14px/1 var(--font-ui);
-  transition: transform var(--dur-fast) var(--ease-spring);
+  font: 600 14px/1 var(--font-partiful);
+  color: var(--partiful-ink);
 }
-.rsvpBtn:active {
-  transform: scale(0.96);
+.rsvpBtn[aria-pressed='true'] {
+  background: var(--partiful-ink);
+  color: #ffffff;
+}
+.rsvpBtn:disabled {
+  opacity: 0.4;
 }
 .rsvpEmoji {
-  font-size: 24px;
+  font-size: 22px;
+  line-height: 1;
 }
-.rsvpOn {
-  background: var(--black);
-  color: var(--white);
-  box-shadow: none;
+
+.details {
+  margin: 22px 0 0;
+  font: 400 16px/22px var(--font-partiful);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
-.section {
+
+/* Guest count: faces + "# Going" (the guest page's row) */
+.going {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 22px;
+  font: 600 15px/1 var(--font-partiful);
+  color: inherit;
+  text-align: left;
+}
+.dim {
+  color: var(--sys-label2);
+  font-weight: 500;
+}
+
+/* Section heads in the display face (guest page "Activity Feed" head) */
+.h2 {
+  margin: 0 0 12px;
+  font: 500 22px/1.1 var(--font-partiful-display);
+  letter-spacing: -0.02em;
+}
+
+/* Find a Time */
+.poll {
   margin-top: 26px;
 }
-.sectionHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  font: 800 18px/22px var(--font-ui);
-  margin-bottom: 12px;
-}
-.expires {
-  font: 600 12px/1 var(--font-ui);
-  color: var(--red);
-}
-.guestRow {
-  margin-bottom: 12px;
-}
-.guestLabel {
-  display: block;
-  font: 600 13px/1 var(--font-ui);
-  color: var(--wolf);
-  margin-bottom: 8px;
-}
-.guestLabel b {
-  color: var(--black);
-}
-.guests {
-  display: flex;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-.guest {
+.option {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  font: 600 12px/1 var(--font-ui);
+  gap: 10px;
+  padding: 12px;
+  border-radius: 16px;
+  background: var(--sys-bg2);
 }
-.cantGo {
-  font: 500 13px/1 var(--font-ui);
-  color: var(--wolf);
+.option + .option {
+  margin-top: 10px;
+}
+.optHead {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: inherit;
+  text-align: left;
+}
+.optHead:disabled {
+  opacity: 1;
+}
+.optWhen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font: 400 15px/20px var(--font-partiful);
+}
+.optWhen b {
+  font-weight: 600;
+  font-size: 17px;
+  line-height: 22px;
+}
+.optWhen span {
+  color: var(--sys-label2);
+}
+.optCount {
+  min-width: 14px;
+  text-align: right;
+  font: 600 17px/1 var(--font-partiful);
+}
+
+/* Activity Feed */
+.feed {
+  margin-top: 30px;
 }
 .upload {
   width: 100%;
   height: 50px;
-  border-radius: 14px;
-  background: var(--black);
-  color: var(--white);
+  border-radius: 999px;
+  background: var(--sys-bg);
+  box-shadow: inset 0 0 0 1.5px var(--partiful-ink);
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  font: 700 15px/1 var(--font-ui);
+  font: 600 16px/1 var(--font-partiful);
+  color: var(--partiful-ink);
 }
+.upload:disabled {
+  opacity: 0.5;
+}
+/* Photos grid: square thumbnails, hairline gaps [HIG Photos] */
 .album {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 4px;
-  margin-top: 10px;
-  border-radius: 14px;
+  gap: 2px;
+  margin-top: 14px;
+  border-radius: 12px;
   overflow: hidden;
+}
+.album button {
+  aspect-ratio: 1;
+  display: block;
 }
 .album img {
   width: 100%;
-  aspect-ratio: 1;
+  height: 100%;
   object-fit: cover;
+  display: block;
 }
-.keep {
-  margin-top: 10px;
-  width: 100%;
-  height: 44px;
-  border-radius: 12px;
-  box-shadow: inset 0 0 0 1.5px var(--swan);
+.feed :global(.ios-group) {
+  background: var(--sys-bg2);
+}
+.feed :global(.ios-section-foot) {
+  padding: 7px 0 0;
+}
+.locked {
+  pointer-events: none;
+  opacity: 0.5;
+}
+.item {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+}
+.itemText {
+  flex: 1;
+  min-width: 0;
+}
+.itemHead {
+  display: flex;
+  align-items: baseline;
   gap: 8px;
-  font: 600 14px/1 var(--font-ui);
+  font: 600 15px/20px var(--font-partiful);
 }
-.kept {
-  margin-top: 8px;
-  font: 600 13px/1 var(--font-ui);
-  color: var(--green);
+.itemHead span {
+  font-weight: 400;
+  font-size: 13px;
+  color: var(--sys-label2);
 }
-.option {
-  padding: 12px;
-  border-radius: 16px;
-  background: var(--white);
-  box-shadow: inset 0 0 0 1.5px var(--swan);
-  margin-bottom: 8px;
+.itemBody {
+  margin-top: 2px;
+  font: 400 16px/22px var(--font-partiful);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
 }
-.optHead {
+
+/* Host bar: "the Text Blast button" at the bottom [V] + attendee count [V-weak]; iOS 26 glass [B-med] */
+.hostBar {
+  position: absolute;
+  z-index: 10;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--safe-bottom) + 12px);
   display: flex;
-  justify-content: space-between;
-  font: 400 15px/20px var(--font-ui);
-}
-.optCount {
-  font: 700 13px/20px var(--font-ui);
-  color: var(--green);
-}
-.optVotes {
-  display: flex;
-  gap: 6px;
-  margin-top: 10px;
-}
-.voteBtn {
-  height: 32px;
-  padding: 0 12px;
+  gap: 8px;
+  padding: 6px;
   border-radius: 999px;
-  background: var(--swan);
-  font: 600 13px/1 var(--font-ui);
+  background: color-mix(in srgb, var(--sys-bg) 72%, transparent);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
 }
-.pick {
-  margin-left: auto;
-  height: 32px;
-  padding: 0 14px;
+.barCount {
+  height: 50px;
+  padding: 0 18px;
   border-radius: 999px;
-  background: var(--black);
-  color: var(--white);
-  font: 700 13px/1 var(--font-ui);
+  font: 600 16px/1 var(--font-partiful);
+  color: var(--partiful-ink);
 }
-.voters {
-  display: flex;
-  gap: 4px;
-  margin-top: 8px;
-}
-.voter[data-vote='yes'] {
-  box-shadow: 0 0 0 2px var(--green);
-  border-radius: 50%;
-}
-.voter[data-vote='maybe'] {
-  box-shadow: 0 0 0 2px var(--yellow);
-  border-radius: 50%;
-}
-.voter[data-vote='no'] {
-  opacity: 0.4;
-}
-.blastBtn {
-  margin-top: 22px;
-  width: 100%;
+.barBlast {
+  flex: 1;
   height: 50px;
   border-radius: 999px;
-  box-shadow: inset 0 0 0 2px var(--black);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  font: 700 15px/1 var(--font-ui);
+  background: var(--partiful-ink);
+  color: #ffffff;
+  font: 600 17px/1 var(--font-partiful);
+}
+
+/* Sheets: stock grouped lists, tint = ink */
+.sheetInk {
+  padding-top: 4px;
+}
+.checkOn {
+  color: var(--partiful-ink);
+}
+.checkOff {
+  color: transparent;
 }
 .blastText {
+  display: block;
   width: 100%;
-  border-radius: 14px;
   border: 0;
-  background: var(--swan);
-  padding: 12px 14px;
-  font: 400 16px/22px var(--font-ui);
-  color: var(--black);
   outline: none;
   resize: none;
+  padding: 12px 16px;
+  background: transparent;
+  color: var(--sys-label);
+  font: var(--t-body);
 }
-.audience {
-  height: 34px;
-  padding: 0 14px;
-  border-radius: 999px;
-  background: var(--swan);
-  font: 600 13px/1 var(--font-ui);
+.blastText::placeholder {
+  color: var(--sys-label3);
 }
-.audOn {
-  background: var(--black);
-  color: var(--white);
+/* Sheets carry their own [data-light], which resets the tint; set it back to ink */
+.page :global(.ios-sheet) {
+  --sys-blue: var(--partiful-ink);
 }
-.primary {
-  height: 52px;
-  border-radius: 999px;
-  background: var(--black);
-  color: var(--white);
-  font: 700 16px/1 var(--font-ui);
-}
-.primary:disabled {
-  opacity: 0.35;
+.back :global(.ios-glass-circle) {
+  background: color-mix(in srgb, var(--sys-bg2) 82%, transparent);
+  color: var(--partiful-ink);
 }

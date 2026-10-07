@@ -19,8 +19,40 @@ export const gphotos = {
     animation: 'Animations',
     meMeme: 'Me Meme',
   },
-  /** [V-weak] Remix style names (Android Authority list) */
-  remixStyles: { threeD: '3D animation', anime: 'Anime', sketch: 'Sketch', comic: 'Comic book' },
+  /** [V-weak] one-line tile descriptions under "Your tools" (research/06 §1.2, 9to5Google; single source) */
+  toolLines: {
+    /** "Transform your photos into different styles like 'Anime'" */
+    remix: "Transform your photos into different styles like 'Anime'",
+    /** "Combine multiple photos in one stylish layout" */
+    collage: 'Combine multiple photos in one stylish layout',
+  },
+  /**
+   * [V-weak] Remix style names, keyed by the server's style ids (apps/server/src/ai/local.ts).
+   * Launch four from Android Authority (research/06 §1.4, 16 §1); Dec 2025 additions from
+   * jetstream/Yahoo (research/26 §3; CONFLICT: 9to5Google says "enamel pins" where this list says
+   * "Metal Pin"); "8-bit" from 9to5Google prose; the last two from the descriptive template list
+   * (research/26 §3, "these look like descriptions, not chip labels").
+   */
+  remixStyles: {
+    comic: 'Comic book',
+    anime: 'Anime',
+    sketch: 'Sketch',
+    '3d': '3D animation',
+    watercolor: 'Watercolor',
+    '8bit': '8-bit',
+    sticker: 'Chibi Sticker',
+    enamel_pin: 'Metal Pin',
+    polaroid: 'Instant film with flash',
+    figurine: 'Collectible figurine',
+  } as Record<string, string>,
+  /** [V-weak] Me Meme: "tap Compare to compare the uploaded photo to the generated meme" (support.google.com 16763021, research/26 §3) */
+  compare: 'Compare',
+  /** [V] AI info field label "Credit" (9to5Google 2024-10-24, research/06 §1.6) */
+  credit: 'Credit',
+  /** [V] AI info field label "Digital source type" */
+  digitalSourceType: 'Digital source type',
+  /** [V] AI info value "Edited using Generative AI" */
+  editedUsingGenAI: 'Edited using Generative AI',
   /** [V-weak] Photo to video prompts */
   subtleMovement: 'Subtle movement',
   /** [V-weak] */

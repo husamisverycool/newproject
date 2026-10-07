@@ -145,4 +145,6 @@ export const ios = {
   speedLabel: (n: number) => `${n}×`,
   /** [HIG] AVKit menu title */
   playbackSpeed: 'Playback Speed',
+  /** [HIG] Settings › General › iPhone Storage usage line, e.g. "64.2 GB of 128 GB Used" */
+  ofUsed: (n: number | string, of: number | string) => `${n} of ${of} Used`,
 } as const;

@@ -57,4 +57,14 @@ export const spec = {
   watermark: 'Watermark',
   /** [S] §L "opt-in group search by caption and self-tags only" */
   searchCaptions: 'Search captions',
+  /** [S] §U perk "the full-resolution archive"; §T "the paid tier keeps the full-resolution archive" */
+  fullRes: 'Full-resolution archive',
+  /** [S] §T "the free tier stores compressed copies" */
+  compressed: 'Compressed copies',
+  /** [S] §Q "paid tiers get watermark styles"; §U perk "watermark styles" */
+  watermarkStyles: 'Watermark styles',
+  /** [S] §I heading "Figurine renders"; §U "figurine and zine generation" in the AI tier */
+  figurines: 'Figurine renders',
+  /** [S] §K heading "Weekly games and the AI game master" */
+  weeklyGames: 'Weekly games',
 } as const;

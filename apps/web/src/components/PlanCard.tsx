@@ -51,7 +51,7 @@ export async function rsvpPlan(plan: Pick<PlanT, 'id' | 'groupId'>, status: (typ
 }
 
 /** Luma Confetti theme: heart, star and circle shapes [V] in the Apple system colors [HIG]. */
-const CONFETTI_COLORS = ['var(--sys-red)', 'var(--sys-orange)', 'var(--sys-yellow)', 'var(--sys-green)', 'var(--sys-blue)', 'var(--sys-purple)', 'var(--sys-pink)'];
+const CONFETTI_COLORS = ['var(--sys-red)', 'var(--sys-orange)', 'var(--sys-yellow)', 'var(--sys-green)', 'var(--sys-cyan)', 'var(--sys-purple)', 'var(--sys-pink)'];
 function Confetti({ n = 18, still }: { n?: number; still?: boolean }) {
   return (
     <span className={`${s.confetti} ${still ? s.still : ''}`}>

@@ -80,6 +80,12 @@ export const wrapped = {
     mostSunsets: 'Most Sunsets',
     /** [S] spec §K example */
     firstToPost: 'First to Post',
+    /** [V-weak] "Most Obsessed" (TechCrunch; Vice: "Most Obsessed" with top artist; research/15 §1e) */
+    mostObsessed: 'Most Obsessed',
+    /** [V-weak] group award "Copy and Paste": the group shares the same artists (research/04 §1.6) */
+    copyAndPaste: 'Copy and Paste',
+    /** [V-weak] group award "Chaos Crew": everyone listens to completely different genres (research/04 §1.6) */
+    chaosCrew: 'Chaos Crew',
   },
 
   /* ── Story cards ── */
@@ -93,4 +99,19 @@ export const wrapped = {
   archiveLine: 'snapshots of your most memorable posting days',
   /** [S] spec §L "five days that defined our year" */
   fiveDays: 'five days that defined our year',
+  /** [V] newsroom: searching "2025 Wrapped" (the year comes first) */
+  title: (year: number) => `${year} Wrapped`,
+  /** [V-weak] story "Minutes Listened" · subst minutes→photos, listened→posted */
+  photosPosted: 'Photos Posted',
+  /** [V-weak] story "Listening Archive" · subst listening→posting */
+  archive: 'Posting Archive',
+  /** [V-weak] Listening Archive day reports (newsroom ?p=37765, research/04 §1.8) */
+  archiveDays: {
+    /** "Your Biggest Listening Day" · subst listening→posting */
+    biggest: 'Your Biggest Posting Day',
+    /** "Most Nostalgic Day" */
+    nostalgic: 'Most Nostalgic Day',
+  },
+  /** [V-weak] feature name; host taps "the Wrapped Party tile" at the end of the story (research/15 §1a) */
+  party: 'Wrapped Party',
 } as const;

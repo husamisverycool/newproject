@@ -12,4 +12,8 @@ export const instagram = {
   expiry: 'Disappears after it’s viewed once',
   /** [V] launch copy "a new way to share in the moment – with spontaneous, unfiltered photos" */
   inTheMoment: 'share in the moment',
+
+  /* ── "Add Yours" sticker (research/24 §7) → the weekly photo challenge (spec §K) ── */
+  /** [V] sticker name and the viewer's button; the creator types a prompt, viewers respond with it pre-loaded */
+  addYours: 'Add Yours',
 } as const;

@@ -5,10 +5,12 @@
 export const imessage = {
   /** [V] classic Tapbacks: heart, thumbs-up, thumbs-down, Haha, !!, ? — plus any emoji (iOS 18) */
   tapbacks: ['❤️', '👍', '👎', '😂', '‼️', '❓'] as const,
-  /** [B-med-high] Live Sticker effects */
-  stickerEffects: ['Original', 'Shiny', 'Puffy', 'Comic', 'Stroke'] as const,
-  /** [B-med] */
+  /** [V-weak] Live Sticker effects as listed by support.apple.com iph37b0bfe7b (research/26 §2): "Shiny" · "Comic" · "Puffy" · "Outline". "Original" is not confirmed; "Stroke" was background knowledge only. */
+  stickerEffects: ['Shiny', 'Comic', 'Puffy', 'Outline'] as const,
+  /** [V] support.apple.com iph37b0bfe7b: tap the photo subject, then "Add Sticker" */
   addSticker: 'Add Sticker',
+  /** [V] support.apple.com iph37b0bfe7b: touch and hold the sticker, then "Add Effect" */
+  addEffect: 'Add Effect',
   /** [B-med] "+" menu → "Stickers" */
   stickers: 'Stickers',
   /** [HIG] Messages list title */
@@ -21,6 +23,8 @@ export const imessage = {
   previewSticker: 'Sticker',
   /** [B-high] composer placeholder in an SMS conversation */
   textMessage: 'Text Message',
+  /** [HIG] Messages › group conversation details: the red row at the bottom */
+  leaveConversation: 'Leave this Conversation',
 } as const;
 
 export const invites = {
@@ -53,8 +57,12 @@ export const whatsapp = {
   poll: 'Poll',
   /** [B-med] sticker tab → "Create sticker" */
   createSticker: 'Create sticker',
+  /** [V-weak] pack export button "Add to WhatsApp" (Sticker.ly flow, igeeksblog; research/26 §9) */
+  addToWhatsApp: 'Add to WhatsApp',
   /** [V-weak] pack spec: 3–30 stickers, 512×512 WebP ≤ 100 KB, tray 96×96 */
   pack: { min: 3, max: 30, size: 512, maxKb: 100, tray: 96 },
+  /** [B-high] group info › participants: the tag beside each admin */
+  groupAdmin: 'Group admin',
 } as const;
 
 export const photos27 = {

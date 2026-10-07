@@ -1,0 +1,304 @@
+/*
+ * Partiful create flow, edited on the event page itself (theme toolbar "on your event page" [V]):
+ * - same look as the event page (plan.module.css) and the guest page: black ink, no blue accent [V-weak],
+ *   Partiful Display for the title [V-weak], the poster's edit button in the bottom-right corner [V];
+ * - the Theme / Effect / Settings toolbar is the iOS 26 floating glass bar [B-med] with text items [HIG];
+ * - date rows open the native date wheel; poll rows use Contacts' red ⊖ / green ⊕ edit controls [HIG];
+ * - "Save Draft" sits where iOS puts a screen's confirm action, the trailing nav bar button [HIG];
+ *   "Invite" is a black filled capsule (black filled buttons [V-weak]).
+ */
+.page {
+  --sys-blue: var(--partiful-ink);
+  color: var(--partiful-ink);
+  font-family: var(--font-partiful);
+}
+.page :global(.ios-sheet) {
+  --sys-blue: var(--partiful-ink);
+}
+.nav {
+  position: absolute;
+  z-index: 5;
+  top: 0;
+  left: 0;
+  right: 0;
+}
+.scroll {
+  position: relative;
+  z-index: 1;
+  padding-top: calc(var(--safe-top) + 52px);
+  padding-bottom: calc(var(--safe-bottom) + 120px);
+}
+.withBar {
+  padding-bottom: calc(var(--safe-bottom) + 110px);
+}
+
+.poster {
+  position: relative;
+  margin: 0 20px;
+  border-radius: 20px;
+  box-shadow: 0 20px 44px color-mix(in srgb, var(--partiful-purple) 30%, transparent);
+}
+.poster > div {
+  padding-right: 64px;
+}
+.posterEdit {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  z-index: 3;
+}
+.posterEdit :global(.ios-glass-circle) {
+  background: color-mix(in srgb, var(--sys-bg2) 82%, transparent);
+  color: var(--partiful-ink);
+}
+.body {
+  padding: 18px 20px 0;
+}
+.title {
+  width: 100%;
+  border: 0;
+  outline: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font-size: 40px;
+  font-weight: 500;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
+}
+.title::placeholder {
+  color: var(--sys-label3);
+}
+/* "Multiple font options pop up" [V]: each option set in its own face */
+.fonts {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+}
+.fonts button {
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 999px;
+  box-shadow: inset 0 0 0 1.5px var(--sys-fill);
+  font-size: 16px;
+  font-weight: 500;
+  color: inherit;
+}
+.fonts button[aria-pressed='true'] {
+  box-shadow: inset 0 0 0 1.5px var(--partiful-ink);
+}
+
+/* Rows: icon + value, hairline under each [HIG] */
+.field {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 52px;
+  margin-top: 8px;
+  border-bottom: 0.5px solid var(--sys-sep);
+}
+.field > svg {
+  flex: none;
+}
+.fieldValue {
+  font: 600 17px/22px var(--font-partiful);
+}
+.fieldEmpty {
+  font: 400 17px/22px var(--font-partiful);
+  color: var(--sys-label3);
+}
+.input {
+  flex: 1;
+  min-width: 0;
+  height: 50px;
+  border: 0;
+  outline: none;
+  background: none;
+  color: inherit;
+  font: 400 17px/22px var(--font-partiful);
+}
+.input::placeholder,
+.details::placeholder {
+  color: var(--sys-label3);
+}
+.link {
+  margin-top: 10px;
+  padding: 0;
+  font: 600 15px/20px var(--font-partiful);
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.details {
+  display: block;
+  width: 100%;
+  margin-top: 18px;
+  border: 0;
+  outline: none;
+  resize: none;
+  background: none;
+  padding: 0;
+  color: inherit;
+  font: 400 17px/24px var(--font-partiful);
+}
+
+/* The native datetime input sits invisibly over its row */
+.dateField {
+  position: relative;
+  cursor: pointer;
+}
+.native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  border: 0;
+  cursor: pointer;
+}
+.options {
+  display: flex;
+  flex-direction: column;
+}
+.optionRow {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-height: 46px;
+  padding-left: 34px;
+  border-bottom: 0.5px solid var(--sys-sep);
+}
+.optionValue {
+  flex: 1;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  font: 500 17px/22px var(--font-partiful);
+}
+.optionRow > .minus,
+.optionRow > .plus {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  margin-top: -11px;
+}
+/* Contacts edit controls [HIG]: red ⊖, green ⊕ */
+.minus,
+.plus {
+  position: relative;
+  z-index: 2;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: var(--sys-red);
+}
+.plus {
+  background: var(--sys-green);
+}
+.minus::before,
+.plus::before,
+.plus::after {
+  content: '';
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  top: 10px;
+  height: 2px;
+  border-radius: 1px;
+  background: #ffffff;
+}
+.plus::after {
+  transform: rotate(90deg);
+}
+.addDate {
+  font: 400 17px/22px var(--font-sf);
+}
+
+/* Theme / Effect / Settings toolbar */
+.toolbar {
+  position: absolute;
+  z-index: 10;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--safe-bottom) + 12px);
+  display: flex;
+  padding: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--sys-bg) 72%, transparent);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.14);
+}
+.toolbar button {
+  flex: 1;
+  height: 48px;
+  border-radius: 999px;
+  font: 600 16px/1 var(--font-partiful);
+  color: var(--partiful-ink);
+}
+.toolbar button:active {
+  background: var(--sys-fill3);
+}
+
+/* Theme and Effect pickers: live previews in a grid, ink ring on the chosen one */
+.swatches {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 8px 0 16px;
+}
+.swatches button {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font: 500 14px/18px var(--font-partiful);
+  color: var(--sys-label);
+}
+.swatches button > div {
+  width: 100%;
+  box-shadow: 0 0 0 0 transparent;
+}
+.swatches button[aria-pressed='true'] > div {
+  box-shadow: 0 0 0 2px var(--sys-bg2), 0 0 0 4px var(--partiful-ink);
+}
+.swatches button[aria-pressed='true'] span {
+  font-weight: 700;
+}
+
+.locked {
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+/* Invite */
+.invitePoster {
+  width: 120px;
+  margin: 12px auto 0;
+}
+.bottom {
+  position: absolute;
+  z-index: 10;
+  left: 16px;
+  right: 16px;
+  bottom: calc(var(--safe-bottom) + 16px);
+}
+.primary {
+  width: 100%;
+  height: 54px;
+  border-radius: 999px;
+  background: var(--partiful-ink);
+  color: #ffffff;
+  font: 600 17px/1 var(--font-partiful);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.primary:disabled {
+  opacity: 0.5;
+}
+.page :global(.ios-group) {
+  background: color-mix(in srgb, var(--sys-bg) 86%, transparent);
+}

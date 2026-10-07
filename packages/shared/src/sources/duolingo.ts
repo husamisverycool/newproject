@@ -8,6 +8,17 @@ export const duolingo = {
   voiceQualities: ['Expressive', 'Playful', 'Embracing', 'Worldly'] as const,
   /** [V] Duo's adjectives */
   duoAdjectives: ['helpful', 'motivating', 'organized', 'dependable', 'dedicated', 'persistent', 'supportive', 'positive', 'emotive', 'slightly awkward'] as const,
+  /** [V] the four qualities as design.duolingo.com/writing/voice defines them (research/14 §1.7) */
+  voiceDefinitions: {
+    Expressive: 'simple words and phrases to convey big feelings',
+    Playful: 'bringing creativity to the conversation',
+    Embracing: 'a cheerleader to whoever you are',
+    Worldly: 'interested, knowledgeable, and having a broad worldview',
+  },
+  /** [V] design.duolingo.com/writing/duo: Duo is learners' "#1 fan and biggest cheerleader" */
+  duoRole: '#1 fan and biggest cheerleader',
+  /** [V-weak] first sentence of "Hi, it's Duo! I missed you. …" (research/14 §2.1) · subst Duo→mascot */
+  hiItsDuo: (mascot: string) => `Hi, it's ${mascot}!`,
 
   /* ── Push (research/14 §2.1) ── */
   /** [V] back-off message */

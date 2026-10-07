@@ -46,4 +46,8 @@ export const snapchat = {
   /* ── Imagine Lens (TechCrunch 2025-10-22) ── */
   /** [V] example prompts */
   imaginePrompts: ['Turn me into an alien', 'grumpy cat'] as const,
+  /** [V] newsroom/storyboard18 capacities written "5GB", "100GB", "250GB", "5TB" (no space) */
+  gb: (n: number) => `${n}GB`,
+  /** [V] Snap spokesperson: free users get "a limited number of image generations per day" · "a limited number of" → the plan's monthly count (spec §U "show users how much allowance is left") */
+  imageGenerations: (n: number) => `${n} image generations`,
 } as const;

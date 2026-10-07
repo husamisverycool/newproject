@@ -47,6 +47,7 @@
 
   /* ── BeReal ───────────────────────────────────────────────────────── */
   --locket-ambient: #2e1a09; /* [I] locket-06: screens are a dark gradient tinted by the current photo (#1D1914 → #2E1A09); this is the fallback, the live value is computed from the photo */
+  --locket-ambient-top: #1d1914; /* [I] locket-06: top of the same photo-tinted gradient (#1D1914 → #2E1A09) */
   --locket-glass: rgba(255, 255, 255, 0.16); /* [I] translucent pills/circles over the ambient background (locket-06/-07) */
   --locket-bubble-me: rgba(255, 255, 255, 0.82); /* [I] locket-04: light right-hand bubble, dark text */
   --locket-bubble-them: rgba(255, 255, 255, 0.14); /* [I] locket-04: dark translucent left bubble, white text */
@@ -94,6 +95,9 @@
   --spotify-green: #1ed760; /* [B-high] current brand green */
   --spotify-black: #121212; /* [B-high] app background */
   --spotify-white: #ffffff; /* [V] black/white/green/red "reduced color palette" (red hex UNKNOWN) */
+  --spotify-red: #ff453a; /* [HIG] systemRed (dark) — Wrapped 2025 "red" is named [V] but its hex is UNKNOWN */
+  --story-bar-h: 3px; /* [I] yope-05: story progress bars along the card top, measured ≈ 3 pt thick */
+  --story-bar-gap: 5px; /* [I] yope-05: ≈ 5 pt between segments, ≈ 8 pt in from the card edges */
 
   /* ── Partiful ─────────────────────────────────────────────────────── */
   --partiful-ink: #000000; /* [V-weak] black actions, borders, headings */
@@ -137,6 +141,7 @@
   --font-spotify: 'Spotify Mix', 'SpotifyMixUI', 'CircularSp', 'Helvetica Neue', Helvetica, Arial, sans-serif; /* [V] Spotify Mix; fallbacks [B-med] */
   --font-partiful-display: 'Partiful Display Medium', var(--font-sf); /* [V-weak] */
   --font-partiful: 'TWK Lausanne Pan', var(--font-sf); /* [V-weak] */
+  --font-partiful-manrope: 'Manrope', var(--font-sf); /* [V-weak] Partiful title font id "manrope" (live create URL); not bundled, so SF shows */
   --font-google: 'Google Sans Flex Variable', 'Google Sans', Roboto, sans-serif; /* [B-high] Google Sans family; Flex is its open release */
   --font-discord: 'gg sans', 'Noto Sans', 'Helvetica Neue', Helvetica, Arial, sans-serif; /* [B-high] */
   --font-card: 'Gill Sans', 'Gill Sans MT', var(--font-sf); /* [V] physical TCG body text */
