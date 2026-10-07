@@ -1,15 +1,18 @@
 /*
- * Locket camera + History [B-med unless noted]: black screen; corner buttons and a centred pill in
- * dark translucent capsules; a square viewfinder with large rounded corners; flash · shutter · flip;
- * "History" with the last photo at the bottom. Type: SF Pro Rounded [B-med]. Colors: --locket-*.
- * iOS Camera mode labels [HIG]. BeReal preview: black and white [V-weak].
+ * Locket camera + History, measured from research/inspo/store/locket-06-capture and -07-history [I]
+ * (1 pt ≈ 0.79 px in those images): a dark gradient tinted by the photo on screen; translucent
+ * capsules and circles; a square viewfinder (radius ≈ 40 pt); flash · shutter (76 pt: white, 3 pt
+ * dark gap, 4 pt yellow ring) · flip; thumbnail + "History" + chevron. UI type is SF Pro semibold/bold
+ * [I] (not Rounded). iOS Camera mode labels [HIG]. BeReal preview from bereal-02-dualcam-preview [I].
  */
 .root {
+  --amb: var(--locket-ambient);
   position: absolute;
   inset: 0;
-  background: var(--locket-bg);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--amb) 16%, #000) 0%, color-mix(in srgb, var(--amb) 30%, #000) 100%);
+  transition: background 600ms ease;
   color: #fff;
-  font-family: var(--font-sf-rounded);
+  font-family: var(--font-sf);
   overflow: hidden;
 }
 .pager {
@@ -38,6 +41,9 @@
 }
 
 /* Corners (fixed) */
+.top[hidden] {
+  display: none;
+}
 .top {
   position: absolute;
   top: calc(var(--safe-top) + 8px);
@@ -49,36 +55,48 @@
   justify-content: space-between;
   z-index: 10;
 }
-.corner {
-  position: relative;
+.me {
   width: 46px;
   height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+.corner {
+  position: relative;
+  width: 40px;
+  height: 40px;
   border-radius: 50%;
-  background: var(--locket-pill);
+  background: var(--locket-glass);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   color: #fff;
 }
-.dot {
+/* [I] locket-06: yellow count badge at the chat circle's top right */
+.badge {
   position: absolute;
-  top: 9px;
-  right: 9px;
-  width: 9px;
-  height: 9px;
-  border-radius: 50%;
-  background: var(--locket-yellow);
-  box-shadow: 0 0 0 2px #000;
-}
-.pill {
-  height: 42px;
-  padding: 0 16px;
+  top: -5px;
+  right: -5px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
   border-radius: 999px;
-  background: var(--locket-pill);
+  background: var(--locket-yellow);
+  color: #000;
+  font: 700 12px/18px var(--font-sf);
+  text-align: center;
+}
+/* [I] locket-06/-07: "👥 12 Friends" / "Everyone ⌄" capsule */
+.pill {
+  height: 38px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--locket-glass);
   display: inline-flex;
   align-items: center;
   gap: 7px;
-  font: 700 16px/1 var(--font-sf-rounded);
+  font: 600 15px/1 var(--font-sf);
   color: #fff;
 }
 
@@ -102,7 +120,7 @@
   aspect-ratio: 1;
   border-radius: var(--locket-viewfinder-r);
   overflow: hidden;
-  background: var(--locket-field);
+  background: rgba(255, 255, 255, 0.06);
   flex: none;
   margin-top: 26px;
   transition: box-shadow 160ms;
@@ -137,9 +155,9 @@
   height: 38px;
   padding: 0 16px;
   border-radius: 999px;
-  background: var(--locket-pill);
+  background: var(--locket-glass);
   color: #fff;
-  font: 700 15px/1 var(--font-sf-rounded);
+  font: 700 15px/1 var(--font-sf);
 }
 .inset {
   position: absolute;
@@ -194,11 +212,12 @@
   color: #fff;
 }
 .shutter {
-  width: 84px;
-  height: 84px;
+  width: 76px;
+  height: 76px;
+  padding: 3px;
+  border: 4px solid var(--locket-yellow);
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 4px #000, 0 0 0 8px var(--locket-yellow); /* white circle inside a yellow ring [B-med] */
+  background: #fff content-box; /* [I] white, a see-through 3 pt gap, 4 pt yellow ring = 76 pt */
   transition: transform 120ms;
 }
 .shutter:active {
@@ -208,7 +227,7 @@
   opacity: 0.5;
 }
 .bottom {
-  margin-top: auto;
+  margin-top: 30px; /* [I] locket-06: History sits ≈ 95 pt under the shutter centre, well above the home indicator */
   margin-bottom: calc(var(--safe-bottom) + 18px);
   width: 100%;
   padding: 0 20px;
@@ -224,17 +243,24 @@
   justify-content: center;
   color: #fff;
 }
+/* [I] locket-06: thumbnail + "History" on one line, the chevron centred under it */
 .historyBtn {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  font: 700 17px/1 var(--font-sf);
+  color: #fff;
+}
+.historyRow {
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font: 700 17px/1 var(--font-sf-rounded);
-  color: #fff;
 }
-.historyBtn img {
-  width: 30px;
-  height: 30px;
-  border-radius: 9px;
+.historyRow img {
+  width: 26px;
+  height: 26px;
+  border-radius: 7px;
   object-fit: cover;
 }
 .blurThumb {
@@ -248,22 +274,24 @@
 }
 
 /* Capture review (Locket) */
+/* [I] locket-04/-07, frame locket-reply-grid: caption centred near the photo's bottom, white
+   semibold in a translucent capsule */
 .captionInput,
 .captionPill {
   position: absolute;
   left: 50%;
-  bottom: 16px;
+  bottom: 14px;
   transform: translateX(-50%);
   max-width: calc(100% - 32px);
-  height: 40px;
-  padding: 0 16px;
+  height: 34px;
+  padding: 0 14px;
   border-radius: 999px;
   border: 0;
-  background: rgba(0, 0, 0, 0.45);
+  background: rgba(60, 60, 60, 0.42);
   -webkit-backdrop-filter: blur(16px);
   backdrop-filter: blur(16px);
   color: #fff;
-  font: 700 16px/40px var(--font-sf-rounded);
+  font: 600 15px/34px var(--font-sf);
   text-align: center;
   outline: none;
   display: inline-flex;
@@ -302,11 +330,11 @@
   height: 32px;
   padding: 0 12px;
   border-radius: 999px;
-  background: var(--locket-pill);
+  background: var(--locket-glass);
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font: 700 14px/1 var(--font-sf-rounded);
+  font: 700 14px/1 var(--font-sf);
   color: #fff;
 }
 .captionTypes button:disabled {
@@ -326,18 +354,45 @@
   justify-content: space-evenly;
   margin-top: 18px;
 }
+/* [I] frames locket-review-*: paper plane in a gray circle → spinner → ✓ */
 .sendBtn {
-  width: 84px;
-  height: 84px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  background: var(--locket-yellow);
-  color: #000;
+  background: rgba(255, 255, 255, 0.24);
+  color: #fff;
   display: inline-flex;
   align-items: center;
   justify-content: center;
 }
 .sendBtn:disabled {
-  opacity: 0.5;
+  opacity: 1;
+}
+/* [I] frame locket-review-sendto: "Send to" (small, gray) over the name (semibold) at the top */
+.sendTo {
+  position: fixed;
+  top: calc(var(--safe-top) + 8px);
+  left: 60px;
+  right: 60px;
+  height: 46px;
+  z-index: 11;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  pointer-events: none;
+}
+.sendTo span {
+  font: 500 12px/1 var(--font-sf);
+  color: rgba(255, 255, 255, 0.6);
+}
+.sendTo strong {
+  font: 600 16px/1.1 var(--font-sf);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .recipients {
   display: flex;
@@ -356,7 +411,7 @@
   flex-direction: column;
   align-items: center;
   gap: 6px;
-  font: 600 12px/1 var(--font-sf-rounded);
+  font: 600 12px/1 var(--font-sf);
   color: #fff;
   max-width: 66px;
 }
@@ -380,7 +435,8 @@
   box-shadow: 0 0 0 3px #000, 0 0 0 5px var(--locket-yellow);
 }
 
-/* BeReal preview [V-weak]: black and white, BTS top right, all-caps SEND */
+/* BeReal preview [I] bereal-02-dualcam-preview: black; ⌄ + "BeReal."; caption above the photo;
+   chips inside the photo's bottom; heavy "SEND ➤" */
 .bereal {
   position: absolute;
   inset: 0;
@@ -390,7 +446,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: calc(var(--safe-top) + 6px) 12px calc(var(--safe-bottom) + 16px);
+  padding: calc(var(--safe-top) + 6px) 14px calc(var(--safe-bottom) + 18px);
   font-family: var(--font-sf);
 }
 .berealTop {
@@ -405,30 +461,30 @@
   height: 44px;
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   color: #fff;
 }
-.bts {
-  justify-self: end;
-  height: 30px;
-  padding: 0 12px;
-  border-radius: 999px;
-  border: 1.5px solid rgba(255, 255, 255, 0.5);
-  font: 600 13px/1 var(--font-sf);
+.berealCaption {
+  margin-top: 6px;
+  width: 100%;
+  height: 34px;
+  border: 0;
+  background: none;
   color: #fff;
+  text-align: left;
+  font: 500 15px/1 var(--font-sf);
+  outline: none;
 }
-.btsOn {
-  background: #fff;
-  color: #000;
-  border-color: #fff;
+.berealCaption::placeholder {
+  color: rgba(255, 255, 255, 0.5);
 }
 .berealPhoto {
   position: relative;
   width: 100%;
   aspect-ratio: 3 / 4;
-  border-radius: 16px;
+  border-radius: 18px;
   overflow: hidden;
-  margin-top: 10px;
+  margin-top: 6px;
 }
 .berealPhoto img {
   width: 100%;
@@ -439,37 +495,57 @@
   position: absolute;
   top: 12px;
   left: 12px;
-  width: 30%;
+  width: 34%;
   aspect-ratio: 3 / 4;
-  border-radius: 12px;
+  border-radius: 14px;
   border: 2px solid #000;
   background: center/cover no-repeat;
 }
-.berealCaption {
-  margin-top: 14px;
-  width: 100%;
-  height: 40px;
-  border: 0;
-  background: none;
+.berealRetake {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 30px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: #fff;
-  text-align: center;
-  font: 400 16px/1 var(--font-sf);
-  outline: none;
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.5));
 }
-.berealCaption::placeholder {
-  color: rgba(255, 255, 255, 0.55);
+.berealChips {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 12px;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+}
+.berealChips button {
+  height: 30px;
+  padding: 0 11px;
+  border-radius: 999px;
+  background: rgba(0, 0, 0, 0.45);
+  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(12px);
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font: 600 12px/1 var(--font-sf);
+  color: #fff;
 }
 .berealSend {
   margin-top: auto;
   display: inline-flex;
   align-items: center;
-  gap: 10px;
-  font: 800 30px/1 var(--font-sf);
-  letter-spacing: 0.02em;
+  gap: 8px;
+  font: 900 32px/1 var(--font-sf);
+  letter-spacing: 0.01em;
   color: #fff;
 }
 .berealSend:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
 }
 
 /* History */
@@ -495,29 +571,51 @@
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  font: 700 13px/1 var(--font-sf-rounded);
+  font: 700 13px/1 var(--font-sf);
 }
+/* [I] bereal-05-unlock-blur: eye-slash, "Share to view", the body line, a white capsule button */
 .postToView {
   position: absolute;
   inset: 0;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
-  font: 700 18px/1 var(--font-sf);
+  gap: 6px;
+  padding: 0 24px;
+  text-align: center;
   color: #fff;
 }
+.postToView strong {
+  margin-top: 4px;
+  font: 600 17px/22px var(--font-sf);
+}
+.postToView span {
+  font: 400 15px/20px var(--font-sf);
+}
+.postAPhoto {
+  margin-top: 14px;
+  height: 40px;
+  padding: 0 22px;
+  border-radius: 12px;
+  background: #fff;
+  color: #000;
+  font: 600 15px/40px var(--font-sf);
+}
+/* [I] locket-07: avatar 20 pt + "Jessica" semibold + "36m" gray */
 .byline {
   display: flex;
   align-items: center;
-  gap: 8px;
-  margin-top: 16px;
-  font: 700 16px/1 var(--font-sf-rounded);
+  gap: 7px;
+  margin-top: 14px;
+  font: 600 15px/1 var(--font-sf);
 }
 .bylineName {
   color: #fff;
 }
 .bylineTime {
   color: rgba(255, 255, 255, 0.5);
+  font-weight: 500;
 }
 .replyRow {
   width: 100%;
@@ -526,11 +624,12 @@
   display: flex;
   justify-content: center;
 }
+/* [I] locket-07: translucent capsule, placeholder at left, 🔥 💖 and the smiley-plus at right */
 .replyBar {
   width: 100%;
-  height: 52px;
+  height: 48px;
   border-radius: 999px;
-  background: var(--locket-field);
+  background: var(--locket-glass);
   display: flex;
   align-items: center;
   padding: 0 6px 0 18px;
@@ -543,10 +642,10 @@
   background: none;
   outline: none;
   color: #fff;
-  font: 600 16px/1 var(--font-sf-rounded);
+  font: 600 16px/1 var(--font-sf);
 }
 .replyInput::placeholder {
-  color: rgba(255, 255, 255, 0.45);
+  color: rgba(255, 255, 255, 0.55);
 }
 .quick {
   width: 38px;
@@ -561,11 +660,11 @@
   height: 44px;
   padding: 0 18px;
   border-radius: 999px;
-  background: var(--locket-field);
+  background: var(--locket-glass);
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font: 700 16px/1 var(--font-sf-rounded);
+  font: 700 16px/1 var(--font-sf);
   color: #fff;
 }
 .activityFaces {
@@ -588,12 +687,14 @@
   justify-content: center;
   color: #fff;
 }
+/* [I] locket-07: small shutter ≈ 44 pt (white, gap, yellow ring) */
 .shutterSmall {
-  width: 58px;
-  height: 58px;
+  width: 46px;
+  height: 46px;
+  padding: 2px;
+  border: 3px solid var(--locket-yellow);
   border-radius: 50%;
-  background: #fff;
-  box-shadow: 0 0 0 3px #000, 0 0 0 6px var(--locket-yellow);
+  background: #fff content-box;
 }
 .sheetEmpty {
   text-align: center;
@@ -660,7 +761,7 @@
   padding: 0 36px;
   text-align: center;
   color: rgba(255, 255, 255, 0.6);
-  font: 600 16px/22px var(--font-sf-rounded);
+  font: 600 16px/22px var(--font-sf);
 }
 
 /* Grid (Locket history grid) */
@@ -705,7 +806,7 @@
 .allowed {
   margin: 0 0 12px;
   text-align: center;
-  font: 600 15px/1 var(--font-sf-rounded);
+  font: 600 15px/1 var(--font-sf);
   color: var(--sys-label2);
 }
 .createNew {
@@ -716,5 +817,5 @@
   border-radius: 999px;
   background: var(--locket-yellow);
   color: #000;
-  font: 700 17px/1 var(--font-sf-rounded);
+  font: 700 17px/1 var(--font-sf);
 }

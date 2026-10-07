@@ -31,8 +31,36 @@ export const bereal = {
   addACaption: 'Add a caption...',
 
   /* ── Feed blur ── */
-  /** [B-low] copy over blurred posts until you post */
-  postToView: 'Post to view',
+  /** [I] bereal-05-unlock-blur: title over the blurred photo, under an eye-slash glyph */
+  shareToView: 'Share to view',
+  /** [I] bereal-05-unlock-blur: "To view your friend's BeReal, post an update." · subst BeReal→photo */
+  shareToViewBody: "To view your friend's photo, post an update.",
+  /** [I] bereal-05-unlock-blur: white capsule "Post a BeReal." · subst BeReal→photo */
+  postAPhoto: 'Post a photo.',
+  /** [I] bereal-05-unlock-blur: "5 min late" under the poster's name */
+  minLate: (n: number) => `${n} min late`,
+  /** [I] bereal-03-same-time-feed: "Claire ✨ and 24 others posted a BeReal" · subst BeReal→photo */
+  andOthersPosted: (name: string, n: number) => `${name} and ${n} others posted a photo`,
+  /** [I] bereal-03 / -05: "View 10 comments" */
+  viewComments: (n: number) => `View ${n} comments`,
+  /** [I] bereal-06-realmojis-comments: "annavibes · 5 min ago" */
+  minAgo: (n: number) => `${n} min ago`,
+  /** [I] bereal-06-realmojis-comments: header capsule "See Profile" */
+  seeProfile: 'See Profile',
+  /** [I] bereal-06-realmojis-comments: overflow circle after the RealMojis "3+" */
+  more: (n: number) => `${n}+`,
+  /** [I] bereal-04-calendar: title "My BeReals" · subst BeReal→photo */
+  myPhotos: 'My Photos',
+  /** [I] bereal-04-calendar: weekday header */
+  weekdays: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'] as const,
+  /** [I] bereal-02-dualcam-preview: audience chip "🔒 My Friends" */
+  myFriends: 'My Friends',
+  /** [I] bereal-05-unlock-blur: feed tabs "My Friends" | "Friends of Friends" */
+  friendsOfFriends: 'Friends of Friends',
+  /** [I] bereal-02-dualcam-preview: toggle chip "Off" */
+  off: 'Off',
+  /** [I] App Store quote: "Like a mini time capsule of my everyday life" */
+  timeCapsule: 'Like a mini time capsule of my everyday life',
 
   /* ── RealMoji (help.bereal.com 7536240858653; research/03 §1.7) ── */
   /** [B-high] the five preset RealMojis in order: Like, smile, surprise, love, burst out laughing ([V] names) */

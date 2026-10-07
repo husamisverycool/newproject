@@ -41,6 +41,16 @@ export const tcg = {
   packStamina: 'Pack Stamina',
   /** [B-low-med] marker on cards not yet in the dex */
   newBadge: 'NEW',
+  /** [I] research/inspo/store/tcg-01-pack-select.webp — left pill under the packs · first-party App Store screenshot [V] */
+  offeringRates: 'Offering Rates',
+  /** [I] research/inspo/store/tcg-01-pack-select.webp — right pill "Select other booster packs ›" · App Store screenshot [V] */
+  selectOtherPacks: 'Select other booster packs',
+  /** [I] research/inspo/store/tcg-01-pack-select.webp — pack-points badge "40 pts" · App Store screenshot [V] */
+  pts: (n: number) => `${n.toLocaleString()} pts`,
+  /** [I] research/inspo/frames/tcg-card-reveal.jpg — caption under the round ⏩ button during the reveal · video frame [V-weak] */
+  tapAndHold: 'Tap and hold',
+  /** [I] research/inspo/store/tcg-02-share-card.webp — bottom sheet label over the "2 › 1" stepper · App Store screenshot [V] */
+  numberOwned: 'Number owned',
   /** [V] "Rare Pack" (0.05%) */
   rarePack: 'Rare Pack',
   /** [V] Pack Points: 5 per pack */

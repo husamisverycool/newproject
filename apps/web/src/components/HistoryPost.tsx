@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router';
 import { bereal, characterai, gphotos, imessage, ios, jackbox, locket, whatsapp } from '@app/shared';
 import { api } from '../lib/api';
 import { haptic } from '../lib/feedback';
-import { firstName, timeAgo } from '../lib/format';
+import { firstName } from '../lib/format';
 import { queryClient, useMe } from '../lib/queries';
 import { useUi } from '../lib/store';
 import type { Post } from '../lib/types';
@@ -13,12 +13,14 @@ import { EmojiRain } from './EmojiRain';
 import s from '../screens/camera.module.css';
 
 /**
- * One page of Locket's History [B-med]: the photo in the same rounded square as the camera, sender
- * avatar + first name + relative time under it, the "Send message..." reply bar with quick emojis
- * and an add-emoji button; on your own photo an "Activity" row instead. Bottom: grid icon, a small
- * shutter back to the camera, ··· menu. Reactions "rain down" [V]; Locket "doesn't count or track
- * reactions" [V]. From BeReal: blurred until you post [V-weak], hold to play BTS [V], tap the inset to
- * swap [B-med], RealMoji + ⚡ Instant RealMoji [V], report / block [V]. Any-emoji reactions: Tapbacks [V].
+ * One page of Locket's History, laid out from research/inspo/store/locket-07-history [I]: the photo
+ * in the camera's rounded square with its caption centred near the bottom; avatar + first name +
+ * short time ("36m") under it; the "Send message..." capsule holding 🔥 💖 and the smiley-plus glyph;
+ * bottom bar = grid (2×2) · small shutter · share glyph. On your own photo an "Activity" row instead
+ * [B-low]. Reactions rain down (frame locket-emoji-rain [I]); Locket "doesn't count or track
+ * reactions" [V]. From BeReal: blurred until you post with "Share to view" (bereal-05 [I]), hold to
+ * play BTS [V], tap the inset to swap [B-med], RealMoji + ⚡ Instant RealMoji [V], report / block [V].
+ * Any-emoji reactions: Tapbacks [V]. The share glyph opens the iOS action menu [HIG].
  */
 export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: () => void; onGrid: () => void }) {
   const nav = useNavigate();
@@ -95,14 +97,21 @@ export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: 
             <Icon name="volume" size={16} /> {Math.round(post.media.voiceDuration ?? 0)}s
           </button>
         )}
-        {post.blurred && <div className={s.postToView}>{bereal.postToView}</div>}
+        {post.blurred && (
+          <div className={s.postToView}>
+            <Icon name="eyeOff" size={30} strokeWidth={2.2} />
+            <strong>{bereal.shareToView}</strong>
+            <span>{bereal.shareToViewBody}</span>
+            <button className={s.postAPhoto} onClick={(e) => { e.stopPropagation(); onCamera(); }}>{bereal.postAPhoto}</button>
+          </div>
+        )}
         {localRain && <EmojiRain key={localRain.key} emoji={localRain.emoji} />}
       </div>
 
       <div className={s.byline}>
         <Avatar user={post.user} size={24} />
         <span className={s.bylineName}>{firstName(post.user.name)}</span>
-        <span className={s.bylineTime}>{timeAgo(post.createdAt)}</span>
+        <span className={s.bylineTime}>{locket.ago(Date.now() - post.createdAt)}</span>
       </div>
 
       <div className={s.replyRow}>
@@ -121,7 +130,7 @@ export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: 
               </button>
             ))}
             <button className={s.quick} onClick={() => setPicker(true)} disabled={post.blurred} aria-label={bereal.realMoji}>
-              <Icon name="smile" size={22} />
+              <Icon name="smilePlus" size={24} />
             </button>
           </div>
         )}
@@ -129,11 +138,11 @@ export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: 
 
       <div className={s.historyBar}>
         <button className={s.barBtn} onClick={onGrid} aria-label={locket.history}>
-          <Icon name="grid" size={24} />
+          <Icon name="grid4" size={26} />
         </button>
         <button className={s.shutterSmall} onClick={onCamera} aria-label={ios.axShutter} />
-        <button className={s.barBtn} onClick={() => setMore(true)} aria-label={ios.more}>
-          <Icon name="more" size={26} strokeWidth={3} />
+        <button className={s.barBtn} onClick={() => setMore(true)} aria-label={ios.share}>
+          <Icon name="share" size={26} />
         </button>
       </div>
 
@@ -148,7 +157,7 @@ export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: 
                 key={i}
                 icon={<Avatar user={r.user} size={32} />}
                 title={r.user ? firstName(r.user.name) : jackbox.audience}
-                sub={timeAgo(r.createdAt)}
+                sub={locket.ago(Date.now() - r.createdAt)}
                 accessory={r.stickerUrl ? <img src={r.stickerUrl} alt="" width={40} height={40} /> : <span style={{ fontSize: 26 }}>{r.emoji}</span>}
                 sepInset={60}
               />
@@ -194,6 +203,7 @@ export function HistoryPost({ post, onCamera, onGrid }: { post: Post; onCamera: 
         open={more}
         onClose={() => setMore(false)}
         actions={[
+          ...(typeof navigator.share === 'function' ? [{ label: ios.share, icon: 'share', onClick: () => void navigator.share({ url: `${location.origin}/api/posts/${post.id}/export` }).catch(() => undefined) }] : []),
           { label: ios.save, icon: 'download', onClick: () => window.open(`/api/posts/${post.id}/export`, '_blank') },
           { label: gphotos.tools.remix, icon: 'sparkles', onClick: () => nav(`/create/remix?post=${post.id}&group=${post.groupId}`) },
           { label: whatsapp.createSticker, icon: 'sticker', onClick: () => nav(`/create/sticker?post=${post.id}&group=${post.groupId}`) },

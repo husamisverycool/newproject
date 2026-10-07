@@ -1,10 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import { useNavigate } from 'react-router';
 import { bereal, ios, locket, spec } from '@app/shared';
 import { useCamera, fileToSquareJpeg, photoTakenAt } from '../lib/camera';
 import { api } from '../lib/api';
 import { invalidateGroup, useActiveGroup, useFeed, useRitual } from '../lib/queries';
 import { useUi } from '../lib/store';
+import { useAmbient, useVideoAmbient } from '../lib/ambient';
 import { haptic, sfx } from '../lib/feedback';
 import { Icon } from '../components/Icon';
 import { Avatar, Section, Row, Sheet } from '../components/ios';
@@ -16,12 +17,13 @@ import s from './camera.module.css';
 type Mode = 'photo' | 'dual';
 
 /**
- * Home — Locket's camera [V/B-med]: no tab bar, icons in the corners (profile top-left, a "N Friends"
- * pill centred, messages top-right), a square viewfinder with large rounded corners, flash bolt left
- * of the white shutter in a yellow ring and the flip arrows right, "History" with the last photo at
- * the bottom. Hold the shutter to record (yellow outline). "Scroll down … to travel back in time and
- * explore your History" [V-weak]. Spec additions: a DUAL mode set as an iOS Camera mode [HIG/S],
- * BeReal's running countdown at the top during the ritual window [V], tapping it opens the roll.
+ * Home — Locket's camera, laid out from locket-06-capture [I]: no tab bar; your avatar top-left, the
+ * "👥 12 Friends" capsule centred, the chat circle with a numbered yellow badge top-right; the rounded
+ * square viewfinder; flash ⚡ · shutter (white, dark gap, yellow ring) · flip; a small thumbnail +
+ * "History" with a chevron under it. The whole screen is tinted by the photo on it [I]. History pages
+ * follow below (locket-07-history). Hold the shutter to record (yellow outline) [V]. Spec additions:
+ * the DUAL mode as an iOS Camera mode label [HIG/S]; BeReal's running countdown at the top during the
+ * ritual window [V]; the library button for "Upload from Camera Roll" (a Locket Gold perk [V]).
  */
 export function CameraHome() {
   const nav = useNavigate();
@@ -42,6 +44,7 @@ export function CameraHome() {
   const [filterSheet, setFilterSheet] = useState(false);
   const atTop = page === 0;
   const cam = useCamera(atTop && !shot && !friendsSheet && !grid, { bts: true });
+  const camAmbient = useVideoAmbient(cam.videoRef, atTop && !shot && cam.ready);
   const fileInput = useRef<HTMLInputElement>(null);
   const holdTimer = useRef<number | null>(null);
   const recordFrames = useRef<Blob[]>([]);
@@ -50,6 +53,9 @@ export function CameraHome() {
   const all = feed.data?.posts ?? [];
   const posts = filter ? all.filter((p) => p.user.id === filter) : all;
   const people = [...new Map(all.map((p) => [p.user.id, p.user])).values()];
+  const pagePost = page > 0 ? posts[page - 1] : null;
+  const photoAmbient = useAmbient(shot ? shot.mainUrl : pagePost ? (pagePost.blurred ? null : pagePost.media.thumb ?? pagePost.media.main) : null);
+  const ambient = (shot || pagePost ? photoAmbient : camAmbient) ?? undefined;
 
   useEffect(() => {
     const el = scroller.current;
@@ -157,7 +163,7 @@ export function CameraHome() {
   };
 
   return (
-    <div className={s.root} data-dark>
+    <div className={s.root} data-dark style={ambient ? ({ '--amb': ambient } as CSSProperties) : undefined}>
       <div ref={scroller} className={s.pager}>
         {/* ───────────── Camera ───────────── */}
         <section className={s.page}>
@@ -197,7 +203,7 @@ export function CameraHome() {
               </div>
               <div className={s.controls}>
                 <button className={s.side} onClick={() => setFlash(!flash)} aria-label={ios.axFlash} aria-pressed={flash}>
-                  <Icon name={flash ? 'bolt' : 'boltOff'} size={30} filled={flash} color={flash ? 'var(--locket-yellow)' : '#fff'} />
+                  <Icon name="bolt" size={28} filled={flash} color={flash ? 'var(--locket-yellow)' : '#fff'} />
                 </button>
                 <button className={s.shutter} aria-label={ios.axShutter} onPointerDown={onShutterDown} onPointerUp={onShutterUp} onPointerLeave={() => recording && onShutterUp()} disabled={!cam.ready} />
                 <button className={s.side} onClick={() => { haptic('light'); void cam.flip(); }} aria-label={ios.axFlip}>
@@ -206,12 +212,14 @@ export function CameraHome() {
               </div>
               <div className={s.bottom}>
                 <button className={s.library} onClick={() => fileInput.current?.click()} aria-label={ios.photoLibrary}>
-                  <Icon name="photos" size={26} />
+                  <Icon name="photos" size={24} />
                 </button>
                 <button className={s.historyBtn} onClick={() => goTo(1)}>
-                  {all[0] && <img src={all[0].media.thumb ?? all[0].media.main} alt="" className={all[0].blurred ? s.blurThumb : ''} />}
-                  <span>{locket.history}</span>
-                  <Icon name="chevronDown" size={18} strokeWidth={2.6} />
+                  <span className={s.historyRow}>
+                    {all[0] && <img src={all[0].media.thumb ?? all[0].media.main} alt="" className={all[0].blurred ? s.blurThumb : ''} />}
+                    <span>{locket.history}</span>
+                  </span>
+                  <Icon name="chevronDown" size={20} strokeWidth={2.6} />
                 </button>
                 <span className={s.library} />
               </div>
@@ -238,13 +246,13 @@ export function CameraHome() {
       </div>
 
       {/* Corners: fixed over camera and History (Locket) */}
-      <div className={s.top}>
-        <button className={s.corner} onClick={() => nav('/me')} aria-label={ios.settings}>
-          <Avatar user={me.data?.user ?? null} size={38} />
+      <div className={s.top} hidden={Boolean(shot)}>
+        <button className={s.me} onClick={() => nav('/me')} aria-label={ios.settings}>
+          <Avatar user={me.data?.user ?? null} size={34} style={{ boxShadow: '0 0 0 2px var(--locket-glass)' }} />
         </button>
         {atTop ? (
           <button className={s.pill} onClick={() => setFriendsSheet(true)}>
-            <Icon name="people" size={18} strokeWidth={2.2} />
+            <Icon name="people" size={18} strokeWidth={2.2} filled />
             {locket.friendsPill(group?.memberCount ?? 0)}
           </button>
         ) : (
@@ -254,8 +262,8 @@ export function CameraHome() {
           </button>
         )}
         <button className={s.corner} onClick={() => nav(group ? `/chat/${group.id}` : '/chats')} aria-label={ios.notifications}>
-          <Icon name="chat" size={22} strokeWidth={2.2} />
-          {(me.data?.unread ?? 0) > 0 && <span className={s.dot} />}
+          <Icon name="chat" size={20} strokeWidth={2.2} />
+          {(me.data?.unread ?? 0) > 0 && <span className={s.badge}>{Math.min(me.data?.unread ?? 0, 99)}</span>}
         </button>
       </div>
 

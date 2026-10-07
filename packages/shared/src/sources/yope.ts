@@ -63,7 +63,43 @@ export const yope = {
   /** [V] */
   toolDraw: 'Draw',
 
+  /* ── INSPO (research/30) ── */
+  /** [I] yope-04-chat: composer placeholder */
+  startTyping: 'start typing...',
+  /** [I] frame yope-1on1-feed: 1:1 composer placeholder */
+  message: 'message...',
+  /** [I] yope-01: profile reply field "message to Sabrina...." (four dots in the source) */
+  messageTo: (name: string) => `message to ${name}....`,
+  /** [I] frame yope-1on1-feed: reactions inside the composer */
+  quickReactions: ['❤️', '😂', '🔥'] as const,
+  /** [I] yope-01: profile note header "MY RED FLAGS" */
+  myRedFlags: 'MY RED FLAGS',
+  /** [I] yope-01: reply chip "spill about pic?" */
+  spillAboutPic: 'spill about pic?',
+  /** [I] yope-03: pill on today's recap "today" */
+  today: 'today',
+  /** [I] yope-03: capsule "share" */
+  share: 'share',
+  /** [I] frame yope-week-recap: segmented "recap" | "pics" */
+  recap: 'recap',
+  /** [I] */
+  pics: 'pics',
+  /** [I] frame yope-week-recap: title "18 aug-24 aug" (lowercase, hyphen, no spaces) */
+  weekRange: (start: number, end: number) => {
+    const f = (t: number) => new Date(t).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }).toLowerCase();
+    return `${f(start)}-${f(end)}`;
+  },
+  /** [I] frame yope-1on1-feed: month separator "august 2025" */
+  monthSeparator: (t: number) => new Date(t).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }).toLowerCase(),
+  /** [I] yope-05: time over each photo "8:00 AM" */
+  time: (t: number) => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+  /** [I] App Store headlines (line 2 bold) */
+  headlines: [['find friends', 'like you'], ['put them on', 'your lock screen'], ['your life =', 'daily & monthly recaps'], ['react. talk.', 'go chaotic.']] as const,
+  /** [I] yope-05 headline */
+  everyHour: 'REAL MOMENTS. EVERY HOUR. EVERY FRIEND.',
   /* ── Streak ── */
-  /** [V-weak] the app shows a flame emoji */
+  /** [I] yope-04/-05 "🔥451", frame yope-1on1-feed lime pill "🔥5" */
   streak: '🔥',
+  /** [I] */
+  streakCount: (n: number) => `🔥${n}`,
 } as const;

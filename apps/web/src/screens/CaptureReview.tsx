@@ -6,6 +6,7 @@ import type { GroupSummary } from '../lib/types';
 import { Icon } from '../components/Icon';
 import { Mascot } from '../components/Mascot';
 import { Wordmark } from '../components/Brand';
+import { Spinner } from '../components/ios';
 import s from './camera.module.css';
 
 export interface Shot {
@@ -81,10 +82,11 @@ function Recipients({ groups, targets, setTargets }: { groups: GroupSummary[]; t
 }
 
 /**
- * Locket's capture review [B-med]: the photo stays in the rounded square with an "Add a message"
- * caption pill at the bottom; caption types (Text, Time, Stickers [V-weak]) plus Yope's voice [V] and
- * Character.ai's Pin [V-weak]; X on the left, the send button in the centre, save on the right; the
- * recipient row below.
+ * Locket's capture review. From the INSPO frames locket-review-* [I]: "Send to" / the recipient's
+ * name centred at the top; ✕ on the left, the send button in the centre (a paper plane in a gray
+ * circle that turns into a spinner, then a ✓), the download glyph on the right. The "Add a message"
+ * caption pill on the photo [B-med]; caption types (Text, Time [V-weak]) plus Yope's voice [V] and
+ * Character.ai's Pin [V-weak]; the recipient row below [B-med].
  */
 export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, onSent }: { shot: Shot; groups: GroupSummary[]; activeGroup: GroupSummary | null; ritualOpen: boolean; onCancel: () => void; onSent: () => void }) {
   const [caption, setCaption] = useState('');
@@ -93,10 +95,17 @@ export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, 
   const [remember, setRemember] = useState(false);
   const [voice, setVoice] = useState<Voice | null>(null);
   const { send, sending, old } = useSend(shot, ritualOpen);
+  const [sent, setSent] = useState(false);
   void activeGroup;
+  const all = targets.length === groups.length && groups.length > 1;
+  const sendToName = all ? locket.all : groups.filter((g) => targets.includes(g.id)).map((g) => g.name).join(', ');
   const timeText = new Date(shot.takenAt).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
   return (
     <>
+      <div className={s.sendTo}>
+        <span>{locket.sendTo}</span>
+        <strong>{sendToName}</strong>
+      </div>
       {old && <span className={s.when}>{ios.longDate(shot.takenAt)}</span>}
       {time ? (
         <button className={s.captionPill} onClick={() => setTime(false)}>
@@ -119,9 +128,12 @@ export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, 
             <Icon name="close" size={30} strokeWidth={2.4} />
           </button>
           <button className={s.sendBtn} disabled={sending || !targets.length} aria-label={locket.sendToFriends} onClick={async () => {
-            if (await send({ targets, caption: time ? timeText : caption, voice, remember, bts: true })) onSent();
+            if (await send({ targets, caption: time ? timeText : caption, voice, remember, bts: true })) {
+              setSent(true);
+              window.setTimeout(onSent, 700);
+            }
           }}>
-            <Icon name="paperplane" size={34} strokeWidth={2.2} />
+            {sent ? <Icon name="check" size={30} strokeWidth={2.6} /> : sending ? <Spinner size={26} /> : <Icon name="paperplane" size={28} strokeWidth={2.2} />}
           </button>
           <a className={s.side} href={shot.mainUrl} download="photo.jpg" aria-label={ios.save}>
             <Icon name="download" size={30} strokeWidth={2.2} />
@@ -134,39 +146,59 @@ export function LocketReview({ shot, groups, activeGroup, ritualOpen, onCancel, 
 }
 
 /**
- * BeReal's post preview for a dual shot [V]: main photo full width with the selfie inset at the top
- * left, "BTS On"/"BTS Off" at the top right, an X to retake, "Add a caption..." and the all-caps
- * "SEND". Late labels are dropped (spec §E).
+ * BeReal's post preview for a dual shot, laid out from research/inspo/store/bereal-02-dualcam-preview
+ * [I]: ⌄ at the top left and "BeReal." centred; the caption sits above the photo, left-aligned; the
+ * 3:4 photo with the selfie inset at its top left and a small ✕ (retake) at its top right; a row of
+ * translucent chips inside the photo's bottom edge — audience "🔒 My Friends" (here: the group) and
+ * the BTS toggle ("BTS On"/"BTS Off" [V]); then "SEND ➤" in heavy capitals. Late labels are dropped
+ * (spec §E).
  */
 export function BeRealPreview({ shot, groups, activeGroup, ritualOpen, onCancel, onSent }: { shot: Shot; groups: GroupSummary[]; activeGroup: GroupSummary | null; ritualOpen: boolean; onCancel: () => void; onSent: () => void }) {
   const [bts, setBts] = useState(true);
   const [caption, setCaption] = useState('');
   const [swap, setSwap] = useState(false);
+  const [target, setTarget] = useState(activeGroup?.id ?? groups[0]?.id ?? '');
   const { send, sending } = useSend(shot, ritualOpen);
-  const targets = activeGroup ? [activeGroup.id] : groups.slice(0, 1).map((g) => g.id);
   const main = swap ? shot.insetUrl! : shot.mainUrl;
   const inset = swap ? shot.mainUrl : shot.insetUrl!;
+  const targetName = groups.find((g) => g.id === target)?.name ?? bereal.myFriends;
+  const nextTarget = () => {
+    if (groups.length < 2) return;
+    haptic('light');
+    const i = groups.findIndex((g) => g.id === target);
+    setTarget(groups[(i + 1) % groups.length].id);
+  };
   return (
     <div className={s.bereal}>
       <div className={s.berealTop}>
         <button className={s.berealX} onClick={onCancel} aria-label={ios.cancel}>
-          <Icon name="close" size={24} strokeWidth={2.6} />
+          <Icon name="chevronDown" size={24} strokeWidth={2.6} />
         </button>
-        <Wordmark size={24} color="#fff" />
-        <button className={`${s.bts} ${bts ? s.btsOn : ''}`} onClick={() => { haptic('light'); setBts(!bts); }}>
-          {bts ? bereal.btsOn : bereal.btsOff}
-        </button>
+        <Wordmark size={22} color="#fff" />
+        <span />
       </div>
+      <input className={s.berealCaption} placeholder={bereal.addACaption} value={caption} onChange={(e) => setCaption(e.target.value.slice(0, 100))} />
       <div className={s.berealPhoto}>
         <img src={main} alt="" />
         <button className={s.berealInset} onClick={() => setSwap(!swap)} style={{ backgroundImage: `url(${inset})` }} aria-label={ios.select} />
+        <button className={s.berealRetake} onClick={onCancel} aria-label={ios.cancel}>
+          <Icon name="close" size={16} strokeWidth={2.6} />
+        </button>
+        <div className={s.berealChips}>
+          <button onClick={nextTarget}>
+            <Icon name="lock" size={13} strokeWidth={2.4} />
+            {targetName}
+          </button>
+          <button onClick={() => { haptic('light'); setBts(!bts); }} aria-pressed={bts}>
+            <Icon name="live" size={14} strokeWidth={2.2} />
+            {bts ? bereal.btsOn : bereal.btsOff}
+          </button>
+        </div>
       </div>
-      <input className={s.berealCaption} placeholder={bereal.addACaption} value={caption} onChange={(e) => setCaption(e.target.value.slice(0, 100))} />
-      <button className={s.berealSend} disabled={sending} onClick={async () => {
-        if (await send({ targets, caption, voice: null, remember: false, bts })) onSent();
+      <button className={s.berealSend} disabled={sending || !target} onClick={async () => {
+        if (await send({ targets: [target], caption, voice: null, remember: false, bts })) onSent();
       }}>
-        {bereal.send}
-        <Icon name="paperplane" size={22} strokeWidth={2.4} />
+        {sending ? <Spinner size={26} /> : <>{bereal.send}<Icon name="play" size={24} filled /></>}
       </button>
     </div>
   );

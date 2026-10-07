@@ -6,6 +6,30 @@ import type { CSSProperties } from 'react';
  */
 const P: Record<string, string> = {
   bolt: 'M13 2 4.5 13.5H11L10 22l8.5-11.5H12L13 2Z',
+  /** Locket reply bar "add reaction" glyph [I]: a smiley with a + at its top right */
+  smilePlus: 'M19.5 10.4A8.5 8.5 0 1 1 13.6 3.6M9 10h.01M15 10h.01M8.5 14.5a4.5 4.5 0 0 0 7 0M19 2.5v6M16 5.5h6',
+  /** Locket Rollcall megaphone with sparkle lines [I] */
+  megaphone: 'M3.5 10v4h3l7 4.5v-13l-7 4.5h-3ZM6.5 14l1 5h2.5l-1-4.5M17 9.5a3.5 3.5 0 0 1 0 5M18.5 4.5l1.5-1.5M20.5 8h2M18.5 19.5l1.5 1.5',
+  /** Locket "Capture" aperture [I] */
+  aperture: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM14.3 3.3 9.5 11.6M20.5 9.5h-9.6M18.6 18.1l-4.8-8.3M9.7 20.7l4.8-8.3M3.5 14.5h9.6M5.4 5.9l4.8 8.3',
+  /** Locket History grid [I]: 2×2 rounded squares */
+  grid4: 'M4 6.5A2.5 2.5 0 0 1 6.5 4h1A2.5 2.5 0 0 1 10 6.5v1A2.5 2.5 0 0 1 7.5 10h-1A2.5 2.5 0 0 1 4 7.5v-1ZM14 6.5A2.5 2.5 0 0 1 16.5 4h1A2.5 2.5 0 0 1 20 6.5v1a2.5 2.5 0 0 1-2.5 2.5h-1A2.5 2.5 0 0 1 14 7.5v-1ZM4 16.5A2.5 2.5 0 0 1 6.5 14h1a2.5 2.5 0 0 1 2.5 2.5v1A2.5 2.5 0 0 1 7.5 20h-1A2.5 2.5 0 0 1 4 17.5v-1ZM14 16.5a2.5 2.5 0 0 1 2.5-2.5h1a2.5 2.5 0 0 1 2.5 2.5v1a2.5 2.5 0 0 1-2.5 2.5h-1a2.5 2.5 0 0 1-2.5-2.5v-1Z',
+  /** Yope voice message waveform [I] */
+  waveform: 'M3 12h.01M6 9v6M9 6v12M12 9v6M15 4v16M18 8v8M21 11v2',
+  /** Yope sticker button [I]: circle with a peeled corner */
+  peel: 'M20.5 12A8.5 8.5 0 1 1 12 3.5M20.5 12c-4.7 0-8.5-3.8-8.5-8.5M20.5 12 12 3.5',
+  /** BeReal tag-friends chip [I]: person with + */
+  personPlus: 'M10 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM2.5 20.5c.8-3.6 3.9-6 7.5-6 1.5 0 2.9.4 4 1.1M19 14v6M16 17h6',
+  /** BeReal music chip [I] */
+  note: 'M9 18V5l11-2v13M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0ZM20 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z',
+  /** Retro journal glyph [I] (retro-01 top right) */
+  book: 'M12 6.5C10.5 5 8 4.5 3.5 4.5v14c4.5 0 7 .5 8.5 2 1.5-1.5 4-2 8.5-2v-14c-4.5 0-7 .5-8.5 2ZM12 6.5v14',
+  /** Retro profile info rows [I] */
+  globe: 'M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM3 12h18M12 3c2.5 2.6 3.7 5.6 3.7 9s-1.2 6.4-3.7 9c-2.5-2.6-3.7-5.6-3.7-9S9.5 5.6 12 3Z',
+  /** Retro "Last photo" location arrow [I] */
+  location: 'M20 4 3.5 11l7 2.5L13 20.5 20 4Z',
+  /** Retro postcard pencil [I] */
+  pencil: 'M4 20h4L19 9l-4-4L4 16v4ZM13.5 6.5l4 4',
   boltOff: 'M13 2 9.6 6.6M7.6 9.3 4.5 13.5H11L10 22l4.2-5.7M16.3 13.3 18.5 10.5H14M3 3l18 18',
   flip: 'M4 12a8 8 0 0 1 13.7-5.6M20 4v4h-4M20 12a8 8 0 0 1-13.7 5.6M4 20v-4h4',
   chat: 'M20.5 12c0 4.4-3.8 8-8.5 8-1.4 0-2.7-.3-3.9-.8L3.5 20.5l1.3-3.8C3.9 15.4 3.5 13.8 3.5 12c0-4.4 3.8-8 8.5-8s8.5 3.6 8.5 8Z',

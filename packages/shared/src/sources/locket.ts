@@ -32,9 +32,9 @@ export const locket = {
   subtitle: 'Best friends first',
 
   /* ── Camera home (research/10 §2 and [B]) ── */
-  /** [B-med] top-centre pill: people icon + friend count, e.g. "12 Friends" */
+  /** [I] locket-06-capture: top-centre pill, people glyph + "12 Friends" */
   friendsPill: (n: number) => `${n} Friends`,
-  /** [V-weak] History entry at the bottom of the camera ("tap history at the bottom") */
+  /** [I] locket-06-capture: thumbnail + "History" + chevron under the shutter */
   history: 'History',
   /** [V-weak] tutorial wording for the video gesture */
   holdToRecord: 'HOLD DOWN to RECORD',
@@ -54,12 +54,31 @@ export const locket = {
   captionStickers: 'Stickers',
 
   /* ── History ([B]) ── */
-  /** [B-med] top-centre filter pill */
+  /** [I] locket-07-history: top-centre filter pill "Everyone ⌄" */
   everyone: 'Everyone',
-  /** [B-med] reply bar placeholder */
+  /** [I] locket-07-history: reply bar placeholder */
   sendMessage: 'Send message...',
-  /** [B-low] quick reactions to the right of the reply bar */
-  quickReactions: ['💛', '🔥', '😍'] as const,
+  /** [I] locket-07-history and locket-04-chat: 🔥 and 💖 inside the bar, then the smiley-plus glyph */
+  quickReactions: ['🔥', '💖'] as const,
+  /** [I] locket-04-chat: chat input placeholder */
+  saySomething: 'Say something...',
+  /** [I] locket-04-chat: centred timestamp "Today at 9:40 PM" */
+  todayAt: (time: string) => `Today at ${time}`,
+  /** [I] frame locket-reply-grid: "Reply to Kile" (2021 reply sheet) */
+  replyTo: (name: string) => `Reply to ${name}`,
+  /** [I] frame locket-reply-grid: the 2×4 emoji grid (the eighth cell is the add-emoji glyph) */
+  replyGrid: ['🫶', '💕', '😍', '🤣', '😋', '🥰', '😱'] as const,
+  /** [I] frame locket-review-sendto: header over the photo "Send to" / name */
+  sendTo: 'Send to',
+  /** [I] locket-07-history "36m", locket-04-chat "1hr"; days [B-low] "d"; under a minute [B-low] "now" */
+  ago: (ms: number) => {
+    const m = Math.floor(ms / 60_000);
+    if (m < 1) return 'now';
+    if (m < 60) return `${m}m`;
+    const h = Math.floor(m / 60);
+    if (h < 24) return `${h}hr`;
+    return `${Math.floor(h / 24)}d`;
+  },
   /** [B-low] activity on your own photo */
   activity: 'Activity',
   /** [B-low] */
@@ -82,10 +101,16 @@ export const locket = {
   /* ── Widgets (research/10 §4) ── */
   /** [V-weak] widget gallery name */
   bestFriendWidget: 'Best Friend or Crush widget',
+  /** [I] frame locket-widget-gallery: "Locket Widget" · subst Locket→roll. */
+  widgetTitle: `${BRAND.name} Widget`,
+  /** [I-partial] frame locket-widget-gallery: "…ve pics from all your friends / …ht on your Home Screen" */
+  widgetDescription: 'Live pics from all your friends right on your Home Screen',
+  /** [I] frame locket-widget-gallery: empty widget shows three avatars in yellow rings + "26 Friends" */
+  widgetFriends: (n: number) => `${n} Friends`,
   /** [V-weak] button that adds another widget/Locket */
   createNew: `Create new ${BRAND.name}`,
-  /** [V-weak] add-widget steps: "Long-press the Home Screen, tap "+", search "Locket", swipe through the sizes" · subst Locket→roll. */
-  addWidgetSteps: [`Long-press the Home Screen`, `Tap +`, `Search “${BRAND.bare}”`, `Swipe through the sizes`] as const,
+  /** [I] frame locket-add-widget-steps (Locket TikTok): "1. Edit Home Screen", "2. Click on + in left corner", "3. Search Locket and Add Widget" · subst Locket→roll. */
+  addWidgetSteps: ['1. Edit Home Screen', '2. Click on + in left corner', `3. Search ${BRAND.bare} and Add Widget`] as const,
 
   /* ── Gold (research/10 §6; help-center perk names) ── */
   /** [V] perk */
@@ -128,6 +153,27 @@ export const locket = {
   rollcallMax: 10,
   /** [V] inviting you to "share your week" */
   shareYourWeek: 'share your week',
+  /** [I] locket-03-rollcall: header "Rollcall" with the megaphone glyph · subst Rollcall→roll. */
+  rollcallTitle: BRAND.name,
+  /** [I] locket-03-rollcall: "JAN 19–25" (uppercase month, en dash; a range crossing months repeats the month [B-low]) */
+  rollcallRange: (start: number, end: number) => {
+    const a = new Date(start);
+    const b = new Date(end);
+    const mon = (d: Date) => d.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
+    return a.getMonth() === b.getMonth() ? `${mon(a)} ${a.getDate()}–${b.getDate()}` : `${mon(a)} ${a.getDate()}–${mon(b)} ${b.getDate()}`;
+  },
+
+  /* ── Store panels (locket-01…07): glyph + label, then headline ── */
+  /** [I] App Store panels, in Locket's order · "Locket Widget" subst Locket→roll. */
+  panels: [
+    { glyph: 'heart', label: `${BRAND.name} Widget`, headline: 'Add your best friends to your Home Screen' },
+    { glyph: 'paperplane', label: 'Send', headline: 'Send pics to friends’ Home Screens' },
+    { glyph: 'megaphone', label: 'Rollcall', headline: 'Weekly photo dumps with your best friends' },
+    { glyph: 'chat', label: 'Chat', headline: 'Reply to your friends’ pics' },
+    { glyph: 'sparkle', label: 'Receive', headline: 'See new pictures throughout the day' },
+    { glyph: 'aperture', label: 'Capture', headline: 'Tap the widget to open the camera' },
+    { glyph: 'photos', label: 'History', headline: 'Explore your History to travel back in time' },
+  ] as const,
 
   /* ── Recap (research/10 §8) ── */
   /** [V-weak] "February Recap on Locket" */

@@ -7,13 +7,14 @@ wording. UI code imports from here and never types copy inline; `npm run check:c
 
 | Tag | Meaning |
 |---|---|
+| `[I]` | Seen in the user's own INSPO folder (`research/inspo/`, transcribed in `research/30-inspo-folder.md`). Outranks everything. `[I-partial]`: partly cropped in the image. |
 | `[V]` | Verified: an official page, or two or more independent sources, quote this wording. |
 | `[V-weak]` | One third-party source, or a summary that may paraphrase. |
 | `[B-high]` / `[B-med]` / `[B-low]` | Background knowledge of the source app, not verified this pass. Confirm with captures (`docs/CAPTURE.md`). |
 | `[HIG]` | Apple's standard iOS wording or component (these apps are native iOS apps; unknown details fall back to the platform default). |
 | `[S]` | Wording from the product spec itself (the user's document). Used only when no source app has the string. |
 
-Precedence when choosing copy: `[V]` > `[V-weak]` > `[B-high]` > `[B-med]` > `[B-low]` > `[S]` > no text.
+Precedence when choosing copy: `[I]` > `[V]` > `[V-weak]` > `[B-high]` > `[B-med]` > `[B-low]` > `[S]` > no text.
 
 ## Adapting a source string
 

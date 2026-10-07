@@ -13,6 +13,53 @@ export const retro = {
   /* ── Rewind (TechCrunch 2025-12-12; Fast Company; App Store story) ── */
   /** [V] tab label, middle of the bottom nav */
   rewind: 'Rewind',
+  /** [I] retro-05-rewind: under the big date "On this week" */
+  onThisWeek: 'On this week',
+  /** [I] retro-01-weekly-feed: large serif title "Week 27" */
+  week: (n: number) => `Week ${n}`,
+  /** [I] retro-02-profile: "Week 27 Jul 3 - 9", "Week 26 Jun 26 - Jul 2" (range in gray; spaced hyphen) */
+  weekRange: (start: number, end: number) => {
+    const a = new Date(start);
+    const b = new Date(end);
+    const mon = (d: Date) => d.toLocaleDateString('en-US', { month: 'short' });
+    return a.getMonth() === b.getMonth() ? `${mon(a)} ${a.getDate()} - ${b.getDate()}` : `${mon(a)} ${a.getDate()} - ${mon(b)} ${b.getDate()}`;
+  },
+  /** [I] retro-01 / -02: weekday labels on the day tiles */
+  days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const,
+  /** [I] retro-01-weekly-feed: red pill on a friend's week "6 new" */
+  nNew: (n: number) => `${n} new`,
+  /** [I] retro-02-profile: "Weeks Posted: 32" */
+  weeksPosted: (n: number) => `Weeks Posted: ${n}`,
+  /** [I] retro-02-profile: "Homebase: Prospect Heights, Brooklyn" */
+  homebase: (place: string) => `Homebase: ${place}`,
+  /** [I] retro-02-profile: "Last photo: Aspen, CO" */
+  lastPhoto: (place: string) => `Last photo: ${place}`,
+  /** [I] retro-02-profile: outline capsule "Share Profile" */
+  shareProfile: 'Share Profile',
+  /** [I] retro-03-postcard: sheet title */
+  postcard: 'Postcard',
+  /** [I] retro-03-postcard: pill on the photo "✎ Add a message" */
+  addAMessage: 'Add a message',
+  /** [I] retro-03-postcard: caption over the address */
+  mailingAddress: 'Mailing Address',
+  /** [I] retro-03-postcard */
+  total: 'Total',
+  /** [I] retro-03-postcard: "$2.00" */
+  postcardPrice: '$2.00',
+  /** [I] retro-03-postcard: white capsule button */
+  sendPostcard: 'Send Postcard',
+  /** [I] retro-04-recap: white capsule button */
+  share: 'Share',
+  /** [I] retro-04-recap: footer meta "retro.app" · subst Retro→roll. */
+  domain: BRAND.domain,
+  /** [I] retro-04-recap: "August 2025" */
+  monthYear: (t: number) => new Date(t).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }),
+  /** [I] retro-04-recap: "2:06am" (lowercase, no space) */
+  clock: (t: number) => new Date(t).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }).replace(' ', '').toLowerCase(),
+  /** [I] retro-05-rewind: big serif date "July 5, 2021" */
+  longDate: (t: number) => new Date(t).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+  /** [I] App Store headlines (serif; the italic word in *…*) */
+  headlines: ['*Weekly* feed with friends', '*Private* by default', 'Your photos *mailed* as postcards', 'Beautifully *recap* memories', 'Press *rewind* on the moments that matter'] as const,
   /** [V-weak] What's New: "Rewind, a new tab to time travel through the best memories from your camera roll" */
   rewindWhatsNew: 'Rewind, a new tab to time travel through the best memories from your camera roll',
   /** [V] "private to you — unless you choose to share" */

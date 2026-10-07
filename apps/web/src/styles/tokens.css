@@ -40,12 +40,25 @@
 
   /* ── Locket ([HIG] fallbacks; Locket's own hexes UNKNOWN) ─────────── */
   --locket-bg: #000000; /* [B-high] camera screen is black */
-  --locket-yellow: #ffd60a; /* [HIG] systemYellow (dark) — Locket yellow hex UNKNOWN, [B-low] range #FFC300–#FFD60A */
+  --locket-yellow: #f6b100; /* [I] measured: app icon + widget frame (locket-01/-02); shutter ring #F0BA29, badge #F0BB20 */
   --locket-pill: rgba(255, 255, 255, 0.14); /* [B-med] translucent dark pills over the camera */
   --locket-field: #1c1c1e; /* [HIG] secondarySystemBackground (dark) — dark rounded reply field [B-med] */
-  --locket-viewfinder-r: 52px; /* [B-low] "roughly a 40–60pt radius on about a 350pt square" (midpoint) */
+  --locket-viewfinder-r: 40px; /* [I] measured ≈ 31 px of a 298 px square in locket-06 (≈ 39–40 pt) */
 
   /* ── BeReal ───────────────────────────────────────────────────────── */
+  --locket-ambient: #2e1a09; /* [I] locket-06: screens are a dark gradient tinted by the current photo (#1D1914 → #2E1A09); this is the fallback, the live value is computed from the photo */
+  --locket-glass: rgba(255, 255, 255, 0.16); /* [I] translucent pills/circles over the ambient background (locket-06/-07) */
+  --locket-bubble-me: rgba(255, 255, 255, 0.82); /* [I] locket-04: light right-hand bubble, dark text */
+  --locket-bubble-them: rgba(255, 255, 255, 0.14); /* [I] locket-04: dark translucent left bubble, white text */
+  --yope-lime: #cffa14; /* [I] measured: camera button + streak pill (yope-04, frame yope-1on1-feed) */
+  --yope-pink: #fa2283; /* [I] measured: profile name sticker (yope-01) */
+  --yope-bg: #1c1c1e; /* [I] dark neutral chat background (yope-04) ≈ [HIG] secondarySystemBackground dark */
+  --bereal-red: #ed4338; /* [I] measured: notification badge (bereal-05) */
+  --retro-red: #e5333a; /* [I] measured: "6 new" pill (retro-01) */
+  --retro-plus: #f2f2f2; /* [I] light-gray "+" tile (retro-01/-02) */
+  --retro-polaroid: #efeee6; /* [I] cream Polaroid frame (retro-04) */
+  --tcg-cyan: #79faff; /* [I] measured: "Share" button (tcg-02) */
+  --tcg-mint: #bdffc7; /* [I] measured: "Share Partner" pill (tcg-02) */
   --bereal-bg: #000000; /* [V-weak] white name on a black background */
   --bereal-fg: #ffffff; /* [V-weak] */
 
@@ -113,6 +126,7 @@
 
   /* ── Type ([HIG] system stacks; source faces listed first where the source names one) ── */
   --font-sf: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'SF Pro Display', system-ui, sans-serif; /* [HIG] */
+  --font-retro: ui-serif, 'New York', 'New York Extra Large', Georgia, serif; /* [B-med] retro-01/-02/-05 heavy high-contrast serif with ball terminals = Apple New York Bold */
   --font-sf-rounded: ui-rounded, 'SF Pro Rounded', -apple-system, BlinkMacSystemFont, system-ui, sans-serif; /* [B-med] Locket */
   --font-duo: 'din-round', 'DIN Next Rounded', sans-serif; /* [B-med-high] duolingo.com CSS */
   --font-duo-head: 'Feather Bold', 'din-round', 'DIN Next Rounded', sans-serif; /* [V] Feather Bold, lowercase headlines */

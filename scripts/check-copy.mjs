@@ -8,7 +8,7 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const root = new URL('..', import.meta.url).pathname;
-const TAG = /\[(V|V-weak|B-high|B-med|B-med-high|B-low|B-low-med|HIG|S|DEMO)\]/;
+const TAG = /\[(I|I-partial|V|V-weak|B-high|B-med|B-med-high|B-low|B-low-med|HIG|S|DEMO)\]/;
 const walk = (dir, ext) =>
   readdirSync(dir).flatMap((f) => {
     const p = join(dir, f);
