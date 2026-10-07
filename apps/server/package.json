@@ -9,16 +9,20 @@
     "seed": "tsx src/seed.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.131.0",
     "@app/shared": "*",
     "@hono/node-server": "1.19.17",
+    "fflate": "^0.8.3",
     "hono": "4.13.13",
     "nanoid": "5.1.16",
     "sharp": "0.34.5",
+    "web-push": "^3.6.7",
     "ws": "8.18.3",
     "zod": "3.25.76"
   },
   "devDependencies": {
     "@types/node": "22.20.5",
+    "@types/web-push": "^3.6.4",
     "@types/ws": "8.18.2",
     "tsx": "4.20.6"
   }

@@ -1,0 +1,2 @@
+Inter, Manrope, Roboto Flex and Google Sans Flex are licensed under the SIL Open Font License 1.1
+(https://openfontlicense.org). Downloaded from Google Fonts for server-side rendering of exports.

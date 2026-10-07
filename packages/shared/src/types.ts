@@ -69,6 +69,10 @@ export type PostKind = 'photo' | 'dual' | 'rewind';
 
 export interface PostMedia {
   main: string;
+  /** 480px thumbnail for walls, widgets and cards. */
+  thumb?: string;
+  /** Full-resolution original (paid tiers only, spec §T). */
+  original?: string | null;
   /** Front-camera inset for dual posts (BeReal). */
   inset?: string;
   /** 2-second pre-capture "live" clip (BeReal BTS) — frames as an animated webp/mp4 url. */
