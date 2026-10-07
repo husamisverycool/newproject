@@ -1,6 +1,6 @@
 import sharp from 'sharp';
 import { zipSync, strToU8 } from 'fflate';
-import { MASCOT_SPECIES, PLANS, aiRemaining, canUseLikeness, type Group } from '@app/shared';
+import { BRAND, MASCOT_SPECIES, PLANS, aiRemaining, canUseLikeness, sora, spec, type Group } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
 import { exportAnimated, exportImage, readMedia, storePng, writeMedia, escapeXml } from '../media.ts';
 import { getGroup, getObject, getPost, getUser, groupsForUser, insertObject, objectsFor, publicUser, type UserFull } from '../repo.ts';
@@ -24,12 +24,16 @@ export function likenessOf(userId: string) {
   return r ? { selfies: json.parse<string[]>(r.selfies, []), face: r.face, verified: !!r.verified, enrolledAt: r.enrolled_at } : null;
 }
 
-export function consent(actor: UserFull, subjectIds: string[], groupId: string | null) {
+export function consent(actor: UserFull, subjectIds: string[], groupId: string | null, opts: { sticker?: boolean } = {}) {
   const actorGroups = groupsForUser(actor.id).map((g) => g.id);
   for (const sid of subjectIds) {
     const owner = getUser(sid);
     if (!owner) throw new GameError('no_subject');
-    const r = canUseLikeness({ owner, actorId: actor.id, groupId, ownerGroupIds: groupsForUser(sid).map((g) => g.id), actorGroupIds: actorGroups });
+    // Spec §F: stickers of a friend also need their "my group can make me into stickers" switch (default on).
+    const stickerOff = opts.sticker && sid !== actor.id && (owner.settings as Record<string, unknown>).stickerConsent === false;
+    const r = stickerOff
+      ? ({ ok: false, reason: 'not_allowed' } as const)
+      : canUseLikeness({ owner, actorId: actor.id, groupId, ownerGroupIds: groupsForUser(sid).map((g) => g.id), actorGroupIds: actorGroups });
     if (!r.ok) throw new GameError(`consent_${r.reason}`, `${owner.name} hasn't allowed this`);
   }
 }
@@ -41,10 +45,12 @@ export function meter(actor: UserFull) {
   return { used, left };
 }
 
-function notifySubjects(actor: UserFull, subjectIds: string[], objectId: string, kind: string, groupId: string | null) {
+function notifySubjects(actor: UserFull, subjectIds: string[], objectId: string, _kind: string, groupId: string | null) {
   for (const s of subjectIds) {
     if (s === actor.id) continue;
-    push({ userId: s, groupId, kind: 'likeness_used', title: 'Your likeness was used', body: `${actor.name} made a ${kind} with you. You can see it or revoke it.`, refIds: [objectId], url: '/me/likeness' });
+    // Sora notifies people when their likeness is used [V-weak]; its notification wording is UNKNOWN, so the
+    // push uses the feature name [S] and Sora's line about seeing what others made with you [V-weak].
+    push({ userId: s, groupId, kind: 'likeness_used', title: spec.likeness, body: sora.draftsLine, refIds: [objectId], url: '/me/likeness' });
   }
 }
 
@@ -53,7 +59,7 @@ function provenance(generator: string, model: string, subjects: string[]) {
 }
 
 export async function makeSticker(actor: UserFull, input: { cutout: Buffer; original: Buffer | null; groupId: string | null; subjectId: string; sourcePostId?: string | null }) {
-  consent(actor, [input.subjectId], input.groupId);
+  consent(actor, [input.subjectId], input.groupId, { sticker: true });
   const res = await img.sticker(input.cutout, input.original);
   const stored = await storePng(await sharp(res.image).png().toBuffer());
   const o = insertObject({
@@ -195,8 +201,7 @@ export async function stickerPack(actor: UserFull, groupId: string | null) {
     contents.push({ image_file: `${i + 1}.webp`, emojis: ['😀'] });
   }
   files['whatsapp/tray.png'] = await sharp(readMedia(stickers[0].media)).resize(96, 96, { fit: 'contain', background: { r: 0, g: 0, b: 0, alpha: 0 } }).png().toBuffer();
-  files['whatsapp/contents.json'] = strToU8(JSON.stringify({ identifier: `roll-${groupId ?? actor.id}`, name: `${group?.name ?? actor.name} · roll.`, publisher: 'roll.', tray_image_file: 'tray.png', stickers: contents }, null, 2));
-  files['README.txt'] = strToU8('WhatsApp: import the whatsapp/ folder with a sticker-pack importer. iMessage: drag the PNGs from imessage/ into a conversation or a sticker app.\nEvery sticker carries the roll. watermark.');
+  files['whatsapp/contents.json'] = strToU8(JSON.stringify({ identifier: `${BRAND.bare}-${groupId ?? actor.id}`, name: group?.name ?? actor.name, publisher: BRAND.name, tray_image_file: 'tray.png', stickers: contents }, null, 2));
   return Buffer.from(zipSync(files, { level: 6 }));
 }
 

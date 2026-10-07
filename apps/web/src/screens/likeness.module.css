@@ -1,0 +1,59 @@
+/*
+ * Likeness settings (spec §F, §S) after Sora's likeness permissions (research/06 §3, 16 §3, 26 §12).
+ * Sora's settings layout, colors and type are UNKNOWN, so this is a stock iOS inset grouped list on
+ * Sora's dark surface (tokens.css [data-dark]) [HIG]: single-choice rows with a checkmark, switches,
+ * a multi-line field, and a destructive row. The selfie strip reuses the onboarding capture
+ * (LikenessCapture: Sora's oval guide [V-weak] and head turns [V-weak]).
+ */
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  padding: 8px 0 calc(var(--safe-bottom) + 24px);
+}
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+/* Enrolled selfies: Photos-style square thumbnails [HIG] */
+.selfies {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+}
+.selfies img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  display: block;
+}
+.cta {
+  padding: 0 var(--margin) 35px;
+}
+/* Multi-line text field inside a grouped cell [HIG] */
+.field {
+  display: block;
+  width: 100%;
+  min-height: 88px;
+  padding: 11px 16px;
+  border: 0;
+  resize: none;
+  background: transparent;
+  color: var(--sys-label);
+  font: var(--t-body);
+  outline: none;
+}
+.field::placeholder {
+  color: var(--sys-label3);
+}
+.thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 6px;
+  object-fit: cover;
+  flex: none;
+  background: var(--sys-fill3);
+}
+.sheetBody {
+  padding-bottom: calc(var(--safe-bottom) + 16px);
+}

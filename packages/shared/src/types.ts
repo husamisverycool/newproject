@@ -3,8 +3,12 @@ export type ID = string;
 /** Subscription tiers. Spec §U: $3.99 entry (plus) and a $5.99 AI tier. */
 export type Plan = 'free' | 'plus' | 'ai';
 
-/** Spec §S: per-person likeness permissions (Sora Cameos-style). */
-export type LikenessScope = 'no_one' | 'my_groups' | 'specific_friends';
+/**
+ * Spec §S: per-person likeness permissions, Sora's four audiences [V]: "Only me" (no_one),
+ * "People I approve" (specific_friends), "Mutuals" (my_groups: people you share a group with),
+ * "Everyone" (everyone).
+ */
+export type LikenessScope = 'no_one' | 'my_groups' | 'specific_friends' | 'everyone';
 
 export interface User {
   id: ID;

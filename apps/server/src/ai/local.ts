@@ -1,6 +1,6 @@
 import '../bootstrap.ts';
 import sharp from 'sharp';
-import { PALETTE } from '@app/shared';
+import { PALETTE, gphotos } from '@app/shared';
 import { escapeXml } from '../media.ts';
 
 /**
@@ -11,18 +11,21 @@ import { escapeXml } from '../media.ts';
 
 export type RemixStyle = 'comic' | 'anime' | 'sketch' | 'watercolor' | '8bit' | 'polaroid' | 'sticker' | 'enamel_pin';
 
-export const REMIX_STYLES: { id: RemixStyle | '3d' | 'figurine'; name: string; local: boolean }[] = [
-  { id: 'comic', name: 'Comic book', local: true },
-  { id: 'anime', name: 'Anime', local: true },
-  { id: 'sketch', name: 'Sketch', local: true },
-  { id: '3d', name: '3D animation', local: false },
-  { id: 'watercolor', name: 'Watercolor', local: true },
-  { id: '8bit', name: '8-bit', local: true },
-  { id: 'sticker', name: 'Sticker', local: true },
-  { id: 'enamel_pin', name: 'Enamel pin', local: true },
-  { id: 'polaroid', name: 'Instant film with flash', local: true },
-  { id: 'figurine', name: 'Collectible figurine', local: true },
-];
+/** Names come from the Google Photos deck (gphotos.remixStyles), keyed by these ids. */
+export const REMIX_STYLES: { id: RemixStyle | '3d' | 'figurine'; name: string; local: boolean }[] = (
+  [
+    ['comic', true],
+    ['anime', true],
+    ['sketch', true],
+    ['3d', false],
+    ['watercolor', true],
+    ['8bit', true],
+    ['sticker', true],
+    ['enamel_pin', true],
+    ['polaroid', true],
+    ['figurine', true],
+  ] as const
+).map(([id, local]) => ({ id, name: gphotos.remixStyles[id], local }));
 
 type Raw = { data: Buffer; info: sharp.OutputInfo };
 

@@ -31,19 +31,20 @@ export function wrapped(group: Group, viewerId: string, year: number) {
     byDay.set(k, [...(byDay.get(k) ?? []), p]);
   }
   const dayList = [...byDay.entries()];
-  const days: { title: string; date: string; posts: ReturnType<typeof toDTO> }[] = [];
+  const days: { kind: string; title: string; date: string; posts: ReturnType<typeof toDTO> }[] = [];
   const used = new Set<string>();
-  const addDay = (title: string, score: (ps: typeof posts) => number) => {
+  const addDay = (kind: string, title: string, score: (ps: typeof posts) => number) => {
     const best = dayList.filter(([d]) => !used.has(d)).sort((a, b) => score(b[1]) - score(a[1]))[0];
     if (!best || score(best[1]) <= 0) return;
     used.add(best[0]);
-    days.push({ title, date: best[0], posts: toDTO(best[1].slice(0, 6), viewerId) });
+    days.push({ kind, title, date: best[0], posts: toDTO(best[1].slice(0, 6), viewerId) });
   };
-  addDay('Your Biggest Day Together', (ps) => new Set(ps.map((p) => p.userId)).size * 10 + ps.length);
-  addDay('Your Most Nostalgic Day', (ps) => ps.filter((p) => p.kind === 'rewind').length);
-  addDay('Your Golden Hour Day', (ps) => ps.filter((p) => (p.media as { golden?: boolean }).golden).length);
-  addDay('Your Loudest Day', (ps) => ps.filter((p) => p.media.voice).length);
-  addDay('Your Roll Day', (ps) => ps.filter((p) => p.ritual).length);
+  // `kind` lets the client label a day from the wrapped deck (Listening Archive day names).
+  addDay('biggest', 'Your Biggest Day Together', (ps) => new Set(ps.map((p) => p.userId)).size * 10 + ps.length);
+  addDay('nostalgic', 'Your Most Nostalgic Day', (ps) => ps.filter((p) => p.kind === 'rewind').length);
+  addDay('golden', 'Your Golden Hour Day', (ps) => ps.filter((p) => (p.media as { golden?: boolean }).golden).length);
+  addDay('loud', 'Your Loudest Day', (ps) => ps.filter((p) => p.media.voice).length);
+  addDay('roll', 'Your Roll Day', (ps) => ps.filter((p) => p.ritual).length);
 
   // Roll Age (Listening Age): how old, on average, the photos you shared were.
   const ageDays = mine.length ? mine.reduce((s, p) => s + Math.max(0, p.createdAt - p.takenAt), 0) / mine.length / 86_400_000 : 0;

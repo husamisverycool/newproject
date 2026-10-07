@@ -63,6 +63,7 @@ export function canUseLikeness(input: ConsentInput): ConsentResult {
   const { owner, actorId, groupId } = input;
   if (owner.id === actorId) return { ok: true };
   if (owner.likenessScope === 'no_one') return { ok: false, reason: 'scope_no_one' };
+  if (owner.likenessScope === 'everyone') return { ok: true };
   const shared = groupId
     ? input.ownerGroupIds.includes(groupId) && input.actorGroupIds.includes(groupId)
     : input.ownerGroupIds.some((g) => input.actorGroupIds.includes(g));
@@ -82,6 +83,7 @@ export const LIKENESS_SCOPE_LABEL: Record<LikenessScope, string> = {
   no_one: 'Only me',
   my_groups: 'My groups',
   specific_friends: 'Friends I choose',
+  everyone: 'Everyone',
 };
 
 /* ───────────────────────── Age (spec §J, §S, §U) ───────────────────────── */

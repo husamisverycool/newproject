@@ -80,8 +80,6 @@ export const wrapped = {
     mostSunsets: 'Most Sunsets',
     /** [S] spec §K example */
     firstToPost: 'First to Post',
-    /** [V-weak] "Most Obsessed" (TechCrunch; Vice: "Most Obsessed" with top artist; research/15 §1e) */
-    mostObsessed: 'Most Obsessed',
     /** [V-weak] group award "Copy and Paste": the group shares the same artists (research/04 §1.6) */
     copyAndPaste: 'Copy and Paste',
     /** [V-weak] group award "Chaos Crew": everyone listens to completely different genres (research/04 §1.6) */
