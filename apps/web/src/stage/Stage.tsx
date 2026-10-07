@@ -29,14 +29,14 @@ export function Stage({ children }: { children: ReactNode }) {
         {cfg.data?.demo && me.data && <DemoPanel groupId={group?.id ?? null} />}
         <p className="stage-foot">{demo.provenance}</p>
       </div>
-      <Device notchSlot={<IslandActivity groupId={group?.id ?? null} />} label="app">
+      <Device notchSlot={<IslandActivity groupId={group?.id ?? null} />} id="app">
         <div className="device-screen" data-path={loc.pathname}>
           {children}
         </div>
       </Device>
       {me.data && (
         <div className="sys-col">
-          <Device label="system" dim>
+          <Device id="system" dim>
             <SystemPhone />
           </Device>
           <SystemSwitch />
@@ -46,14 +46,14 @@ export function Stage({ children }: { children: ReactNode }) {
   );
 }
 
-export function Device({ children, notchSlot, label, dim }: { children: ReactNode; notchSlot?: ReactNode; label: string; dim?: boolean }) {
+export function Device({ children, notchSlot, id, dim }: { children: ReactNode; notchSlot?: ReactNode; id: string; dim?: boolean }) {
   const [time, setTime] = useState(() => new Date());
   useEffect(() => {
     const id = setInterval(() => setTime(new Date()), 15_000);
     return () => clearInterval(id);
   }, []);
   return (
-    <div className={`device ${dim ? 'device-dim' : ''}`} data-device={label}>
+    <div className={`device ${dim ? 'device-dim' : ''}`} data-device={id}>
       <div className="device-glass">
         <div className="statusbar">
           <span className="sb-time">{time.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M/i, '')}</span>

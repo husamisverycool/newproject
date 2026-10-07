@@ -2,9 +2,10 @@ import { useEffect } from 'react';
 import { AnimatePresence, motion } from 'motion/react';
 import { useNavigate } from 'react-router';
 import { useUi } from '../lib/store';
-import { Wordmark } from './ui';
+import { ios } from '@app/shared';
+import { AppIcon } from './Brand';
 
-/** iOS notification banners, sliding from the top of the device. */
+/** iOS notification banners [HIG], sliding from the top of the device: app icon, title, body, "now". */
 export function Toasts() {
   const toasts = useUi((s) => s.toasts);
   const dismiss = useUi((s) => s.dismissToast);
@@ -38,13 +39,13 @@ export function Toasts() {
             }}
           >
             <span className="toast-icon">
-              <Wordmark size={11} />
+              <AppIcon size={38} />
             </span>
             <span className="toast-text">
               <span className="toast-title">{t.title}</span>
               <span className="toast-body">{t.body}</span>
             </span>
-            <span className="toast-time">now</span>
+            <span className="toast-time">{ios.now}</span>
           </motion.button>
         )}
       </AnimatePresence>

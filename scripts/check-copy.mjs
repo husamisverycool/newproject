@@ -6,6 +6,7 @@
 // Usage: node scripts/check-copy.mjs [--list]   (exit 1 on violations)
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
+import { createRequire } from 'node:module';
 
 const root = new URL('..', import.meta.url).pathname;
 const TAG = /\[(I|I-partial|V|V-weak|B-high|B-med|B-med-high|B-low|B-low-med|HIG|S|DEMO)\]/;
@@ -46,25 +47,35 @@ for (const file of walk(join(root, 'packages/shared/src/sources'), ['.ts'])) {
   });
 }
 
-// 2. Web UI: inline copy
-const COPY_PROPS = /\b(placeholder|title|label|aria-label|alt|sub|body|hint|caption|heading|empty)=("([^"]*[A-Za-z]{2}[^"]*)"|'([^']*[A-Za-z]{2}[^']*)'|\{`([^`]*[A-Za-z]{2}[^`]*)`\}|\{'([^']*[A-Za-z]{2}[^']*)'\}|\{"([^"]*[A-Za-z]{2}[^"]*)"\})/g;
-const JSX_TEXT = />([^<>{}]*[A-Za-z]{2}[^<>{}]*)</g;
+// 2. Web UI: inline copy, found on the TypeScript AST (no false positives from generics).
+const require = createRequire(import.meta.url);
+const ts = require('typescript');
+const COPY_ATTRS = new Set(['placeholder', 'title', 'label', 'aria-label', 'alt', 'sub', 'body', 'hint', 'caption', 'heading', 'empty', 'message']);
+const COPY_KEYS = new Set(['label', 'title', 'sub', 'body', 'message', 'placeholder', 'hint', 'caption']);
+const wordy = (t) => /[A-Za-z]{2}/.test(t);
 for (const file of walk(join(root, 'apps/web/src'), ['.tsx'])) {
   const src = readFileSync(file, 'utf8');
   const isDemo = rel(file).startsWith('apps/web/src/stage/');
-  src.split('\n').forEach((line, i) => {
-    if (/^\s*(\/\/|\*|\/\*)/.test(line) || /^\s*import /.test(line)) return;
-    for (const m of line.matchAll(JSX_TEXT)) {
-      const t = m[1].trim();
-      if (!t || /^[\w.]+$/.test(t) && !/\s/.test(t) && /[a-z][A-Z]|^[a-z]+$/.test(t) && false) continue;
-      if (/=>|&&|\|\||\?\s|:\s*\w+\s*[;,)]|^\)|\(\w*\)\s*:/.test(t)) continue; // TS generics / expressions split by the regex
-      problems.push(`${rel(file)}:${i + 1}  inline JSX text${isDemo ? ' (demo harness)' : ''}: "${t.slice(0, 60)}"`);
+  const sf = ts.createSourceFile(file, src, ts.ScriptTarget.Latest, true, ts.ScriptKind.TSX);
+  const at = (n) => sf.getLineAndCharacterOfPosition(n.getStart(sf)).line + 1;
+  const flag = (n, kind, t) => problems.push(`${rel(file)}:${at(n)}  inline ${kind}${isDemo ? ' (demo harness)' : ''}: "${t.trim().slice(0, 60)}"`);
+  const literalText = (e) => (e && (ts.isStringLiteral(e) || ts.isNoSubstitutionTemplateLiteral(e)) ? e.text : e && ts.isTemplateExpression(e) ? e.head.text + e.templateSpans.map((x) => x.literal.text).join(' ') : null);
+  const visit = (n) => {
+    if (ts.isJsxText(n) && wordy(n.text)) flag(n, 'JSX text', n.text);
+    else if (ts.isJsxAttribute(n) && COPY_ATTRS.has(n.name.getText(sf))) {
+      const init = n.initializer;
+      const t = init && ts.isStringLiteral(init) ? init.text : init && ts.isJsxExpression(init) ? literalText(init.expression) : null;
+      if (t && wordy(t)) flag(n, n.name.getText(sf), t);
+    } else if (ts.isJsxExpression(n) && n.parent && (ts.isJsxElement(n.parent) || ts.isJsxFragment(n.parent))) {
+      const t = literalText(n.expression);
+      if (t && wordy(t)) flag(n, 'JSX text', t);
+    } else if (ts.isPropertyAssignment(n) && COPY_KEYS.has(n.name.getText(sf))) {
+      const t = literalText(n.initializer);
+      if (t && wordy(t) && /\s|^[A-Z]/.test(t)) flag(n, `${n.name.getText(sf)}:`, t);
     }
-    for (const m of line.matchAll(COPY_PROPS)) {
-      const t = (m[3] ?? m[4] ?? m[5] ?? m[6] ?? m[7] ?? '').trim();
-      problems.push(`${rel(file)}:${i + 1}  inline ${m[1]}${isDemo ? ' (demo harness)' : ''}: "${t.slice(0, 60)}"`);
-    }
-  });
+    ts.forEachChild(n, visit);
+  };
+  visit(sf);
 }
 
 // 3. Server: inline copy handed to users

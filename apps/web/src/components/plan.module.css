@@ -1,120 +1,288 @@
-.poster {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 4px;
-  aspect-ratio: 16 / 10;
-  padding: 16px;
-  border-radius: 18px;
-  overflow: hidden;
-  isolation: isolate;
-  text-align: left;
-}
-.big {
-  aspect-ratio: 1;
-  border-radius: 26px;
-  padding: 22px;
-}
-.posterTitle {
-  font-weight: 800;
-  font-size: 26px;
-  line-height: 1.05;
-  letter-spacing: -0.03em;
-  z-index: 2;
-}
-.big .posterTitle {
-  font-size: 40px;
-}
-.posterDate {
-  font: 700 13px/1 var(--font-ui);
-  opacity: 0.8;
-  z-index: 2;
-}
-.glitter {
+/*
+ * Partiful theme, effect and poster layers, and the plan card in the group chat.
+ * - Themes: Luma's verified categories [V] (research/21 §2c) painted in Partiful's marketing palette
+ *   [V-weak] (research/04 §3.2): "soft periwinkle-to-white gradient", "purple-to-pink" washes, black
+ *   "pure contrast", a white canvas. Hexes are the --partiful-* tokens ([HIG] system colors, since
+ *   Partiful's own hexes are UNKNOWN). Quantum is "Soft animated gradients" [V]; Confetti is "animated
+ *   confetti effects" with heart, star and circle shapes [V].
+ * - Effects: "sunbeams" and "fireworks" are Partiful effect ids [V-weak]; how they look is UNKNOWN, so
+ *   each is drawn literally (light rays; bursts) in Apple system colors [HIG].
+ * - Poster title: "Partiful Display Medium", tight -0.03em tracking, line height ~1.0–1.2 [V-weak].
+ * - Card: Yope's dark chat bubble and circle grays [I] (yope-04, --yope-*), holding WhatsApp's event
+ *   card contents [V] (research/21 §4).
+ */
+
+/* ── Page backgrounds (Theme) ── */
+.backdrop {
   position: absolute;
   inset: 0;
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.9) 1px, transparent 1.5px), radial-gradient(circle, rgba(255, 255, 255, 0.6) 1px, transparent 1.5px);
-  background-size: 18px 18px, 11px 11px;
-  background-position: 0 0, 6px 9px;
-  mix-blend-mode: overlay;
-  animation: twinkle 2.4s ease-in-out infinite alternate;
+  overflow: hidden;
+  pointer-events: none;
 }
-@keyframes twinkle {
+.pageMinimal {
+  background: var(--sys-bg);
+}
+.pageQuantum {
+  background: linear-gradient(180deg, var(--partiful-periwinkle), var(--sys-bg) 55%, color-mix(in srgb, var(--partiful-pink) 10%, var(--sys-bg)));
+  background-size: 100% 160%;
+  animation: quantum 14s ease-in-out infinite alternate;
+}
+@keyframes quantum {
   from {
-    opacity: 0.5;
+    background-position: 0 0;
   }
   to {
-    opacity: 1;
+    background-position: 0 100%;
   }
 }
+.pageConfetti {
+  background: var(--sys-bg);
+}
+
+/* ── Confetti shapes (Luma Confetti [V]) ── */
+.confetti {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+.piece,
+.dot {
+  position: absolute;
+  top: -16px;
+  animation: fall 10s linear infinite;
+}
+.dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: currentColor;
+}
+@keyframes fall {
+  from {
+    transform: translateY(0) rotate(0deg);
+  }
+  to {
+    transform: translateY(110vh) rotate(540deg);
+  }
+}
+.still .piece,
+.still .dot {
+  animation: none;
+  transform: rotate(25deg);
+}
+
+/* ── Effects ── */
 .sunbeams {
   position: absolute;
-  inset: -50%;
-  background: repeating-conic-gradient(from 0deg at 50% 50%, rgba(255, 255, 255, 0.35) 0deg 8deg, transparent 8deg 24deg);
-  animation: spinbeams 24s linear infinite;
-  z-index: 0;
-  mix-blend-mode: soft-light;
+  left: -50%;
+  right: -50%;
+  top: -60%;
+  aspect-ratio: 1;
+  background: repeating-conic-gradient(from 0deg at 50% 50%, color-mix(in srgb, var(--sys-yellow) 22%, transparent) 0deg 5deg, transparent 5deg 20deg);
+  -webkit-mask: radial-gradient(closest-side, #000 20%, transparent 100%);
+  mask: radial-gradient(closest-side, #000 20%, transparent 100%);
+  animation: beams 40s linear infinite;
 }
-@keyframes spinbeams {
+@keyframes beams {
   to {
     transform: rotate(360deg);
   }
 }
+.fireworks {
+  position: absolute;
+  inset: 0;
+}
 .fireworks i {
   position: absolute;
-  width: 80px;
-  height: 80px;
-  margin: -40px;
+  width: 96px;
+  height: 96px;
+  margin: -48px;
   border-radius: 50%;
-  background: radial-gradient(circle, transparent 30%, var(--yellow) 32%, transparent 36%), repeating-conic-gradient(var(--white) 0deg 4deg, transparent 4deg 30deg);
-  -webkit-mask: radial-gradient(circle, transparent 20%, #000 22%, #000 48%, transparent 50%);
-  mask: radial-gradient(circle, transparent 20%, #000 22%, #000 48%, transparent 50%);
+  background: repeating-conic-gradient(currentColor 0deg 5deg, transparent 5deg 30deg);
+  -webkit-mask: radial-gradient(circle, transparent 22%, #000 24%, #000 46%, transparent 50%);
+  mask: radial-gradient(circle, transparent 22%, #000 24%, #000 46%, transparent 50%);
+  opacity: 0;
+  animation: burst 2.2s ease-out infinite;
+}
+@keyframes burst {
+  0% {
+    transform: scale(0.2);
+    opacity: 0;
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1.5);
+    opacity: 0;
+  }
 }
 
+/* ── Poster ── */
+.poster {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  display: flex;
+  align-items: flex-end;
+  text-align: left;
+}
+.posterTitle {
+  position: relative;
+  z-index: 2;
+  font-weight: 500;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+  overflow-wrap: anywhere;
+}
+.sizePage {
+  aspect-ratio: 1;
+  border-radius: 20px;
+  padding: 22px;
+}
+.sizePage .posterTitle {
+  font-size: 44px;
+}
+.sizeCard {
+  aspect-ratio: 16 / 10;
+  border-radius: 15px;
+  padding: 14px;
+}
+.sizeCard .posterTitle {
+  font-size: 26px;
+}
+.sizeSwatch {
+  aspect-ratio: 1;
+  border-radius: 14px;
+  padding: 8px;
+}
+.sizeSwatch .posterTitle {
+  font-size: 13px;
+  line-height: 1.05;
+}
+.posterMinimal {
+  background: var(--partiful-ink);
+  color: #ffffff;
+}
+.posterQuantum {
+  background: linear-gradient(135deg, var(--partiful-purple), var(--partiful-pink));
+  background-size: 180% 180%;
+  animation: wash 12s ease-in-out infinite alternate;
+  color: #ffffff;
+}
+@keyframes wash {
+  from {
+    background-position: 0 0;
+  }
+  to {
+    background-position: 100% 100%;
+  }
+}
+.posterConfetti {
+  background: var(--partiful-periwinkle);
+  color: var(--partiful-ink);
+}
+
+/* ── Plan card in the chat ── */
 .card {
-  width: 260px;
-  border-radius: 22px;
-  background: var(--white);
-  color: var(--black);
+  width: 268px;
+  border-radius: 20px;
+  background: var(--yope-bubble);
+  color: var(--sys-label);
   padding: 6px;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
+}
+.cardOpen {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   text-align: left;
+  color: inherit;
 }
 .cardBody {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 8px 8px 6px;
+  gap: 5px;
+  padding: 4px 8px 2px;
 }
 .cardWhen {
-  font: 700 14px/1.2 var(--font-ui);
+  font: 600 15px/20px var(--font-sf);
+}
+.cardWhere {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font: 400 14px/19px var(--font-sf);
+  color: var(--sys-label2);
+}
+.cardWhere span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 .cardGoing {
   display: flex;
   align-items: center;
   gap: 8px;
-  font: 600 13px/1 var(--font-ui);
-  color: var(--eel);
+  margin-top: 2px;
+  font: 600 14px/19px var(--font-sf);
+}
+.cardDim {
+  color: var(--sys-label2);
+  font-weight: 400;
 }
 .cardRsvp {
-  height: 38px;
-  border-radius: 999px;
-  background: var(--black);
-  color: var(--white);
-  font: 700 14px/38px var(--font-ui);
-  text-align: center;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
 }
-.going {
-  background: var(--green);
+.cardRsvp button {
+  height: 52px;
+  border-radius: 14px;
+  background: var(--yope-circle);
+  color: var(--sys-label);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font: 600 12px/1 var(--font-sf);
 }
-.maybe {
-  background: var(--yellow);
-  color: var(--black);
+.cardRsvp button[aria-pressed='true'] {
+  background: #ffffff;
+  color: var(--partiful-ink);
 }
-.cant_go {
-  background: var(--swan);
-  color: var(--eel);
+.cardRsvp button:disabled {
+  opacity: 0.5;
+}
+.cardEmoji {
+  font-size: 19px;
+  line-height: 1;
+}
+.cardPoll {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cardPoll button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 40px;
+  padding: 0 12px;
+  border-radius: 12px;
+  background: var(--yope-circle);
+  color: var(--sys-label);
+  font: 500 14px/1 var(--font-sf);
+  text-align: left;
+}
+.cardPoll button span:first-child {
+  flex: 1;
+}
+.cardPoll b {
+  min-width: 12px;
+  text-align: right;
+  font-weight: 600;
 }

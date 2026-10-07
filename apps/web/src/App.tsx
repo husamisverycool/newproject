@@ -5,7 +5,7 @@ import { queryClient, useMe } from './lib/queries';
 import { useRealtime } from './lib/realtime';
 import { Stage } from './stage/Stage';
 import { Toasts } from './components/Toasts';
-import { Spinner } from './components/ui';
+import { Spinner } from './components/ios';
 import { CameraHome } from './screens/CameraHome';
 
 const Onboarding = lazy(() => import('./screens/Onboarding'));
@@ -17,6 +17,7 @@ const Calendar = lazy(() => import('./screens/Calendar'));
 const ChatList = lazy(() => import('./screens/ChatList'));
 const ChatThread = lazy(() => import('./screens/ChatThread'));
 const PlanPage = lazy(() => import('./screens/PlanPage'));
+const NewPlan = lazy(() => import('./screens/NewPlan'));
 const RollComposer = lazy(() => import('./screens/RollComposer'));
 const Binder = lazy(() => import('./screens/cards/Binder'));
 const PackOpening = lazy(() => import('./screens/cards/PackOpening'));
@@ -73,6 +74,7 @@ function AppRoutes() {
         <Route path="/chats" element={<ChatList />} />
         <Route path="/chat/:groupId" element={<ChatThread />} />
         <Route path="/plan/:planId" element={<PlanPage />} />
+        <Route path="/g/:groupId/new-plan" element={<NewPlan />} />
         <Route path="/p/:postId" element={<PostView />} />
         <Route path="/g/:groupId/cards" element={<Binder />} />
         <Route path="/g/:groupId/pack/:packId" element={<PackOpening />} />
