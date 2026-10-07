@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { zipSync, strToU8 } from 'fflate';
-import { BACKDROPS, PLANS, SPARKS_PRICE, STORAGE, oddsTable, pets, type Group, type Plan } from '@app/shared';
+import { BACKDROPS, PLANS, SPARKS_PRICE, STORAGE, oddsTable, pets, spec, type Group, type Plan } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
 import { mediaPath } from '../media.ts';
 import { addCurrency, getGroup, getUser, id, members, membership, postsForGroup, publicUser, updateMascot, updateUser } from '../repo.ts';
@@ -154,13 +154,16 @@ export function gift(fromId: string, toId: string, kind: 'plus_month' | 'pack' |
 
 /* ───────────────────────── Print orders with group chip-in ───────────────────────── */
 
-/** Retro postcards are $2 (research/02 §B4.10); other print prices are product parameters. */
-export const PRINT = {
+/**
+ * Retro postcards are $2 (research/02 §B4.10); other print prices are product parameters. Names come from
+ * the decks (Retro "postcard", spec §U "Zine", §V "Printed yearbook"); the figurine card has no sourced name.
+ */
+export const PRINT: Record<'postcard' | 'zine' | 'yearbook' | 'figurine_card', { name: string | null; usd: number }> = {
   postcard: { name: 'Postcard', usd: 2 },
-  zine: { name: 'Printed zine', usd: 6 },
-  yearbook: { name: 'Yearbook', usd: 29 },
-  figurine_card: { name: 'Figurine card', usd: 3 },
-} as const;
+  zine: { name: spec.zine, usd: 6 },
+  yearbook: { name: spec.yearbook, usd: 29 },
+  figurine_card: { name: null, usd: 3 },
+};
 
 export function createOrder(group: Group, userId: string, kind: keyof typeof PRINT, items: string[], qty = 1) {
   const total = PRINT[kind].usd * Math.max(1, qty);

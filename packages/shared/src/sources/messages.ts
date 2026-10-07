@@ -19,6 +19,8 @@ export const imessage = {
   previewAudio: 'Audio Message',
   /** [B-med] list preview for a sticker */
   previewSticker: 'Sticker',
+  /** [B-high] composer placeholder in an SMS conversation */
+  textMessage: 'Text Message',
 } as const;
 
 export const invites = {
@@ -32,6 +34,8 @@ export const invites = {
   sendReply: 'Send Reply',
   /** [V] guest list group */
   notResponded: 'Not Responded',
+  /** [V] create an event: "Add Description" */
+  addDescription: 'Add Description',
 } as const;
 
 export const whatsapp = {
@@ -64,4 +68,6 @@ export const photos27 = {
   days: 30,
   /** [B-low] header countdown */
   expiresIn: (n: number) => `Expires in ${n} ${n === 1 ? 'day' : 'days'}`,
+  /** [V] support.apple.com 127875: "Temporary shared albums expire after 30 days, and any photos or videos not saved to your library will be deleted." */
+  expirySentence: 'Temporary shared albums expire after 30 days, and any photos or videos not saved to your library will be deleted.',
 } as const;

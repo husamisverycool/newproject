@@ -5,13 +5,14 @@ import { weekRange } from '../../lib/format';
 import s from './cards.module.css';
 
 /**
- * Booster pack. TCG Pocket's pack art is per set with a featured Pokémon (Genetic Apex: Mewtwo, Pikachu,
- * Charizard) [V]; ours features the group's mascot, the wordmark, and the set (the week) — the only sourced
- * identities this app has. Foil wrapper with crimped ends [B-med]; the cut guide is "a dotted or glowing
- * guide line across the top of the pack" [B-med].
+ * Booster pack. TCG Pocket's pack art is per set with a featured Pokémon [V]; the layout follows
+ * [I research/inspo/store/tcg-01-pack-select.webp]: crimped foil ends, a patterned top band holding the logo,
+ * full-bleed art, the set title in big outlined letters with the featured character's name under it. Ours
+ * features the group's mascot (and its name), the wordmark, and the set (the week) — the only sourced identities
+ * this app has. The cut guide is "a dotted or glowing guide line across the top of the pack" [B-med].
  */
 
-export const CUT_Y = 13.5; // in viewBox units of 178
+export const CUT_Y = 15.5; // in viewBox units of 178: just under the top band's logo
 
 function edge(y0: number, y1: number, top: boolean) {
   const pts: string[] = [];
@@ -25,6 +26,7 @@ export interface PackMascot {
   species: string;
   outfit?: string[];
   level?: number;
+  name?: string;
 }
 
 export function PackArt({ weekKey, mascot, part = 'whole', guide, style }: { weekKey: string; mascot?: PackMascot | null; part?: 'whole' | 'top' | 'body'; guide?: boolean; style?: CSSProperties }) {
@@ -48,17 +50,26 @@ export function PackArt({ weekKey, mascot, part = 'whole', guide, style }: { wee
           </pattern>
         </defs>
         <path d={OUTLINE} fill="url(#pk-foil)" />
-        <rect x="0" y="2" width="100" height="9.5" fill="url(#pk-crimp)" />
-        <rect x="0" y="166.5" width="100" height="9.5" fill="url(#pk-crimp)" />
-        <line x1="0" x2="100" y1="11.5" y2="11.5" stroke="rgba(0,0,0,0.12)" strokeWidth="0.4" />
-        <line x1="0" x2="100" y1="166.5" y2="166.5" stroke="rgba(0,0,0,0.12)" strokeWidth="0.4" />
-        {guide && <line x1="3" x2="97" y1={CUT_Y} y2={CUT_Y} stroke="rgba(0,0,0,0.38)" strokeWidth="0.7" strokeDasharray="2 1.6" />}
+        <rect x="0" y="1.5" width="100" height="10" fill="url(#pk-crimp)" />
+        <rect x="0" y="166.5" width="100" height="10" fill="url(#pk-crimp)" />
       </svg>
       <div className={s.packArt} style={{ '--art': sp.body } as CSSProperties}>
-        <span className="wordmark">{BRAND.name}</span>
-        <Mascot species={sp.id} outfit={mascot?.outfit ?? []} level={mascot?.level ?? 3} size={150} style={{ width: '78%', height: 'auto', flex: 'none' }} />
-        <span className={s.packSet}>{weekRange(weekKey)}</span>
+        <div className={s.packBand}>
+          <span className={s.brand}>{BRAND.name}</span>
+        </div>
+        <div className={s.packHero}>
+          <Mascot species={sp.id} outfit={mascot?.outfit ?? []} level={mascot?.level ?? 3} size={150} style={{ width: '86%', height: 'auto' }} />
+        </div>
+        <div className={s.packTitle}>
+          <span className={s.packSet}>{weekRange(weekKey)}</span>
+          {mascot?.name && <span className={s.packSub}>{mascot.name}</span>}
+        </div>
       </div>
+      {guide && (
+        <svg className={s.packLayer} viewBox="0 0 100 178" preserveAspectRatio="none" width="100%" height="100%">
+          <line x1="2" x2="98" y1={CUT_Y} y2={CUT_Y} stroke="rgba(255,255,255,0.9)" strokeWidth="0.8" strokeDasharray="2 1.6" />
+        </svg>
+      )}
       <div className={s.packShine} />
     </div>
   );

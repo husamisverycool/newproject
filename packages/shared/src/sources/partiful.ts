@@ -86,4 +86,30 @@ export const partiful = {
   tabReminders: 'Auto-Reminders',
   /** [V] schedule: Going guests 2 hours before; Maybe / no-reply 1 week before. Reminder wording is UNKNOWN, so reminders carry only the event's own title and time. */
   reminderOffsetsMs: { going: 2 * 3_600_000, maybe: 7 * 86_400_000 },
+
+  /* ── Event page, plan card and create flow (research/21 §1, research/15 §2) ── */
+  /** [V-weak] the guest list shows how many are "Going" and how many marked "Maybe"; same "# Going" pattern [V] */
+  countMaybe: (n: number) => `${n} Maybe`,
+  /** [V] the "# Going" pattern applied to the other statuses the host sees ("Going", "Maybe", "Can't Go", "Invited", the Text Blast recipient categories) */
+  countOf: (n: number, status: string) => `${n} ${status}`,
+  /** [V] "Show Guest List" (Display + Privacy); the Guest List has "Export CSV" */
+  guestList: 'Guest List',
+  /** [V] core fields "Event name, date, location, description" (help center; capitalized as a field label) */
+  location: 'Location',
+  /** [V-weak] title-font ids in live partiful.com/create URLs: titleFont=display, titleFont=manrope (display names UNKNOWN) */
+  titleFonts: { display: 'Display', manrope: 'Manrope' },
+  /** [V-weak] effect ids in live partiful.com/create URLs: effect=sunbeams, effect=fireworks ("fireworks" is also in the press list) */
+  effectNames: { sunbeams: 'sunbeams', fireworks: 'fireworks' },
+  /** [V] Settings > RSVPs toggle */
+  guestApproval: 'Guest Approval',
+  /** [V] Settings > RSVPs */
+  rsvpButtonStyle: 'RSVP Button Style',
+  /** [V] "RSVP Button Style" options "Emojis", "Icons" */
+  emojis: 'Emojis',
+  /** [V] Settings > RSVPs: the option to turn off "Maybe" */
+  acceptRsvps: 'Accept RSVPs',
+  /** [V] Settings > Display + Privacy */
+  showGuestList: 'Show Guest List',
+  /** [V] Settings > Display + Privacy (aka "# Going") */
+  showGuestCount: 'Show Guest Count',
 } as const;

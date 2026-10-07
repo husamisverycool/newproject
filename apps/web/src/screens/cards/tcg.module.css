@@ -1,0 +1,996 @@
+/*
+ * TCG Pocket surfaces [B-low]: "mostly white or very light grey backgrounds and panels, rounded-corner
+ * cards, soft drop shadows. Primary buttons are teal or turquoise pills with white text, and secondary
+ * buttons are white or grey." Tokens: --tcg-bg, --tcg-panel, --tcg-teal, --tcg-frame, --tcg-gold.
+ * UI type is UNKNOWN for Pocket → --font-sf.
+ */
+
+.screen {
+  /* pale white/blue-gray [I research/inspo/store/tcg-04-my-cards.webp]; UI type looks like Gill Sans [I] */
+  background: linear-gradient(180deg, #edf0f5 0%, #f4f6f9 50%, #e7ebf1 100%);
+  font-family: var(--font-card);
+}
+.scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: none;
+  padding-bottom: calc(var(--safe-bottom) + 96px);
+}
+.scroll::-webkit-scrollbar {
+  display: none;
+}
+
+.panel {
+  background: var(--tcg-bg);
+  border-radius: 18px;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06), 0 8px 20px -14px rgba(0, 0, 0, 0.35);
+}
+
+.statusRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 4px var(--margin) 10px;
+}
+.chipStat {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--tcg-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  font: 600 14px/1 var(--font-sf);
+  font-variant-numeric: tabular-nums;
+  color: var(--sys-label);
+}
+.chipStat small {
+  font: 500 11px/1 var(--font-sf);
+  color: var(--sys-label2);
+}
+
+/* Pack Stamina: "a progress bar with a timer", top-right of the Packs screen [V-weak] */
+.packStamina {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  min-width: 150px;
+}
+.packStaminaLabel {
+  display: flex;
+  gap: 8px;
+  font: 600 12px/1 var(--font-sf);
+  color: var(--sys-label2);
+}
+.packStaminaLabel b {
+  color: var(--sys-label);
+  font-variant-numeric: tabular-nums;
+}
+.bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--tcg-frame) 55%, transparent);
+  overflow: hidden;
+}
+.bar > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: var(--tcg-teal);
+}
+
+/* Booster carousel */
+.carousel {
+  position: relative;
+  display: flex;
+  gap: 18px;
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  padding: 18px calc(50% - 92px) 22px;
+  scrollbar-width: none;
+}
+.carousel::-webkit-scrollbar {
+  display: none;
+}
+.carouselItem {
+  flex: none;
+  width: 184px;
+  scroll-snap-align: center;
+  transition: transform 260ms var(--ease-out), opacity 260ms;
+}
+.carouselItem[data-side] {
+  transform: scale(0.84);
+  opacity: 0.6;
+}
+.dots {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  margin-top: -8px;
+}
+.dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--tcg-frame) 80%, transparent);
+}
+.dots span[data-on] {
+  background: var(--tcg-teal);
+}
+.emptyPack {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.center {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 14px var(--margin) 0;
+}
+
+/* TCG primary teal pill / secondary white pill [B-low] */
+.tealBtn,
+.whiteBtn {
+  height: 48px;
+  padding: 0 26px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font: 700 17px/1 var(--font-sf);
+  transition: transform 120ms, opacity 120ms;
+}
+.tealBtn {
+  min-width: 200px;
+  background: var(--tcg-teal);
+  color: #fff;
+  box-shadow: 0 3px 0 color-mix(in srgb, var(--tcg-teal) 68%, #000), 0 10px 18px -10px color-mix(in srgb, var(--tcg-teal) 90%, transparent);
+}
+.whiteBtn {
+  height: 40px;
+  padding: 0 16px;
+  font-size: 15px;
+  background: var(--tcg-bg);
+  color: var(--sys-label);
+  box-shadow: 0 2px 0 var(--tcg-frame), 0 8px 16px -12px rgba(0, 0, 0, 0.5);
+}
+.tealBtn:active,
+.whiteBtn:active {
+  transform: translateY(2px);
+}
+.tealBtn:disabled,
+.whiteBtn:disabled {
+  opacity: 0.4;
+}
+
+/* Home buttons grid (game8: "Booster Packs", "Wonder Pick", "Shop", "Missions", …) */
+.homeGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 22px var(--margin) 0;
+}
+.homeBtn {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  min-height: 112px;
+  text-align: left;
+}
+.homeBtn:active {
+  transform: scale(0.98);
+}
+.homeIcon {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  color: #fff;
+}
+.homeLabel {
+  font: 700 16px/1.15 var(--font-sf);
+  color: var(--sys-label);
+}
+.homeMeta {
+  margin-top: auto;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: 500 13px/1 var(--font-sf);
+  color: var(--sys-label2);
+  font-variant-numeric: tabular-nums;
+}
+.dotBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: var(--sys-red);
+  color: #fff;
+  font: 700 12px/20px var(--font-sf);
+  text-align: center;
+}
+
+/* My Cards */
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 var(--margin) 10px;
+}
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 34px;
+  padding: 0 6px 0 12px;
+  border-radius: 999px;
+  background: var(--tcg-bg);
+  font: 600 14px/1 var(--font-sf);
+  color: var(--sys-label);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.toggle :global(.ios-switch) {
+  transform: scale(0.72);
+  margin: 0 -6px;
+}
+.chip {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--tcg-bg);
+  font: 600 13px/1 var(--font-sf);
+  color: var(--sys-label);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  white-space: nowrap;
+}
+.chip[aria-pressed='true'] {
+  background: var(--tcg-teal);
+  color: #fff;
+}
+.chip small {
+  font: 500 12px/1 var(--font-sf);
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 0 var(--margin) 12px;
+  scrollbar-width: none;
+}
+.chips::-webkit-scrollbar {
+  display: none;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  gap: var(--gap, 12px);
+  padding: 4px var(--margin) 0;
+  touch-action: pan-y;
+}
+.gridItem {
+  position: relative;
+  transition: transform 120ms;
+}
+.gridItem:active {
+  transform: scale(0.97);
+}
+.setHead {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  padding: 10px 2px 0;
+  font: 700 15px/1.2 var(--font-sf);
+  color: var(--sys-label);
+}
+.setHead small {
+  font: 500 13px/1 var(--font-sf);
+  color: var(--sys-label2);
+  font-variant-numeric: tabular-nums;
+}
+
+.tiles {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  padding: 0 var(--margin) 14px;
+}
+.tile {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px;
+  font: 700 15px/1.15 var(--font-sf);
+  color: var(--sys-label);
+  text-align: left;
+}
+.tile small {
+  display: block;
+  font: 500 12px/1.3 var(--font-sf);
+  color: var(--sys-label2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Binder covers & display boards */
+.binderCard {
+  position: relative;
+  height: 150px;
+  border-radius: 18px;
+  overflow: hidden;
+  padding: 14px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  color: #fff;
+  background: radial-gradient(circle at 30% 30%, var(--cv-from, #8e8e93), var(--cv-to, #48484a));
+  box-shadow: 0 10px 20px -14px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.18);
+}
+.binderSpine {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 14px;
+  background: rgba(0, 0, 0, 0.18);
+  box-shadow: inset -1px 0 0 rgba(255, 255, 255, 0.2);
+}
+.binderFan {
+  position: absolute;
+  right: 18px;
+  top: 14px;
+  width: 112px;
+  height: 120px;
+}
+.binderFan > div {
+  position: absolute;
+  top: 0;
+  width: 68px;
+}
+.binderMeta {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font: 700 15px/1 var(--font-sf);
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+.display {
+  position: relative;
+  border-radius: 20px;
+  padding: 26px 0 22px;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 40%, var(--cv-from, #f2f2f7), var(--cv-to, #c7c7cc));
+  overflow: hidden;
+}
+/* Display Board: a single card "wrapped in a proper encasing" [V] */
+.encasing {
+  width: 132px;
+  padding: 9px;
+  border-radius: 14px;
+  background: linear-gradient(150deg, rgba(255, 255, 255, 0.75), rgba(255, 255, 255, 0.25) 40%, rgba(255, 255, 255, 0.55));
+  box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.85), inset 0 0 0 1px rgba(0, 0, 0, 0.08), 0 16px 26px -14px rgba(0, 0, 0, 0.6);
+  -webkit-backdrop-filter: blur(6px);
+  backdrop-filter: blur(6px);
+}
+.ownerTag {
+  position: absolute;
+  left: 12px;
+  top: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px 4px 4px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.85);
+  font: 600 13px/1 var(--font-sf);
+  color: var(--sys-label);
+}
+
+/* Social Hub menu, in order: Community Showcase, Friends, Trade [V-weak] */
+.hubMenu {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  padding: 6px var(--margin) 16px;
+}
+.hubBtn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 14px 6px 12px;
+  font: 700 13px/1.15 var(--font-sf);
+  color: var(--sys-label);
+  text-align: center;
+}
+.hubBtn[aria-pressed='true'] {
+  box-shadow: 0 0 0 2.5px var(--tcg-teal), 0 8px 20px -14px rgba(0, 0, 0, 0.35);
+}
+.friendRow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+}
+.friendRow + .friendRow {
+  border-top: 0.5px solid var(--sys-sep);
+}
+.friendName {
+  flex: 1;
+  min-width: 0;
+  font: 600 16px/1.2 var(--font-sf);
+}
+.friendName small {
+  display: block;
+  font: 500 13px/1.3 var(--font-sf);
+  color: var(--sys-label2);
+  font-variant-numeric: tabular-nums;
+}
+.badgeMini {
+  width: 38px;
+  position: relative;
+}
+
+.sectionTitle {
+  font: 700 20px/1.2 var(--font-sf);
+  color: var(--sys-label);
+  padding: 8px var(--margin) 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Missions sheet */
+.reward {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin: 4px auto 16px;
+  width: 128px;
+  height: 92px;
+  border-radius: 18px;
+  background: var(--tcg-bg);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  font: 800 22px/1 var(--font-sf);
+  font-variant-numeric: tabular-nums;
+}
+.reward[data-ready] {
+  box-shadow: 0 0 0 3px var(--tcg-gold), 0 0 24px color-mix(in srgb, var(--tcg-gold) 60%, transparent);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.reward[data-claimed] {
+  opacity: 0.45;
+}
+@keyframes pulse {
+  50% { transform: scale(1.04); }
+}
+.mission {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 14px;
+  margin-bottom: 10px;
+}
+.missionTop {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font: 600 16px/1.2 var(--font-sf);
+}
+.missionTop small {
+  font: 600 14px/1 var(--font-sf);
+  color: var(--sys-label2);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Card detail overlay */
+.detail {
+  position: absolute;
+  inset: 0;
+  z-index: 70;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(20, 20, 24, 0.72);
+  -webkit-backdrop-filter: blur(18px) saturate(140%);
+  backdrop-filter: blur(18px) saturate(140%);
+  padding: calc(var(--safe-top) + 20px) 0 calc(var(--safe-bottom) + 18px);
+  color: #fff;
+}
+.detailClose {
+  position: absolute;
+  top: calc(var(--safe-top) + 4px);
+  right: 12px;
+}
+.detailCard {
+  margin-top: 26px;
+  width: 238px;
+  transition: width 320ms var(--ease-out);
+}
+.detailCard[data-big] {
+  width: 330px;
+}
+.detailInfo {
+  margin-top: 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font: 600 15px/1 var(--font-sf);
+}
+.detailInfo small {
+  font: 500 13px/1 var(--font-card-num);
+  opacity: 0.7;
+}
+.actions {
+  margin-top: auto;
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 8px;
+}
+.action {
+  width: 68px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font: 600 11px/1.2 var(--font-sf);
+  color: #fff;
+  text-align: center;
+}
+.action span:first-child {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.16);
+  font-size: 18px;
+}
+.action:disabled {
+  opacity: 0.35;
+}
+.action[data-accent] span:first-child {
+  background: var(--tcg-teal);
+}
+
+.sheetFoot {
+  display: flex;
+  justify-content: center;
+  padding: 18px 0 6px;
+}
+.pickGrid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+.picked {
+  outline: 3px solid var(--tcg-teal);
+  outline-offset: 2px;
+  border-radius: 8px;
+}
+.dimmed {
+  opacity: 0.35;
+  filter: grayscale(0.6);
+}
+.lock {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: rgba(0, 0, 0, 0.35);
+  border-radius: 8px;
+  z-index: 7;
+}
+
+/* ───────────── [I] research/inspo/store/tcg-01-pack-select.webp — pack select ───────────── */
+.home {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  font-family: var(--font-card);
+  /* pale white/blue-gray gradient with a lighter diagonal band [I] */
+  background:
+    linear-gradient(118deg, transparent 0 46%, rgba(255, 255, 255, 0.55) 46% 64%, transparent 64%),
+    linear-gradient(180deg, #e9edf4 0%, #f6f7fa 42%, #e2e7ef 100%);
+}
+.segTop {
+  position: absolute;
+  top: calc(var(--safe-top) + 4px);
+  left: var(--margin);
+  right: var(--margin);
+  z-index: 25;
+}
+.homeTop {
+  position: absolute;
+  top: calc(var(--safe-top) + 46px);
+  left: 12px;
+  right: 14px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  z-index: 6;
+}
+.roundGroup {
+  display: flex;
+  gap: 10px;
+}
+/* Round white button with a caption under it [I tcg-02-share-card.webp "Edit Card", "↩"] */
+.round {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  font: 600 11px/1.1 var(--font-card);
+  color: #4a4f57;
+}
+.round > span:first-child {
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #4a4f57;
+  box-shadow: 0 2px 6px rgba(40, 50, 80, 0.14), inset 0 -2px 0 rgba(40, 50, 80, 0.06);
+}
+.round[data-big] > span:first-child {
+  width: 58px;
+  height: 58px;
+}
+.round .dotBadge {
+  top: -2px;
+  right: -4px;
+}
+.bubble {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--safe-top) + 120px);
+  translate: -50% 0;
+  width: 318px;
+  height: 96px;
+  padding: 8px 10px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 8px 22px -12px rgba(40, 50, 80, 0.45), inset 0 0 0 1px rgba(255, 255, 255, 0.9);
+  z-index: 4;
+}
+.bubble::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  width: 18px;
+  height: 18px;
+  translate: -50% 0;
+  rotate: 45deg;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.92);
+}
+.bubbleStrip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  gap: 6px;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 10px;
+}
+.bubbleStrip > div {
+  flex: none;
+  width: 62px;
+}
+.fan {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(var(--safe-top) + 238px);
+  height: 340px;
+  z-index: 3;
+  touch-action: pan-y;
+}
+.fanPack {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 180px;
+  margin-left: -90px;
+  transform-origin: 50% 100%;
+}
+.ptsBadge {
+  position: absolute;
+  right: 14px;
+  top: calc(var(--safe-top) + 500px);
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+.ptsBadge > span:first-child {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 40% 35%, #ffffff, #dbe7f5);
+  box-shadow: 0 3px 8px rgba(40, 50, 80, 0.2);
+}
+.ptsPill {
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: #8e949e;
+  color: #fff;
+  font: 700 13px/1 var(--font-card);
+  font-variant-numeric: tabular-nums;
+}
+.homeBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--safe-bottom) + 84px);
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding: 0 0;
+  z-index: 6;
+}
+/* Gray-edged white pills [I] */
+.pill {
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 16px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #4a4f57;
+  font: 600 14px/1.15 var(--font-card);
+  box-shadow: 0 2px 6px rgba(40, 50, 80, 0.12);
+  text-align: center;
+}
+.pillLeft {
+  justify-self: start;
+  border-radius: 0 999px 999px 0;
+  padding-left: 20px;
+}
+.pillRight {
+  justify-self: end;
+  border-radius: 999px 0 0 999px;
+  padding-right: 12px;
+  max-width: 158px;
+  height: 46px;
+}
+.openWrap {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--safe-bottom) + 140px);
+  display: flex;
+  justify-content: center;
+  z-index: 7;
+}
+.timer {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 5px;
+  width: 148px;
+  font: 600 12px/1 var(--font-card);
+  color: #4a4f57;
+}
+.timer b {
+  font: 700 13px/1 var(--font-card);
+  font-variant-numeric: tabular-nums;
+  color: #2c2c2e;
+}
+
+/* ───────────── [I] research/inspo/store/tcg-04-my-cards.webp — My Cards ───────────── */
+.tcgBg {
+  background: linear-gradient(180deg, #edf0f5 0%, #f4f6f9 50%, #e7ebf1 100%);
+  font-family: var(--font-card);
+}
+.myHead {
+  position: relative;
+  flex: none;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  height: calc(46px + var(--safe-top));
+  padding: var(--safe-top) 8px 0;
+  font: 700 22px/1 var(--font-card);
+  color: #2c2c2e;
+}
+/* thin rainbow line under the header [I] */
+.myHead::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #ff9ac6, #ffd36b 25%, #9ef09a 50%, #7fd6ff 75%, #c49bff);
+}
+.frost {
+  position: relative;
+  margin: 14px 12px 12px;
+  padding: 14px 14px 12px;
+  border-radius: 22px;
+  overflow: hidden;
+  background: linear-gradient(118deg, rgba(255, 255, 255, 0.9) 0 58%, rgba(226, 231, 241, 0.75) 58%);
+  box-shadow: 0 10px 24px -16px rgba(40, 50, 80, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.95);
+}
+.squareRow {
+  display: flex;
+  gap: 12px;
+}
+.square {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  font: 600 12px/1.1 var(--font-card);
+  color: #5a606b;
+}
+.square > span:first-child {
+  width: 64px;
+  height: 64px;
+  border-radius: 18px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #4a4f57;
+  box-shadow: 0 3px 8px rgba(40, 50, 80, 0.16);
+}
+.frostRow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 14px;
+}
+.countPill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 30px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #e8ebf0;
+  font: 700 15px/1 var(--font-card);
+  font-variant-numeric: tabular-nums;
+  color: #2c2c2e;
+}
+.dexToggle {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.dexToggle > span:first-child {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  background: #fff;
+  color: #4a4f57;
+  box-shadow: 0 2px 5px rgba(40, 50, 80, 0.14);
+}
+.vsep {
+  width: 1px;
+  height: 28px;
+  background: rgba(60, 60, 67, 0.2);
+}
+
+/* ───────────── [I] research/inspo/store/tcg-02-share-card.webp — share layout (trade confirm) ───────────── */
+.share {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  overflow: hidden;
+  font-family: var(--font-card);
+  background: linear-gradient(180deg, #e3f7e6 0%, #cdeed6 45%, #bfe8cb 100%);
+}
+.partnerPill {
+  margin-top: calc(var(--safe-top) + 14px);
+  width: 270px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #bdffc7;
+  font: 600 15px/1 var(--font-card);
+  color: #3a3a3c;
+}
+.partner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 10px;
+  font: 600 17px/1 var(--font-card);
+  color: #6b7079;
+}
+.shareSheet {
+  margin-top: auto;
+  width: 100%;
+  border-radius: 30px 30px 0 0;
+  background: #fff;
+  padding: 18px 20px calc(var(--safe-bottom) + 16px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  box-shadow: 0 -10px 30px -18px rgba(40, 80, 50, 0.5);
+}
+.ownedLabel {
+  font: 500 15px/1 var(--font-card);
+  color: #6b7079;
+}
+.stepper {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  padding: 4px 22px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, transparent, #f2f3f6 20% 80%, transparent);
+  font: 700 19px/1.2 var(--font-card);
+  color: #2c2c2e;
+  font-variant-numeric: tabular-nums;
+}
+.stepper i {
+  font-style: normal;
+  color: #9a9fa8;
+}
+/* glowing cyan button ≈#79FAFF [I] */
+.cyanBtn {
+  width: 220px;
+  height: 52px;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #a9fcff, #79faff);
+  color: #fff;
+  font: 700 19px/1 var(--font-card);
+  text-shadow: 0 1px 3px rgba(0, 120, 140, 0.45);
+  box-shadow: 0 0 22px rgba(121, 250, 255, 0.85), 0 6px 14px -6px rgba(0, 140, 160, 0.6);
+}
+.cyanBtn:disabled {
+  opacity: 0.45;
+}
+.costLine {
+  display: flex;
+  gap: 18px;
+  align-items: center;
+  font: 600 14px/1 var(--font-card);
+  color: #4a4f57;
+}

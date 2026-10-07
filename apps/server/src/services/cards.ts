@@ -390,6 +390,7 @@ export function wonderPick(group: Group, userId: string, wonderId: string, choic
   }
   const position = Math.max(0, Math.min(cards.length - 1, choice));
   const got = cards[order[position]];
+  const isNew = !get('SELECT 1 FROM cards WHERE owner_id = ? AND group_id = ? AND post_id = ? AND rarity = ?', userId, group.id, got.postId, got.rarity);
   const card = tx(() => {
     spendStamina(userId, 'wonder', WONDER.cost[best]);
     picks[userId] = position;
@@ -400,7 +401,7 @@ export function wonderPick(group: Group, userId: string, wonderId: string, choic
   });
   const { view, dto, numbers } = cardContext(group, userId);
   return {
-    card: view(card),
+    card: { ...view(card), isNew },
     position,
     order: order.map((i) => ({ ...cards[i], number: numbers.get(`${cards[i].postId}:${cards[i].rarity}`) ?? null, post: dto.get(cards[i].postId) ?? null })),
   };

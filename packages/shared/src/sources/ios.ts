@@ -4,6 +4,8 @@
  * Source: Apple Human Interface Guidelines and the stock iOS apps. [HIG]
  */
 export const ios = {
+  /** [HIG] Contacts address field labels, used for Retro's "Mailing Address" [I] */
+  addressFields: ['Name', 'Street', 'City, State', 'ZIP'] as const,
   /** [HIG] standard alert / sheet buttons */
   ok: 'OK',
   /** [HIG] */

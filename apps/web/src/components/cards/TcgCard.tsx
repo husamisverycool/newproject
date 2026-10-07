@@ -1,7 +1,7 @@
-import { useEffect, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { useEffect, useId, useRef, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { BACKDROPS, BRAND, RARITY_MARK, backdropById, symbolById, tcg, type Rarity } from '@app/shared';
 import type { CardFaceT, CardNumber, Post } from '../../lib/types';
-import { longDate } from '../../lib/format';
+import { clock, longDate } from '../../lib/format';
 import { Icon } from '../Icon';
 import s from './cards.module.css';
 
@@ -28,10 +28,52 @@ export function cardNumber(n: CardNumber | null | undefined) {
 
 export const isFullArt = (r: Rarity) => r === 'holo' || r === 'immersive';
 
-export function RarityMark({ rarity, className = '', style }: { rarity: Rarity; className?: string; style?: CSSProperties }) {
+const DIAMOND = 'M8 0.8 15.2 12 8 23.2 0.8 12Z';
+const STAR = 'M12 1.2l3.1 7 7.6.7-5.7 5 1.7 7.4L12 17.4l-6.7 3.9 1.7-7.4-5.7-5 7.6-.7Z';
+
+/**
+ * Rarity gems. Diamonds are "silver outlined" [I research/inspo/frames/tcg-card-next.jpg]; Immersive Rare stars
+ * are golden [V]; the ☆ color is UNKNOWN and uses the same silver as the diamonds.
+ */
+export function Gem({ rarity, size = 12, big }: { rarity: Rarity; size?: number; big?: boolean }) {
+  const id = useId();
+  const star = rarity === 'holo' || rarity === 'immersive';
+  const gold = rarity === 'immersive';
+  const w = star ? size : size * (16 / 24);
   return (
-    <span className={`${s.mark} ${className}`} data-gold={rarity === 'immersive' || undefined} style={style}>
-      {RARITY_MARK[rarity]}
+    <svg viewBox={star ? '0 0 24 24' : '0 0 16 24'} width={w} height={size} aria-hidden>
+      <defs>
+        <linearGradient id={id} x1="0" y1="0" x2="1" y2="1">
+          {gold ? (
+            <>
+              <stop offset="0" stopColor="#fff7c2" />
+              <stop offset="0.45" stopColor="var(--tcg-gold)" />
+              <stop offset="1" stopColor="#c99400" />
+            </>
+          ) : (
+            <>
+              <stop offset="0" stopColor="#ffffff" />
+              <stop offset="0.4" stopColor="#d1d1d6" />
+              <stop offset="0.55" stopColor="#8e8e93" />
+              <stop offset="0.7" stopColor="#e5e5ea" />
+              <stop offset="1" stopColor="#aeaeb2" />
+            </>
+          )}
+        </linearGradient>
+      </defs>
+      <path d={star ? STAR : DIAMOND} fill={big || gold ? `url(#${id})` : '#fff'} stroke={gold ? '#a77b00' : '#2c2c2e'} strokeWidth={big ? 1.6 : 1.8} strokeLinejoin="round" />
+    </svg>
+  );
+}
+
+export const GEM_COUNT: Record<Rarity, number> = { common: 1, rare: 2, holo: 1, immersive: 3 };
+
+export function RarityMark({ rarity, className = '', style, size }: { rarity: Rarity; className?: string; style?: CSSProperties; size?: number }) {
+  return (
+    <span className={`${s.mark} ${className}`} style={style} role="img" aria-label={RARITY_MARK[rarity]}>
+      {Array.from({ length: GEM_COUNT[rarity] }, (_, i) => (
+        <Gem key={i} rarity={rarity} size={size} />
+      ))}
     </span>
   );
 }
@@ -59,12 +101,13 @@ export function Flair() {
   );
 }
 
+type MotionPermission = { requestPermission?(): Promise<string> };
 let orientationAsked = false;
 /** iOS asks for motion permission on a user gesture; other browsers fire DeviceOrientation directly. */
 export function askOrientation() {
   if (orientationAsked) return;
   orientationAsked = true;
-  const D = (window as unknown as { DeviceOrientationEvent?: { requestPermission?: () => Promise<string> } }).DeviceOrientationEvent;
+  const D = (window as unknown as { DeviceOrientationEvent?: MotionPermission }).DeviceOrientationEvent;
   if (D?.requestPermission) void D.requestPermission().catch(() => undefined);
 }
 
@@ -194,6 +237,7 @@ export function TcgCard({ card, tilt, isNew, copies, wish, live, className = '',
             {card.serial ? <span className={s.serial}>#{card.serial}</span> : null}
           </div>
           <div className={s.window}>{src && <img src={src} alt="" draggable={false} />}</div>
+          <div className={s.strip}>{post ? [longDate(post.takenAt), clock(post.takenAt)].join(' · ') : ''}</div>
           <div className={s.foot}>
             <div className={s.illusCol}>
               <span className={s.illus}>{post ? tcg.illus(post.user.name) : ''}</span>
@@ -217,13 +261,17 @@ export function TcgCard({ card, tilt, isNew, copies, wish, live, className = '',
   );
 }
 
-/** Plain black back with the app wordmark; an owned Card Sleeve recolors it. */
+/**
+ * Card back. No source art is known for TCG Pocket's default back (research/13 [B-low]), so it is plain black
+ * with the app wordmark (BRAND.name) — the brand is the only sourced identity we have. An owned Card Sleeve
+ * (Special Shop item [V-weak]) recolors it.
+ */
 export function CardBack({ sleeve, style, className = '' }: { sleeve?: string | null; style?: CSSProperties; className?: string }) {
   const color = sleeve ? backdropById(sleeve.replace(/^sleeve_/, '')) : null;
   return (
     <div className={`${s.card} ${className}`} style={style}>
       <div className={s.back} data-sleeve={color ? '' : undefined} style={color ? ({ '--bd-from': color.from, '--bd-to': color.to } as CSSProperties) : undefined}>
-        <span className="wordmark">{BRAND.name}</span>
+        <span className={s.brand}>{BRAND.name}</span>
       </div>
     </div>
   );
@@ -245,11 +293,13 @@ export function FlipCard({ down, front, sleeve, style, onClick }: { down: boolea
 export function DexSlot({ card, wish, onClick }: { card: CardFaceT; wish?: 'on' | 'hi' | null; onClick?: () => void }) {
   return (
     <div className={s.slot} onClick={onClick} role={onClick ? 'button' : undefined}>
-      <span className={s.slotNum}>{card.number ? String(card.number.n).padStart(3, '0') : ''}</span>
-      <span className={s.slotName}>{cardName(card.post)}</span>
-      <div className={s.slotFoot}>
-        <span className={s.illus}>{card.post ? tcg.illus(card.post.user.name) : ''}</span>
-        <RarityMark rarity={card.rarity} />
+      <div className={s.slotInner}>
+        <span className={s.slotNum}>{card.number ? String(card.number.n).padStart(3, '0') : ''}</span>
+        <span className={s.slotName}>{cardName(card.post)}</span>
+        <div className={s.slotFoot}>
+          <span className={s.illus}>{card.post ? tcg.illus(card.post.user.name) : ''}</span>
+          <RarityMark rarity={card.rarity} />
+        </div>
       </div>
       {wish && (
         <span className={s.heart} data-hi={wish === 'hi' || undefined}>

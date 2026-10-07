@@ -30,7 +30,7 @@ export function OddsTable({ odds }: { odds: OddsTableT }) {
         {RARITIES.map((r) => (
           <tr key={r} style={{ borderTop: '0.5px solid var(--sys-sep)' }}>
             <td style={{ padding: '9px 6px', whiteSpace: 'nowrap' }}>
-              <RarityMark rarity={r} style={{ fontSize: 13, color: r === 'immersive' ? undefined : 'var(--sys-label2)' }} />
+              <RarityMark rarity={r} size={13} />
               <div style={{ fontWeight: 600 }}>{RARITY_NAME[r]}</div>
             </td>
             {odds.slots.map((sl) => (

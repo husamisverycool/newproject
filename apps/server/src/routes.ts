@@ -818,8 +818,11 @@ api.post('/gift', async (c) => {
 });
 api.get('/groups/:groupId/orders', (c) => c.json({ orders: shopSvc.ordersFor(memberGroup(c).id), prices: shopSvc.PRINT }));
 api.post('/groups/:groupId/orders', async (c) => {
-  const b = await c.req.json<{ kind: keyof typeof shopSvc.PRINT; items: string[]; qty?: number }>();
-  return c.json({ id: shopSvc.createOrder(memberGroup(c), c.get('user').id, b.kind, b.items, b.qty) });
+  const b = await c.req.json<{ kind: keyof typeof shopSvc.PRINT; items: string[]; qty?: number; message?: string; address?: string[] }>();
+  const oid = shopSvc.createOrder(memberGroup(c), c.get('user').id, b.kind, b.items, b.qty);
+  // Retro postcard [I] (retro-03): "Add a message" and a "Mailing Address".
+  if (b.message || b.address?.length) run('INSERT OR REPLACE INTO order_meta (order_id, meta) VALUES (?, ?)', oid, json.str({ message: String(b.message ?? '').slice(0, 300), address: (b.address ?? []).map((l) => String(l).slice(0, 120)).slice(0, 5) }));
+  return c.json({ id: oid });
 });
 api.post('/orders/:orderId/chip', async (c) => {
   const { usd } = await c.req.json<{ usd: number }>();

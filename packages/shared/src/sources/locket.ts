@@ -72,6 +72,12 @@ export const locket = {
     if (day(t) === day(now - 86_400_000)) return `Yesterday at ${time}`;
     return `${new Date(t).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })} at ${time}`;
   },
+  /** [I] locket-03-rollcall: poster row "Karima K" (first name + last initial) */
+  shortName: (name: string) => {
+    const [first, ...rest] = name.trim().split(/\s+/);
+    const last = rest.at(-1);
+    return last ? `${first} ${last[0].toUpperCase()}` : first;
+  },
   /** [I] frame locket-reply-grid: "Reply to Kile" (2021 reply sheet) */
   replyTo: (name: string) => `Reply to ${name}`,
   /** [I] frame locket-reply-grid: the 2×4 emoji grid (the eighth cell is the add-emoji glyph) */

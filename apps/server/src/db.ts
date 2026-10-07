@@ -282,6 +282,10 @@ CREATE TABLE IF NOT EXISTS orders (
   status TEXT NOT NULL,
   created_at INTEGER NOT NULL
 );
+CREATE TABLE IF NOT EXISTS order_meta (
+  order_id TEXT PRIMARY KEY,
+  meta TEXT NOT NULL
+);
 CREATE TABLE IF NOT EXISTS quests (
   group_id TEXT NOT NULL,
   week_key TEXT NOT NULL,

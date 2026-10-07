@@ -5,13 +5,18 @@
  * Colors: --tcg-* tokens; type: --font-card / --font-card-num on card faces.
  */
 
-/* ───────────── Card ───────────── */
+/* ───────────── Card ─────────────
+ * [I] research/inspo/frames/tcg-card-reveal.jpg, tcg-card-new.jpg: a silver outer frame, the name in bold
+ * black top-left, an illustration window with a thin silver border, a silver strip under the art, "Illus."
+ * in small italics bottom-left with small outlined diamonds under it. Full art (tcg-03-trade-eligible.webp,
+ * tcg-05-showcase.webp): the art fills the card inside an iridescent foil border; text sits on translucent bands.
+ */
 .card {
   position: relative;
   width: 100%;
   aspect-ratio: 63 / 88;
   container-type: inline-size;
-  border-radius: 4.8cqw;
+  border-radius: 6px;
   transform: perspective(700px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
   transform-style: preserve-3d;
   transition: transform 140ms ease-out;
@@ -25,13 +30,13 @@
 .face {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
+  border-radius: 4.6cqw;
   overflow: hidden;
-  padding: 3.4cqw;
+  padding: 3.6cqw;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(160deg, color-mix(in srgb, var(--tcg-frame) 55%, #fff), var(--tcg-frame) 55%, color-mix(in srgb, var(--tcg-frame) 80%, #000));
-  box-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.18), 0 5cqw 12cqw -6cqw rgba(0, 0, 0, 0.45);
+  background: linear-gradient(165deg, #fbfbfd 0%, #dcdce1 28%, #c7c7cc 52%, #e9e9ee 74%, #c4c4ca 100%);
+  box-shadow: 0 0.4cqw 1cqw rgba(0, 0, 0, 0.16), 0 5cqw 12cqw -6cqw rgba(30, 30, 60, 0.45);
 }
 .numbered .face {
   background: radial-gradient(circle at 50% 42%, var(--bd-from), var(--bd-to));
@@ -42,38 +47,39 @@
   min-height: 0;
   display: flex;
   flex-direction: column;
-  border-radius: 2.6cqw;
-  padding: 0 3.2cqw 2.6cqw;
-  background: linear-gradient(180deg, var(--tcg-bg), var(--tcg-panel));
+  border-radius: 1.6cqw;
+  padding: 0 3.4cqw 2.4cqw;
+  background: linear-gradient(180deg, #fdfdfe 0%, #eef0f4 100%);
+  box-shadow: inset 0 0 0 0.5cqw rgba(255, 255, 255, 0.7);
 }
 .nameBar {
   display: flex;
   align-items: baseline;
   gap: 2cqw;
-  padding: 3.6cqw 0.6cqw 2.6cqw;
-  color: #1c1c1e;
+  padding: 3cqw 0.4cqw 1.8cqw;
+  color: #111;
 }
 .name {
   flex: 1;
   min-width: 0;
-  font: 700 7.4cqw/1.05 var(--font-card);
+  font: 700 7.6cqw/1.05 var(--font-card);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .serial {
   flex: none;
-  font: 600 5cqw/1 var(--font-card-num);
-  opacity: 0.75;
+  font: 700 5.4cqw/1 var(--font-card-num);
+  opacity: 0.8;
 }
 .window {
   position: relative;
   flex: 1;
   min-height: 0;
-  border-radius: 1.2cqw;
   overflow: hidden;
-  background: var(--tcg-panel);
-  box-shadow: 0 0 0 0.7cqw color-mix(in srgb, var(--tcg-frame) 70%, #fff), 0 0.6cqw 1.4cqw rgba(0, 0, 0, 0.25);
+  background: #d1d1d6;
+  border: 1.2cqw solid transparent;
+  border-image: linear-gradient(160deg, #f5f5f7, #b8b8be 45%, #e5e5ea 70%, #a7a7ad) 1;
 }
 .window img {
   width: 100%;
@@ -81,91 +87,96 @@
   object-fit: cover;
   pointer-events: none;
 }
+/* Silver strip under the art (the Pokédex line on Pocket cards) — here the moment's date, data only. */
+.strip {
+  margin: 0.6cqw 0 0;
+  padding: 0.9cqw 2cqw;
+  background: linear-gradient(180deg, #f2f2f5, #c9c9cf);
+  font: italic 500 3.5cqw/1 var(--font-card);
+  color: #3a3a3c;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 .foot {
   display: flex;
   justify-content: space-between;
   align-items: flex-end;
   gap: 2cqw;
-  padding: 3cqw 0.6cqw 0;
+  padding: 2.6cqw 0.4cqw 0;
   color: #3a3a3c;
 }
 .illusCol {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  gap: 1.2cqw;
+  gap: 1cqw;
 }
 .illus {
-  font: 500 4.6cqw/1.1 var(--font-card);
+  font: italic 600 3.6cqw/1.1 var(--font-card);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 .mark {
+  display: inline-flex;
+  gap: 0.8cqw;
+  align-items: center;
   font: 600 6.2cqw/1 var(--font-sf);
-  letter-spacing: -0.2cqw;
 }
-.mark[data-gold] {
-  color: var(--tcg-gold);
-  text-shadow: 0 0 1.6cqw color-mix(in srgb, var(--tcg-gold) 70%, transparent), 0 0.2cqw 0.4cqw rgba(0, 0, 0, 0.45);
+.card .mark svg,
+.slot .mark svg {
+  height: 4.6cqw;
+  width: auto;
 }
 .num {
   flex: none;
-  font: 500 4.2cqw/1 var(--font-card-num);
-  opacity: 0.72;
+  font: italic 500 3.5cqw/1 var(--font-card);
+  opacity: 0.75;
   white-space: nowrap;
 }
 
-/* ☆ Art Rare / ☆☆☆ Immersive Rare: full art — the photo fills the card [B]; thin frame line [B-low-med]. */
+/* ☆ Art Rare / ☆☆☆ Immersive Rare: full art inside an iridescent foil border [I]. */
 .full .face {
-  padding: 1.6cqw;
+  padding: 2.4cqw;
+  background:
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.35) 0 1.2cqw, transparent 1.2cqw 2.4cqw),
+    linear-gradient(135deg, #ffd1f0, #c9d7ff 20%, #c8fff1 40%, #fff6c4 60%, #ffc9e8 80%, #cfd3ff);
 }
 .full .inner {
   padding: 0;
   background: #000;
   overflow: hidden;
+  border-radius: 1.4cqw;
 }
 .full .window {
   position: absolute;
   inset: 0;
-  border-radius: 0;
-  box-shadow: none;
-}
-.full .inner::before,
-.full .inner::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-.full .inner::before {
-  top: 0;
-  height: 26%;
-  background: linear-gradient(rgba(0, 0, 0, 0.5), transparent);
-}
-.full .inner::after {
-  bottom: 0;
-  height: 30%;
-  background: linear-gradient(transparent, rgba(0, 0, 0, 0.55));
+  border: 0;
 }
 .full .nameBar,
 .full .foot {
   position: relative;
   z-index: 2;
-  color: #fff;
-  text-shadow: 0 0.3cqw 1.2cqw rgba(0, 0, 0, 0.6);
+  margin: 2cqw;
+  border-radius: 1.4cqw;
+  background: rgba(255, 255, 255, 0.62);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
 }
 .full .nameBar {
-  padding: 4.4cqw 4.4cqw 0;
+  padding: 1.8cqw 2.4cqw;
+}
+.full .strip {
+  display: none;
 }
 .full .foot {
   margin-top: auto;
-  padding: 0 4.4cqw 3.8cqw;
+  padding: 1.6cqw 2.4cqw;
 }
 
-/* Tilt sheen: "tilt the device to view cards from different angles" [V]. Holographic for ☆ and up. */
+/* Tilt sheen: "tilt the device to view cards from different angles" [V]. Holographic for ☆ and up [I tcg-ex-flip.jpg]. */
 .sheen {
   position: absolute;
   inset: 0;
@@ -193,7 +204,7 @@
   background-size: 300% 300%;
   background-position: calc(var(--mx, 0.5) * 100%) calc(var(--my, 0.5) * 100%);
   mix-blend-mode: color-dodge;
-  opacity: 0.32;
+  opacity: 0.3;
 }
 
 /* Telegram numbered variant: grey symbol pattern on the backdrop frame [V-weak]. */
@@ -240,7 +251,7 @@
 .back {
   position: absolute;
   inset: 0;
-  border-radius: inherit;
+  border-radius: 4.6cqw;
   display: grid;
   place-items: center;
   background: #000;
@@ -251,7 +262,7 @@
 .back[data-sleeve] {
   background: radial-gradient(circle at 50% 42%, var(--bd-from), var(--bd-to));
 }
-.back :global(.wordmark) {
+.back .brand {
   font-size: 19cqw;
 }
 
@@ -276,20 +287,19 @@
   transform: rotateY(180deg);
 }
 
-/* Badges on cards */
+/* "NEW": a pink→magenta gradient pill above the card's top-left corner [I tcg-card-new.jpg, tcg-ex-new.jpg]. */
 .newBadge {
   position: absolute;
-  top: -1.8cqw;
-  left: 50%;
-  translate: -50% 0;
+  top: -6.6cqw;
+  left: -1.4cqw;
   z-index: 6;
-  padding: 1.6cqw 4cqw;
+  padding: 1.8cqw 4.2cqw;
   border-radius: 999px;
-  background: var(--sys-red);
+  background: linear-gradient(90deg, #ff74b1, #e8279b);
   color: #fff;
-  font: 800 6.4cqw/1 var(--font-sf);
-  letter-spacing: 0.04em;
-  box-shadow: 0 1cqw 3cqw rgba(0, 0, 0, 0.3);
+  font: 800 6.6cqw/1 var(--font-card);
+  letter-spacing: 0.03em;
+  box-shadow: 0 1cqw 3cqw rgba(232, 39, 155, 0.35);
 }
 .copies {
   position: absolute;
@@ -305,7 +315,7 @@
   background: #1c1c1e;
   color: #fff;
   font: 700 8cqw/1 var(--font-card-num);
-  box-shadow: 0 0 0 1.4cqw var(--tcg-bg);
+  box-shadow: 0 0 0 1.4cqw #fff;
 }
 .heart {
   position: absolute;
@@ -330,7 +340,8 @@
 @container (max-width: 84px) {
   .nameBar,
   .illus,
-  .num {
+  .num,
+  .strip {
     display: none;
   }
   .inner {
@@ -342,8 +353,9 @@
   .full .foot {
     padding-bottom: 4cqw;
   }
-  .mark {
-    font-size: 9cqw;
+  .card .mark svg,
+  .slot .mark svg {
+    height: 8cqw;
   }
 }
 
@@ -353,6 +365,10 @@
   width: 100%;
   aspect-ratio: 63 / 88;
   container-type: inline-size;
+}
+.slotInner {
+  position: absolute;
+  inset: 0;
   border-radius: 4.8cqw;
   background: color-mix(in srgb, var(--tcg-frame) 32%, var(--tcg-bg));
   box-shadow: inset 0 0 0 0.8cqw color-mix(in srgb, var(--tcg-frame) 70%, transparent);
@@ -388,13 +404,17 @@
   }
 }
 
-/* ───────────── Pack (booster) ───────────── */
+/* ───────────── Pack (booster) ─────────────
+ * [I] research/inspo/store/tcg-01-pack-select.webp, frames/tcg-pack-tear.jpg: crimped foil ends, a patterned
+ * band across the top with the logo, full-bleed art of the featured character, and the set title at the bottom
+ * in big outlined letters over a subtitle naming the featured character.
+ */
 .pack {
   position: relative;
   width: 100%;
   aspect-ratio: 100 / 178;
   container-type: inline-size;
-  filter: drop-shadow(0 6cqw 8cqw rgba(0, 0, 0, 0.28));
+  filter: drop-shadow(0 14px 18px rgba(40, 50, 80, 0.28));
 }
 .packLayer {
   position: absolute;
@@ -402,36 +422,74 @@
 }
 .packArt {
   position: absolute;
-  left: 7%;
-  right: 7%;
-  top: 15%;
-  bottom: 13%;
-  border-radius: 4cqw;
+  left: 2.5%;
+  right: 2.5%;
+  top: 6.6%;
+  bottom: 6.6%;
   overflow: hidden;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  padding: 6cqw 4cqw 5cqw;
-  background: radial-gradient(circle at 50% 55%, color-mix(in srgb, var(--art) 30%, #fff) 0%, var(--art) 62%, color-mix(in srgb, var(--art) 70%, #000) 100%);
-  box-shadow: inset 0 0 0 1cqw rgba(255, 255, 255, 0.35);
+  background:
+    repeating-conic-gradient(from 0deg at 50% 52%, rgba(255, 255, 255, 0.22) 0deg 6deg, transparent 6deg 16deg),
+    radial-gradient(circle at 50% 52%, color-mix(in srgb, var(--art) 25%, #fff) 0%, var(--art) 48%, color-mix(in srgb, var(--art) 62%, #000) 100%);
 }
-.packArt :global(.wordmark) {
-  font-size: 15cqw;
+.packBand {
+  width: 100%;
+  flex: none;
+  height: 17%;
+  display: grid;
+  place-items: center;
+  background:
+    radial-gradient(circle, rgba(255, 255, 255, 0.18) 1.4cqw, transparent 1.6cqw) 0 0 / 7cqw 7cqw,
+    linear-gradient(180deg, color-mix(in srgb, var(--art) 55%, #1c2a6b), color-mix(in srgb, var(--art) 40%, #1c2a6b));
+  box-shadow: 0 1cqw 2cqw rgba(0, 0, 0, 0.25);
+}
+.packArt .brand {
+  font-size: 14cqw;
   color: #fff;
-  text-shadow: 0 1cqw 3cqw rgba(0, 0, 0, 0.3);
+  text-shadow: 0 0.8cqw 0 rgba(0, 0, 0, 0.25);
+}
+.packHero {
+  flex: 1;
+  min-height: 0;
+  width: 100%;
+  display: grid;
+  place-items: center;
+}
+.packTitle {
+  flex: none;
+  width: 100%;
+  padding: 2cqw 3cqw 4cqw;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.6cqw;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.28));
 }
 .packSet {
-  font: 700 6cqw/1 var(--font-card-num);
+  font: 900 11cqw/1 var(--font-card);
   color: #fff;
-  letter-spacing: 0.04em;
-  text-shadow: 0 0.6cqw 2cqw rgba(0, 0, 0, 0.35);
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  -webkit-text-stroke: 1.4cqw #1c1c1e;
+  paint-order: stroke fill;
+  text-shadow: 0 0.8cqw 0 rgba(0, 0, 0, 0.35);
+}
+.packSub {
+  padding: 1cqw 4cqw;
+  border-radius: 1.4cqw;
+  background: linear-gradient(180deg, #ff6b4a, #c9302c);
+  color: #fff;
+  font: 700 5.4cqw/1.1 var(--font-card);
+  box-shadow: inset 0 0 0 0.5cqw rgba(255, 255, 255, 0.5);
+  white-space: nowrap;
 }
 .packShine {
   position: absolute;
   inset: 0;
   pointer-events: none;
-  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.55) 48%, transparent 60%);
+  background: linear-gradient(105deg, transparent 35%, rgba(255, 255, 255, 0.5) 48%, transparent 60%);
   background-size: 250% 100%;
   animation: packShine 3.6s ease-in-out infinite;
   mix-blend-mode: overlay;
@@ -463,4 +521,38 @@
   gap: 4px;
   font: 600 15px/1 var(--font-sf);
   font-variant-numeric: tabular-nums;
+}
+
+/* Live clip stored as a vertical strip of square frames (server framesToLive): step through the frames. */
+.liveBox {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: var(--side);
+  height: var(--side);
+  margin: calc(var(--side) / -2) 0 0 calc(var(--side) / -2);
+  overflow: hidden;
+}
+.liveStrip {
+  display: block;
+  width: 100%;
+  animation: liveStrip var(--dur) steps(var(--steps), jump-none) infinite;
+}
+@keyframes liveStrip {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(var(--end));
+  }
+}
+
+/* The app wordmark "roll." (BRAND.name): lowercase with a trailing period (yope / BeReal., docs/INSPIRATION.md).
+   Same face as the app-wide wordmark, kept here so card art does not depend on legacy ui.css. */
+.brand {
+  display: inline-block;
+  font-family: 'Inter Variable', 'Inter', var(--font-sf);
+  font-weight: 900;
+  letter-spacing: -0.045em;
+  line-height: 1;
 }
