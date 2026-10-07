@@ -1,4 +1,4 @@
-import { MASCOT_XP, STORAGE, type Group } from '@app/shared';
+import { MASCOT_XP, STORAGE, ios, partiful, type Group } from '@app/shared';
 import { all, get, json, now, run } from '../db.ts';
 import { getUser, id, insertMessage, members, membership, postsForGroup, publicUser, updateMascot } from '../repo.ts';
 import { toGroup } from '../realtime.ts';
@@ -43,7 +43,7 @@ export function createPlan(group: Group, userId: string, input: { title: string;
   const creator = getUser(userId)!;
   for (const m of members(group.id)) {
     if (m.userId === userId) continue;
-    push({ userId: m.userId, groupId: group.id, kind: 'plan', title: `${creator.name} made a plan`, body: input.title, refIds: [pid], url: `/plan/${pid}` });
+    push({ userId: m.userId, groupId: group.id, kind: 'plan', title: input.title, body: partiful.hostedBy(creator.name.split(' ')[0]), refIds: [pid], url: `/plan/${pid}` });
   }
   return pid;
 }
@@ -71,7 +71,7 @@ export function planView(planId: string, viewerId: string) {
     isHost: p.created_by === viewerId,
     album,
     albumExpiresAt: p.album_expires_at,
-    albumKept: !!p.album_kept,
+    albumKept: p.album_kept === 1,
     blastsLeft: MAX_BLASTS - (get<{ n: number }>("SELECT COUNT(*) AS n FROM messages WHERE ref_id = ? AND json_extract(meta, '$.blast') = 1", planId)?.n ?? 0),
   };
 }
@@ -147,12 +147,14 @@ export function planTick() {
       run('UPDATE plans SET album_expires_at = NULL, album_kept = -1 WHERE id = ?', p.id);
     }
     const rsvps = new Map(all<{ user_id: string; status: RsvpStatus }>('SELECT user_id, status FROM plan_rsvps WHERE plan_id = ?', p.id).map((r) => [r.user_id, r.status]));
-    const remind = (key: string, when: number, who: (s: RsvpStatus | undefined) => boolean, body: string) => {
+    // Partiful Auto-Reminders [V] schedule; their wording is UNKNOWN, so a reminder carries only the plan's title and time.
+    const remind = (key: string, when: number, who: (s: RsvpStatus | undefined) => boolean) => {
+      const body = ios.dateTime(p.starts_at!);
       if (t < when || t > p.starts_at! || get('SELECT 1 FROM jobs_done WHERE key = ?', key)) return;
       run('INSERT OR IGNORE INTO jobs_done (key, at) VALUES (?, ?)', key, t);
       for (const m of members(p.group_id)) if (who(rsvps.get(m.userId))) push({ userId: m.userId, groupId: p.group_id, kind: 'plan', title: p.title, body, refIds: [`${key}:${m.userId}`], url: `/plan/${p.id}` });
     };
-    remind(`plan_week:${p.id}`, p.starts_at! - 7 * 86_400_000, (s) => s === undefined || s === 'maybe', 'Happening in a week — are you in?');
-    remind(`plan_2h:${p.id}`, p.starts_at! - 2 * 3_600_000, (s) => s === 'going', 'Starts in 2 hours');
+    remind(`plan_week:${p.id}`, p.starts_at! - 7 * 86_400_000, (s) => s === undefined || s === 'maybe');
+    remind(`plan_2h:${p.id}`, p.starts_at! - 2 * 3_600_000, (s) => s === 'going');
   }
 }
