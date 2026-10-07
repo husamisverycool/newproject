@@ -3,12 +3,12 @@ import { Route, Routes, useNavigate, useSearchParams } from 'react-router';
 import { motion } from 'motion/react';
 import { BRAND, MASCOT_SPECIES, WALL_UNLOCK_MEMBERS, gphotos, ios, jackbox, locket, pets, retro, snapchat, sora, spec, whatsapp } from '@app/shared';
 import { api, ApiError } from '../lib/api';
-import { queryClient, useMe } from '../lib/queries';
+import { queryClient, useActiveGroup, useMe } from '../lib/queries';
 import { useUi } from '../lib/store';
 import { haptic } from '../lib/feedback';
 import { useCamera, fileToSquareJpeg, photoTakenAt } from '../lib/camera';
 import { Icon } from '../components/Icon';
-import { Alert, Section, Row, Sheet, Spinner } from '../components/ios';
+import { Alert, Avatar, Section, Row, Sheet, Spinner } from '../components/ios';
 import { Mascot } from '../components/Mascot';
 import { QR, shareInvite } from '../components/QR';
 import { RewindDial, type DialItem } from '../components/RewindDial';
@@ -507,28 +507,47 @@ function NotificationsStep() {
   );
 }
 
-/* 10 ── Widget: Locket's add-widget steps [V-weak] */
+/* 10 ── Widget: Locket's own TikTok steps [I] (frame locket-add-widget-steps) over the iOS widget
+   gallery card as Locket shows it [I] (frame locket-widget-gallery): "Locket Widget", "Live pics from
+   all your friends right on your Home Screen", the dark preview with three avatars in yellow rings
+   and "26 Friends", page dots, the blue "⊕ Add Widget" button. */
 function WidgetStep() {
   const nav = useNavigate();
+  const me = useMe();
+  const { group } = useActiveGroup();
   const finish = async () => {
     await api.patch('/me', { onboarded: true });
     await queryClient.invalidateQueries({ queryKey: ['me'] });
     nav('/', { replace: true });
   };
+  const faces = group?.members.slice(0, 3) ?? (me.data ? [me.data.user] : []);
   return (
     <Step>
-      <h1 className={s.title}>{ios.addWidget}</h1>
-      <p className={s.lede}>{locket.storeLine}</p>
       <ol className={s.steps}>
-        {locket.addWidgetSteps.map((t, i) => (
-          <li key={t}>
-            <span>{i + 1}</span>
-            {t}
-          </li>
+        {locket.addWidgetSteps.map((t) => (
+          <li key={t}>{t}</li>
         ))}
       </ol>
-      <div className={s.cta}>
-        <Primary onClick={finish}>{ios.done}</Primary>
+      <div className={s.gallery}>
+        <span className={s.galleryGrabber} />
+        <h2>{locket.widgetTitle}</h2>
+        <p>{locket.widgetDescription}</p>
+        <span className={s.galleryWidget}>
+          <span className={s.galleryRings}>
+            {faces.map((u) => (
+              <Avatar key={u.id} user={u} size={34} />
+            ))}
+          </span>
+          <b>{locket.widgetFriends(group?.memberCount ?? 1)}</b>
+        </span>
+        <span className={s.galleryDots}>
+          <i className={s.galleryDotOn} />
+          <i />
+        </span>
+        <button className={s.galleryAdd} onClick={finish}>
+          <Icon name="plus" size={16} strokeWidth={3} />
+          {ios.addWidget}
+        </button>
       </div>
     </Step>
   );
