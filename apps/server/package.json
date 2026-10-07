@@ -1,0 +1,25 @@
+{
+  "name": "@app/server",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch --clear-screen=false src/main.ts",
+    "start": "tsx src/main.ts",
+    "seed": "tsx src/seed.ts"
+  },
+  "dependencies": {
+    "@app/shared": "*",
+    "@hono/node-server": "1.19.17",
+    "hono": "4.13.13",
+    "nanoid": "5.1.16",
+    "sharp": "0.34.5",
+    "ws": "8.18.3",
+    "zod": "3.25.76"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.5",
+    "@types/ws": "8.18.2",
+    "tsx": "4.20.6"
+  }
+}

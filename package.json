@@ -1,0 +1,22 @@
+{
+  "name": "friend-camera",
+  "private": true,
+  "type": "module",
+  "workspaces": ["apps/*", "packages/*"],
+  "scripts": {
+    "dev": "concurrently -k -n server,web -c blue,magenta \"npm:dev -w apps/server\" \"npm:dev -w apps/web\"",
+    "build": "npm run build -w packages/shared && npm run build -w apps/web",
+    "start": "npm run start -w apps/server",
+    "typecheck": "tsc -p packages/shared && tsc -p apps/server && tsc -p apps/web",
+    "test": "vitest run",
+    "e2e": "playwright test",
+    "seed": "npm run seed -w apps/server"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1",
+    "concurrently": "9.2.4",
+    "typescript": "5.9.3",
+    "vitest": "3.2.7"
+  },
+  "engines": { "node": ">=22.13" }
+}
